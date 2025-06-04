@@ -1,0 +1,7 @@
+Study Name: ST002016
+Dataset Source: Metabolomics Workbench
+ID: ST002016
+Node Name: ST002016
+Metadata Group: Factor Value[Disease]
+Metadata Filter:  
+Outliers:  

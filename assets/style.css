@@ -1,0 +1,16 @@
+.sidebar-link {
+    height: 60px;
+    line-height: 60px; /* vertically center text in that 60px */
+    /* optional: text-align: center; if you want the text centered horizontally */
+}
+.custom-outline-button {
+    background-color: white !important;
+    color: #0d6efd !important;  /* Bootstrap Primary Blue */
+    border: 1px solid #0d6efd !important;
+}
+
+.custom-outline-button:hover {
+    background-color: #e7f0ff !important;  /* Light blue background on hover */
+    color: #0a58ca !important;  /* Darker blue text on hover */
+    border: 1px solid #0a58ca !important;
+}

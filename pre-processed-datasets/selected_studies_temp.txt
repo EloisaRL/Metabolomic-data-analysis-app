@@ -1,0 +1,400 @@
+{
+  "studies": {
+    "MTBLS1866": {
+      "filename": "processed_MTBLS1866_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "Factor Value[Medical case]",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "SA 8",
+      "group_filter": {
+        "Control": [
+          "COVID-19"
+        ],
+        "Case": [
+          "HEALTHY"
+        ]
+      }
+    },
+    "MTBLS2014": {
+      "filename": "processed_MTBLS2014_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "Factor Value[Disease]",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "12JUN2020_AAA_COV_PL_068",
+      "group_filter": {
+        "Control": [
+          "Healthy"
+        ],
+        "Case": [
+          "Patient (+) SARS-CoV-2"
+        ]
+      }
+    },
+    "MTBLS2224": {
+      "filename": "processed_MTBLS2224_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "Factor Value[COVID Infection]",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "FU22",
+      "group_filter": {
+        "Control": [
+          "Negative"
+        ],
+        "Case": [
+          "Positive"
+        ]
+      }
+    },
+    "MTBLS2291": {
+      "filename": "processed_MTBLS2291_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "Factor Value[Disease severity]",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "",
+      "group_filter": {
+        "Control": [
+          "Negative COVID-19"
+        ],
+        "Case": [
+          "Severe COVID-19"
+        ]
+      }
+    },
+    "MTBLS2336": {
+      "filename": "processed_MTBLS2336_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "Factor Value[Disease]",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "",
+      "group_filter": {
+        "Control": [
+          "Healthy (control)"
+        ],
+        "Case": [
+          "COVID-19"
+        ]
+      }
+    },
+    "MTBLS2542": {
+      "filename": "processed_MTBLS2542_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "Factor Value[Disease severity]",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "",
+      "group_filter": {
+        "Control": [
+          "Mild"
+        ],
+        "Case": [
+          "Death"
+        ]
+      }
+    },
+    "MTBLS3852": {
+      "filename": "processed_MTBLS3852_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "Factor Value[Disease staging]",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "",
+      "group_filter": {
+        "Control": [
+          "control"
+        ],
+        "Case": [
+          "severe COVID-19"
+        ]
+      }
+    },
+    "MTBLS6739": {
+      "filename": "processed_MTBLS6739_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "Factor Value[Disease]",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "",
+      "group_filter": {
+        "Control": [
+          "Negative"
+        ],
+        "Case": [
+          "COVID-19"
+        ]
+      }
+    },
+    "ST000041": {
+      "filename": "processed_ST000041_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "Group:Control",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "",
+      "group_filter": {
+        "Control": [
+          "Group:Control"
+        ],
+        "Case": [
+          "Group:NAFLD"
+        ]
+      }
+    },
+    "ST000284": {
+      "filename": "processed_ST000284_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "Patient group:CRC",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "",
+      "group_filter": {
+        "Control": [
+          "Patient group:Healthy"
+        ],
+        "Case": [
+          "Patient group:CRC"
+        ]
+      }
+    },
+    "ST000899": {
+      "filename": "processed_ST000899_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "Type:Control",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "",
+      "group_filter": {
+        "Control": [
+          "Type:Control"
+        ],
+        "Case": [
+          "Type:Ulcerative Colitis"
+        ]
+      }
+    },
+    "ST000974": {
+      "filename": "processed_ST000974_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "GROUP:case",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "",
+      "group_filter": {
+        "Control": [
+          "GROUP:control"
+        ],
+        "Case": [
+          "GROUP:case"
+        ]
+      }
+    },
+    "ST001412": {
+      "filename": "processed_ST001412_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "Group:Lean",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "",
+      "group_filter": {
+        "Control": [
+          "Group:Lean"
+        ],
+        "Case": [
+          "Group:Obese neuropathy"
+        ]
+      }
+    },
+    "ST001420": {
+      "filename": "processed_ST001420_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "Disease:Angina",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "",
+      "group_filter": {
+        "Control": [
+          "Disease:Angina"
+        ],
+        "Case": [
+          "Disease:Angina-free"
+        ]
+      }
+    },
+    "ST001736": {
+      "filename": "processed_ST001736_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "COVID_Status:Negative",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "",
+      "group_filter": {
+        "Control": [
+          "COVID_Status:Negative"
+        ],
+        "Case": [
+          "COVID_Status:Positive"
+        ]
+      }
+    },
+    "ST001933": {
+      "filename": "processed_ST001933_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "Group:CA",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "",
+      "group_filter": {
+        "Control": [
+          "Group:H"
+        ],
+        "Case": [
+          "Group:CA"
+        ]
+      }
+    },
+    "ST002016": {
+      "filename": "processed_ST002016_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "group:-",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "",
+      "group_filter": {
+        "Control": [
+          "group:Healthy"
+        ],
+        "Case": [
+          "group:COVID_non-acute"
+        ]
+      }
+    },
+    "ST002100": {
+      "filename": "processed_ST002100_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "Treatment:Acute hepatitis",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "",
+      "group_filter": {
+        "Control": [
+          "Treatment:Healthy"
+        ],
+        "Case": [
+          "Treatment:Acute hepatitis"
+        ]
+      }
+    },
+    "ST002301": {
+      "filename": "processed_ST002301_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "Severity of Disease:Asymptomatic",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "",
+      "group_filter": {
+        "Control": [
+          "Severity of Disease:Asymptomatic"
+        ],
+        "Case": [
+          "Severity of Disease:Severe"
+        ]
+      }
+    },
+    "ST002428": {
+      "filename": "processed_ST002428_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "Label:Controls",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "",
+      "group_filter": {
+        "Control": [
+          "Label:Controls"
+        ],
+        "Case": [
+          "Label:TB"
+        ]
+      }
+    },
+    "ST002498": {
+      "filename": "processed_ST002498_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "Diagnosis:0",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "",
+      "group_filter": {
+        "Control": [
+          "Diagnosis:0"
+        ],
+        "Case": [
+          "Diagnosis:1"
+        ]
+      }
+    },
+    "ST002829": {
+      "filename": "processed_ST002829_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "Severity_Scale:0",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "",
+      "group_filter": {
+        "Control": [
+          "Severity_Scale:0"
+        ],
+        "Case": [
+          "Severity_Scale:3"
+        ]
+      }
+    }
+  }
+}

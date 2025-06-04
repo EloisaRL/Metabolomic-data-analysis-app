@@ -1,0 +1,7 @@
+Study Name: MTBLS1866
+Dataset Source: MetaboLights
+ID: MTBLS1866
+Node Name: MTBLS1866
+Metadata Group: Factor Value[Medical case]
+Metadata Filter: {'Case': ['COVID-19', 'ICU-COVID-19'], 'Control': ['HEALTHY']}
+Outliers: SA 8

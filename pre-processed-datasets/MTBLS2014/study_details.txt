@@ -1,0 +1,7 @@
+Study Name: MTBLS2014
+Dataset Source: MetaboLights
+ID: MTBLS2014
+Node Name: MTBLS2014
+Metadata Group: Factor Value[Disease]
+Metadata Filter: {'Case': ['Patient (+) SARS-CoV-2'], 'Control': ['Healthy']}
+Outliers: 12JUN2020_AAA_COV_PL_068
