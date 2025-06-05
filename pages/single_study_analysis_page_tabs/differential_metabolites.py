@@ -10,10 +10,6 @@ from scipy import stats
 from statsmodels.stats.multitest import multipletests
 import json
 
-UPLOAD_FOLDER = "pre-processed-datasets"
-# Path to the temporary file that holds the selected studies
-SELECTED_STUDIES_FILE = os.path.join(UPLOAD_FOLDER, "selected_studies_temp.txt")
-
 def da_testing(self):
         '''
         Performs differential analysis testing, adds pval_df attribute containing results.
@@ -299,7 +295,9 @@ def register_callbacks():
         else:
             study_name = None
 
-        with open(SELECTED_STUDIES_FILE, "r", encoding="utf-8") as f:
+        project_details_path = os.path.join("Projects", selected_project, "project_details_file.json")
+
+        with open(project_details_path, "r", encoding="utf-8") as f:
             payload = json.load(f).get("studies", {})
 
         group_filter = payload[study_name].get("group_filter", {})

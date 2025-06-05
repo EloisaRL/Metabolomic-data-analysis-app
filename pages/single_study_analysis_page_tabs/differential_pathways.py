@@ -12,11 +12,6 @@ import plotly.io as pio
 import base64
 import json
 
-UPLOAD_FOLDER = "pre-processed-datasets"
-# Path to the temporary file that holds the selected studies
-SELECTED_STUDIES_FILE = os.path.join(UPLOAD_FOLDER, "selected_studies_temp.txt")
-
-
 refmet = pd.read_csv(r"C:\Users\Eloisa\Documents\ICL\Tim RA Project - Postgraduate\my_dash_app\refmet.csv", dtype=object)
 refmet.columns = refmet.columns.str.strip() 
 name2pubchem = dict(zip(refmet['refmet_name'], refmet['chebi_id']))
@@ -394,7 +389,9 @@ def register_callbacks():
                 else:
                     study_name = None
 
-                with open(SELECTED_STUDIES_FILE, "r", encoding="utf-8") as f:
+                project_details_path = os.path.join("Projects", selected_project, "project_details_file.json")
+
+                with open(project_details_path, "r", encoding="utf-8") as f:
                     payload = json.load(f).get("studies", {})
                     
                 group_filter = payload[study_name].get("group_filter", {})
