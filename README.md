@@ -78,3 +78,7 @@ You’ll see output similar to:
 Dash is running on http://127.0.0.1:8050/  (Press CTRL+C to quit)
 ```
 Ctrl+Click (or Cmd+Click on macOS) the link to open the app in your browser.
+
+## Example Data (“Dummy Project”)
+
+To start using the single-study and multi-study analysis tabs now, you can use the data in the 'Dummy project' which contains processed data from all studies that currently uploaded. Or you can upload the processed data directly from the 'Dummy project' on to Metaboanalyst for data analysis.
