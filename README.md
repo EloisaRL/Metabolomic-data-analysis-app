@@ -1,4 +1,4 @@
-# MetaboLight Data Analysis App
+# Metabolite Data Analysis App
 
 An interactive Dash application for visualizing and analyzing differential metabolites and pathways across single- and multi-study datasets. By leveraging harmonized metabolite annotations, the app enables you to:
 
