@@ -99,8 +99,8 @@ layout = html.Div([
                                 ),
 
                                 html.P(
-                                    "Next metabolites are mapped to Reactome pathways (note: one metabolite can map to more than "
-                                    "one pathway). If two or more metabolites overlap a pathway, it applies single-sample pathway "
+                                    "Next metabolites are mapped to Reactome pathways (using file version 90) Note: one metabolite can map to more than "
+                                    "one pathway. If two or more metabolites overlap a pathway, it applies single-sample pathway "
                                     "analysis (ssPA) via KPCA to compute an arbitrary score for each pathway in each patient sample.",
                                     style={"marginBottom": "0.5rem"}
                                 ),
