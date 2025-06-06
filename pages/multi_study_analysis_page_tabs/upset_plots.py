@@ -1,5 +1,5 @@
 # pages/multi_study_analysis_page_tabs/upset_plots.py
-from dash import html, dcc, callback, Input, Output, State, no_update
+from dash import html, dcc, callback, Input, Output, State, no_update, dash_table
 import dash_bootstrap_components as dbc
 import os
 import pandas as pd
@@ -95,6 +95,33 @@ def da_testing(self):
 
 
 layout = html.Div([
+                    # Background processing description in a grey box
+                    html.Div(
+                        [
+                            html.H4("Background processing description", style={"marginBottom": "0.5rem"}),
+                            html.P(
+                                "If the dataset uses RefMet IDs (i.e. originates from workbench or is original data), "
+                                "RefMet-to–ChEBI conversion is performed renaming each metabolite column to its "
+                                "corresponding ChEBI ID (dropping any unmapped columns).",
+                                style={"marginBottom": "0.5rem"}
+                            ),
+                            html.P(
+                                "For the upset plot of co-occurring differential metabolites, differential testing is performed "
+                                "by first separating metabolite data into Case and Control groups, then runs an independent "
+                                "two‐sided t‐test for each metabolite to compare their means. It labels each metabolite as “Up” "
+                                "or “Down” based on the sign of the test statistic, applies Benjamini–Hochberg FDR correction "
+                                "to the p-values, and finally reports those metabolites with an adjusted p-value below 0.05 as "
+                                "differentially abundant."
+                            ),
+                        ],
+                        style={
+                            "backgroundColor": "#f0f0f0",
+                            "padding": "1rem",
+                            "borderRadius": "5px",
+                            "marginBottom": "1.5rem",
+                        },
+                    ),
+
                     html.H2("Upset plots of co-occurring metabolites and differential metabolites"),
 
                     # always-visible “min co-occur” input
@@ -275,6 +302,9 @@ def register_callbacks():
         if not selected_project or not selected_files:
             return html.Div("Please select a project and at least one file."), html.Div("Please select a project and at least one file."), no_update, no_update
 
+        # Before looping over files, initialize a list to collect mapping stats
+        mapping_records = []
+
         # 1) load each file, grab the full set of metabolites
         studies = []
         for fname in selected_files:
@@ -302,42 +332,39 @@ def register_callbacks():
 
             # ─── map refMet IDs to CheBI IDs ──────────────────────────────────
             all_cols = list(df.columns)
-            total = len(all_cols)
             keep_cols = {'database_identifier', 'group_type'}
 
             if dataset_source in ("metabolomics workbench", "original data - refmet ids"):
-                # 1) restrict to only the columns you actually want to map
+                # 1) Restrict to only the columns you actually want to map
                 met_cols = [c for c in all_cols if c not in keep_cols]
 
-                # 2) find which of those can’t be mapped
+                # 2) Find which of those can’t be mapped
                 unmapped = [c for c in met_cols if c not in refmet2chebi]
 
-                # report on mapping efficiency
-                total = len(met_cols)
-                num_unmapped = len(unmapped)
-                pct_unmapped = num_unmapped/total*100 if total else 0
-                print(f"{study_name}: {num_unmapped}/{total} metabolites "
-                    f"({pct_unmapped:.1f}%) could not be mapped")
+                # Compute mapping metrics
+                total_refmet   = len(met_cols)
+                num_unmapped   = len(unmapped)
+                num_mapped     = total_refmet - num_unmapped
+                pct_unmapped   = (num_unmapped / total_refmet * 100) if total_refmet else 0.0
 
-                # 3) drop only the unmapped metabolite columns
+                # Append this study’s stats to mapping_records
+                mapping_records.append({
+                    "study_name":    study_name,
+                    "total_refmet":  total_refmet,
+                    "num_mapped":    num_mapped,
+                    "num_unmapped":  num_unmapped,
+                    "pct_unmapped":  round(pct_unmapped, 1)
+                })
+
+                # 3) Drop only the unmapped metabolite columns
                 df = df.drop(columns=unmapped)
 
-                # 4) rename only those that _are_ in your lookup
-                to_rename = {c: refmet2chebi[c] for c in df.columns 
-                            if c in refmet2chebi}
+                # 4) Rename only those that _are_ in your lookup
+                to_rename = {c: refmet2chebi[c] for c in df.columns if c in refmet2chebi}
                 df = df.rename(columns=to_rename)
 
             # now every column name is guaranteed to be a CheBI string
             st.metabolites = set(df.columns)
-
-            """ if dataset_source in (
-                "metabolomics workbench",
-                "original data - refmet ids",
-                "original data - chebi ids",
-            ):
-                st.metabolites = set(df.columns)
-            else:
-                st.metabolites = set(df.columns) """
 
             studies.append(st)
 
@@ -490,7 +517,71 @@ def register_callbacks():
         coor_payload = make_payload(fig_coor)
         diff_payload = make_payload(fig_diff)
 
-        return graph_coor, graph_diff, coor_payload, diff_payload
+        # Build the mapping‐summary table (only if mapping_summary_df has rows)
+        mapping_summary_df = pd.DataFrame(mapping_records)
+        if not mapping_summary_df.empty:
+            mapping_table = dash_table.DataTable(
+                data=mapping_summary_df.to_dict("records"),
+                columns=[
+                    {"name": "Study Name",    "id": "study_name"},
+                    {"name": "Total RefMet",  "id": "total_refmet"},
+                    {"name": "Mapped",        "id": "num_mapped"},
+                    {"name": "Unmapped",      "id": "num_unmapped"},
+                    {"name": "% Unmapped",    "id": "pct_unmapped"},
+                ],
+                sort_action="native",
+                page_size=10,
+                style_table={
+                    "overflowX": "auto",
+                    "border": "1px solid #ccc",
+                    "borderRadius": "5px",
+                    "marginTop": "1rem"
+                },
+                style_header={
+                    "backgroundColor": "#f2f2f2",
+                    "fontWeight": "bold",
+                    "textAlign": "left",
+                    "borderBottom": "1px solid #ddd",
+                    "padding": "8px"
+                },
+                style_cell={
+                    "textAlign": "left",
+                    "padding": "8px",
+                    "borderBottom": "1px solid #eee"
+                },
+                style_data_conditional=[
+                    {"if": {"row_index": "odd"}, "backgroundColor": "#fafafa"}
+                ]
+            )
+            # Wrap it in a Div with a title, so it appears under the diff plot:
+            mapping_summary_div = html.Div(
+                [
+                    html.H4("RefMet→ChEBI Mapping Summary", style={"marginTop": "2rem"}),
+                    mapping_table
+                ],
+                style={
+                    "border": "1px solid #ddd",
+                    "padding": "1rem",
+                    "borderRadius": "5px",
+                    "backgroundColor": "#fafafa",
+                    "width": "100%",
+                    "boxSizing": "border-box",
+                    "marginTop": "1rem"
+                }
+            )
+        else:
+            # If there’s no mapping data, return an empty placeholder
+            mapping_summary_div = html.Div()
+
+        combined_diff = html.Div(
+            [
+                graph_diff,
+                mapping_summary_div
+            ],
+            style={"display": "flex", "flexDirection": "column", "alignItems": "center"}
+        )
+
+        return graph_coor, combined_diff, coor_payload, diff_payload
         
 
     PROJECT_ROOT = os.path.join(os.path.dirname(__file__), "Project")
