@@ -86,6 +86,40 @@ layout = html.Div([
                         # Title
                         html.H2("Differential Pathway Analysis"),
 
+                        # Background processing in a grey box
+                        html.Div(
+                            [
+                                html.H4("Background processing description", style={"marginBottom": "0.5rem"}),
+
+                                html.P(
+                                    "If the dataset uses RefMet IDs (i.e. originates from workbench or is original data), "
+                                    "RefMet-to–ChEBI conversion is performed renaming each metabolite column to its "
+                                    "corresponding ChEBI ID (dropping any unmapped columns).",
+                                    style={"marginBottom": "0.5rem"}
+                                ),
+
+                                html.P(
+                                    "Next metabolites are mapped to Reactome pathways (note: one metabolite can map to more than "
+                                    "one pathway). If two or more metabolites overlap a pathway, it applies single-sample pathway "
+                                    "analysis (ssPA) via KPCA to compute an arbitrary score for each pathway in each patient sample.",
+                                    style={"marginBottom": "0.5rem"}
+                                ),
+
+                                html.P(
+                                    "Finally, differential testing is performed on those pathway scores. It splits those pathway scores "
+                                    "into Case and Control groups and runs a two-tailed t-test (with Benjamini–Hochberg FDR correction) "
+                                    "on each pathway score to identify pathways that are significantly differentially abundant between "
+                                    "groups (adjusted p-value below 0.05)."
+                                ),
+                            ],
+                            style={
+                                "backgroundColor": "#f0f0f0",
+                                "padding": "1rem",
+                                "borderRadius": "5px",
+                                "marginBottom": "1.5rem",
+                            },
+                        ),
+
                         # always‐visible “num pathways” input
                         html.Div(
                             [
@@ -258,14 +292,16 @@ def register_callbacks():
             reactome_paths = sspa.process_gmt(infile='Reactome_Homo_sapiens_pathways_ChEBI_R90.gmt')
             reactome_dict = sspa.utils.pathwaydf_to_dict(reactome_paths)
 
-            if dataset_source in (
-                "metabolomics workbench",
-                "original data - refmet ids",
-            ):
+            # Keep a copy of the original column names so we can count RefMet→ChEBI conversions
+            original_cols = list(processed_data.columns)
+
+            # If the dataset uses RefMet IDs, do the conversion
+            if dataset_source in ("metabolomics workbench", "original data - refmet ids"):
                 keep_cols = {'database_identifier', 'group_type'}
                 drop_columns = []
                 rename_mapping = {}
-                for col in processed_data.columns:
+
+                for col in original_cols:
                     if col in keep_cols:
                         rename_mapping[col] = col
                     else:
@@ -274,27 +310,34 @@ def register_callbacks():
                             drop_columns.append(col)
                         else:
                             rename_mapping[col] = new_name
+
+                # Count how many RefMet IDs mapped vs. didn’t
+                # (exclude 'database_identifier' & 'group_type' from the “RefMet_ID” set)
+                refmet_cols = [c for c in original_cols if c not in keep_cols]
+                num_unmapped_refmet = len(drop_columns)
+                num_mapped_refmet   = len([c for c in refmet_cols if c not in drop_columns])
+
+                # Now actually drop and rename
                 processed_data = processed_data.drop(columns=drop_columns)
                 processed_data = processed_data.rename(columns=rename_mapping)
-                
-            # Build a mapping of pathway IDs to pathway names.
+            else:
+                # If not RefMet, set these counts to None or 0 so we can skip showing them later
+                num_mapped_refmet = None
+                num_unmapped_refmet = None
+
+            # Build a mapping of pathway IDs → pathway names
             pathway_names = dict(zip(reactome_paths.index, reactome_paths['Pathway_name']))
 
-            # Remove "CHEBI:" prefix from column names if present.
+            # Strip any “CHEBI:” prefix
             processed_data.columns = processed_data.columns.str.removeprefix("CHEBI:")
-            
-            # ─────────────────────────────────────────────────────────────────────────────
-            # NEW: compute mapped vs. unmapped metabolites
-            # ─────────────────────────────────────────────────────────────────────────────
-            # a) Build a single set of all Reactome‐side IDs (each entry still has "CHEBI:" prefix)
-            all_rxn_ids = set().union(*reactome_dict.values())
 
-            # b) Identify which columns in processed_data are “metabolites” (exclude "group_type")
-            #    At this point, processed_data.columns still look like "CHEBI:12345", etc.
+            # ─────────────────────────────────────────────────────────────────
+            # Compute mapped vs. unmapped metabolites in Reactome
+            # ─────────────────────────────────────────────────────────────────
+            all_rxn_ids = set().union(*reactome_dict.values())
             metabolite_cols   = set(processed_data.columns) - {"group_type"}
             total_metabolites = len(metabolite_cols)
 
-            # c) Count how many of those metabolite columns appear in at least one Reactome pathway:
             mapped_metabolites   = metabolite_cols.intersection(all_rxn_ids)
             unmapped_metabolites = metabolite_cols.difference(all_rxn_ids)
 
@@ -302,30 +345,41 @@ def register_callbacks():
             num_unmapped = len(unmapped_metabolites)
             pct_mapped   = (num_mapped / total_metabolites * 100) if total_metabolites > 0 else 0.0
 
-            # d) Build the set of unique pathway IDs that are hit by ≥1 metabolite.
-            #    For each pathway_id, if its member‐list intersects with metabolite_cols, count it.
             mapped_pathways = {
-                pathway_id
-                for pathway_id, member_list in reactome_dict.items()
-                if set(member_list).intersection(metabolite_cols)
+                pid
+                for pid, members in reactome_dict.items()
+                if set(members).intersection(metabolite_cols)
             }
             num_mapped_pathways = len(mapped_pathways)
 
-            # e) Build a small Div to display these five lines:
+            # Build the grey‐box Div.  If this was a RefMet dataset, show the mapped/unmapped counts first:
+            stats_children = []
+
+            if num_mapped_refmet is not None:
+                stats_children += [
+                    html.H4("RefMet-to-ChEBI Conversion Summary", style={"marginTop": "0.5rem"}),
+                    html.P(f"RefMet IDs successfully converted to ChEBI: {num_mapped_refmet}"),
+                    html.P(f"RefMet IDs NOT converted (dropped): {num_unmapped_refmet}"),
+                    html.Hr(style={"borderColor": "#ddd", "margin": "0.5rem 0"})
+                ]
+
+            stats_children += [
+                html.H4("Metabolite Coverage Summary", style={"marginTop": "0.5rem"}),
+                html.P(f"Total metabolites detected: {total_metabolites}"),
+                html.P(f"• Mapped to ≥1 Reactome pathway: {num_mapped}"),
+                html.P(f"• Not mapped to any Reactome pathway: {num_unmapped}"),
+                html.P(f"→ Percentage mapped: {pct_mapped:.1f}%"),
+                html.P(f"• Unique Reactome pathways covered: {num_mapped_pathways}"),
+            ]
+
             mapping_stats_div = html.Div(
-                [
-                    html.H4("Metabolite Coverage Summary"),
-                    html.P(f"Total metabolites detected: {total_metabolites}"),
-                    html.P(f"• Mapped to ≥1 Reactome pathway: {num_mapped}"),
-                    html.P(f"• Not mapped to any Reactome pathway: {num_unmapped}"),
-                    html.P(f"→ Percentage mapped: {pct_mapped:.1f}%"),
-                    html.P(f"• Unique Reactome pathways covered: {num_mapped_pathways}"),
-                ],
+                stats_children,
                 style={
                     "border": "1px solid #ddd",
-                    "padding": "0.5rem",
+                    "padding": "0.75rem",
                     "marginBottom": "1rem",
                     "backgroundColor": "#fafafa",
+                    "borderRadius": "4px"
                 },
             )
             # ─────────────────────────────────────────────────────────────────────────────

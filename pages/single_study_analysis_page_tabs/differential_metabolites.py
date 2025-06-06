@@ -64,6 +64,27 @@ layout = html.Div([
                     # Title
                     html.H2("Differential Metabolite Analysis"),
 
+                    # Background processing description
+                    html.Div(
+                        [
+                            html.H4("Background processing description", style={"marginBottom": "0.5rem"}),
+                            html.P(
+                                "Differential testing is performed by first separating metabolite "
+                                "data into Case and Control groups, then runs an independent two‐sided t‐test "
+                                "for each metabolite to compare their means. It labels each metabolite as “Up” "
+                                "or “Down” based on the sign of the test statistic, applies Benjamini–Hochberg "
+                                "FDR correction to the p-values, and finally reports those metabolites with an "
+                                "adjusted p-value below 0.05 as differentially abundant."
+                            ),
+                        ],
+                        style={
+                            "backgroundColor": "#f0f0f0",
+                            "padding": "1rem",
+                            "borderRadius": "5px",
+                            "marginBottom": "1.5rem",
+                        },
+                    ),
+
                     # always‐visible “num metabolites” input
                     html.Div(
                         [
