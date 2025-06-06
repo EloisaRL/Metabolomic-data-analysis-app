@@ -226,7 +226,7 @@ def register_callbacks():
     def update_pathway_analysis(selected_project, selected_file, top_n):
         # Check if both a project and a file have been selected.
         if not selected_project or not selected_file:
-            return html.Div("Please select a project and a file for pathway analysis."), None, None, None
+            return html.Div("Please select a project and a file for differential pathway analysis."), None, None, None
 
         # Construct the full processed file path.
         processed_filepath = os.path.join("Projects", selected_project, "processed-datasets", selected_file)
@@ -245,7 +245,6 @@ def register_callbacks():
         folder_details = os.path.join("pre-processed-datasets", study_name)
         details = read_study_details_dpp2(folder_details)
         dataset_source = details.get("Dataset Source", "").lower()
-        print(details)
         try:
             # Load the processed data and set its index.
             processed_data = pd.read_csv(processed_filepath)
@@ -280,9 +279,56 @@ def register_callbacks():
                 
             # Build a mapping of pathway IDs to pathway names.
             pathway_names = dict(zip(reactome_paths.index, reactome_paths['Pathway_name']))
-            
+
             # Remove "CHEBI:" prefix from column names if present.
             processed_data.columns = processed_data.columns.str.removeprefix("CHEBI:")
+            
+            # ─────────────────────────────────────────────────────────────────────────────
+            # NEW: compute mapped vs. unmapped metabolites
+            # ─────────────────────────────────────────────────────────────────────────────
+            # a) Build a single set of all Reactome‐side IDs (each entry still has "CHEBI:" prefix)
+            all_rxn_ids = set().union(*reactome_dict.values())
+
+            # b) Identify which columns in processed_data are “metabolites” (exclude "group_type")
+            #    At this point, processed_data.columns still look like "CHEBI:12345", etc.
+            metabolite_cols   = set(processed_data.columns) - {"group_type"}
+            total_metabolites = len(metabolite_cols)
+
+            # c) Count how many of those metabolite columns appear in at least one Reactome pathway:
+            mapped_metabolites   = metabolite_cols.intersection(all_rxn_ids)
+            unmapped_metabolites = metabolite_cols.difference(all_rxn_ids)
+
+            num_mapped   = len(mapped_metabolites)
+            num_unmapped = len(unmapped_metabolites)
+            pct_mapped   = (num_mapped / total_metabolites * 100) if total_metabolites > 0 else 0.0
+
+            # d) Build the set of unique pathway IDs that are hit by ≥1 metabolite.
+            #    For each pathway_id, if its member‐list intersects with metabolite_cols, count it.
+            mapped_pathways = {
+                pathway_id
+                for pathway_id, member_list in reactome_dict.items()
+                if set(member_list).intersection(metabolite_cols)
+            }
+            num_mapped_pathways = len(mapped_pathways)
+
+            # e) Build a small Div to display these five lines:
+            mapping_stats_div = html.Div(
+                [
+                    html.H4("Metabolite Coverage Summary"),
+                    html.P(f"Total metabolites detected: {total_metabolites}"),
+                    html.P(f"• Mapped to ≥1 Reactome pathway: {num_mapped}"),
+                    html.P(f"• Not mapped to any Reactome pathway: {num_unmapped}"),
+                    html.P(f"→ Percentage mapped: {pct_mapped:.1f}%"),
+                    html.P(f"• Unique Reactome pathways covered: {num_mapped_pathways}"),
+                ],
+                style={
+                    "border": "1px solid #ddd",
+                    "padding": "0.5rem",
+                    "marginBottom": "1rem",
+                    "backgroundColor": "#fafafa",
+                },
+            )
+            # ─────────────────────────────────────────────────────────────────────────────
 
             # Calculate pathway coverage statistics.
             coverage_dict = {k: len(set(processed_data.columns).intersection(set(v))) 
@@ -301,16 +347,12 @@ def register_callbacks():
                 ]), None, None, None
             
             # Perform ssPA using KPCA.
-            #print('start sspa')
             scores = sspa.sspa_KPCA(reactome_paths).fit_transform(processed_data.iloc[:, :-1])
             scores['group_type'] = processed_data['group_type']
-            #print(scores)
-            #print('after sspa')
             
             # Rename pathway columns with pathway names.
             new_columns = {col: pathway_names.get(col, col) for col in scores.columns if col not in ['Group', 'group_type']}
             scores.rename(columns=new_columns, inplace=True)
-            #print('after rename')
             
             # Save the KPCA scores.
             results_folder = os.path.join("raw_results_data", "pathway analysis")
@@ -319,11 +361,9 @@ def register_callbacks():
             save_filename = f"KPCA_results{base_filename}.csv"
             save_filepath = os.path.join(results_folder, save_filename)
             scores.to_csv(save_filepath)
-            print('after save')
             
             # Importance metric and differential testing on pathway scores.
             importance = scores.drop(['group_type'], axis=1).abs().mean().sort_values(ascending=False)
-            print('after importance')
             X_case = scores[scores['group_type'] == 'Case'].select_dtypes(include='number')
             X_ctrl = scores[scores['group_type'] == 'Control'].select_dtypes(include='number')
             valid_columns = [
@@ -332,7 +372,6 @@ def register_callbacks():
                     np.std(X_ctrl[col].to_numpy(), ddof=1) != 0)]
             X_case_valid = X_case[valid_columns]
             X_ctrl_valid = X_ctrl[valid_columns]
-            print('after filter of valid columns')
             stat, pvals = stats.ttest_ind(X_case_valid, X_ctrl_valid, nan_policy='raise')
             pval_df = pd.DataFrame({
                 'P-value': pvals,
@@ -411,7 +450,7 @@ def register_callbacks():
                     category_orders={"Pathway": ordered_paths}
                 )
 
-                # —— size it exactly like the differential version ——  
+                # —— size the width depending on requested number of pathways ——  
                 NEW_H = 400
                 orig_w = fig_box.layout.width  or 700
                 orig_h = fig_box.layout.height or 450
@@ -427,11 +466,27 @@ def register_callbacks():
                 bar_needed  = n_for_width * BAR_PX
                 NEW_W       = max(BASE_W, bar_needed)
 
+                #  (1) Compute the longest label length in characters
+                max_label_len = max(len(str(lbl)) for lbl in ordered_paths)
+                #  (2) Turn that into an estimated pixel height needed for rotated labels
+                PX_PER_CHAR         = 5   # px of vertical space per character (45°‐rotated)
+                estimated_label_px  = max_label_len * PX_PER_CHAR
+                NEW_H = 120 + estimated_label_px
+                NEW_W = max(BASE_W, bar_needed)
                 fig_box.update_layout(
-                    width  = NEW_W,
+                    width = NEW_W,
                     height = NEW_H,
-                    title  = {"text": title, "x":0.5, "xanchor":"center"},
-                    margin = dict(l=40, r=40, t=40, b=40)
+                    margin = dict(
+                        l = 40,
+                        r = 40,
+                        t = 40,
+                        b = 40
+                    ),
+                    title = {
+                        "text": title,
+                        "x": 0.5,
+                        "xanchor": "center"
+                    }
                 )
                 
             # serialize both
@@ -450,10 +505,18 @@ def register_callbacks():
             )
 
             return (
-                chart_child,
-                {"type":"plotly","data":fig_json},
+                html.Div(
+                    [
+                        mapping_stats_div,
+                        chart_child
+                    ],
+                    style={"display": "flex", "flexDirection": "column", "alignItems": "center"}
+                ),
+                {"type":"plotly","data":pio.to_json(fig_box)},
                 table_child,
-                {"type":"csv","data":table_b64},
+                {"type":"csv","data":base64.b64encode(
+                    sig_sorted.reset_index().to_csv(index=False).encode()
+                ).decode()}
             )
         except Exception as e:
             return html.Div(f"Error during pathway analysis: {e}"), None, None, None

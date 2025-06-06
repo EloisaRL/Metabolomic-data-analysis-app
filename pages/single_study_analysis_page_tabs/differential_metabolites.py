@@ -18,7 +18,6 @@ def da_testing(self):
             dat = self.pathway_data
         else:
             dat = self.processed_data
-        print('starting da test')
 
         # Directly filter using the 'group_type' column
         X_case = dat.loc[dat['group_type'] == 'Case'].select_dtypes(include='number')
@@ -211,11 +210,7 @@ def register_callbacks():
     def update_differential_analysis(selected_project, selected_file, top_n):
         # if nothing selected, show a warning in the chart area and clear everything else
         if not selected_project or not selected_file:
-            warning = dbc.Alert(
-                "Please select a project and a file for differential analysis.",
-                color="warning"
-            )
-            return warning, None, None, None
+            return html.Div("Please select a project and a file for differential metabolite analysis."), None, None, None
 
         # build path
         filepath = os.path.join(
@@ -274,7 +269,8 @@ def register_callbacks():
 
         # pick top N for the box plot
         top_mets    = list(sig_sorted.index)[: (top_n or 10)]
-        ordered_mets = top_mets
+        #ordered_mets = top_mets
+        ordered_mets = list(sig_sorted.loc[top_mets].index)
         title       = f"Box Plot of Top {len(top_mets)} Differentially Abundant Metabolites"
 
         box_df = df[top_mets + ["group_type"]].reset_index(drop=True)
@@ -318,49 +314,48 @@ def register_callbacks():
             category_orders={"Metabolite":ordered_mets}
         )
 
+        NEW_H = 400
+        orig_w = fig_box.layout.width  or 700
+        orig_h = fig_box.layout.height or 450
+        aspect = orig_w / orig_h
+        BASE_W = int(aspect * NEW_H) + 200
+
+        # width driven by requested count (but never more than actual)
+        requested = top_n or 10
+        top_mets = sig_sorted.index.tolist()[:requested]
+        actual    = len(top_mets)
+        n_for_width = requested if requested <= actual else actual
+        BAR_PX      = 50
+        bar_needed  = n_for_width * BAR_PX
+        NEW_W       = max(BASE_W, bar_needed)
+
+        #  (1) Compute the longest label length in characters
+        max_label_len = max(len(str(lbl)) for lbl in ordered_mets)
+        #  (2) Turn that into an estimated pixel height needed for rotated labels
+        PX_PER_CHAR         = 5   # px of vertical space per character (45°‐rotated)
+        estimated_label_px  = max_label_len * PX_PER_CHAR
+        NEW_H = 220 + estimated_label_px
+        NEW_W = max(BASE_W, bar_needed)
+        fig_box.update_layout(
+            width = NEW_W,
+            height = NEW_H,
+            margin = dict(
+                l = 40,
+                r = 40,
+                t = 40,
+                b = 40
+            ),
+            title = {
+                "text": title,
+                "x": 0.5,
+                "xanchor": "center"
+            }
+        )
+
         # serialize for the two stores
         fig_json  = pio.to_json(fig_box)
         csv_bytes = sig_sorted.reset_index().to_csv(index=False).encode()
         table_b64 = base64.b64encode(csv_bytes).decode()
-
-        fig_box.update_layout(
-            title = {
-            "text": title,
-            "x": 0.5,           # 0 = left, 0.5 = center, 1 = right
-            "xanchor": "center" # align the text around that x position
-            },
-            # your width/height/margin settings from before…
-        )
-
-        # 1) Decide on the fixed height:
-        NEW_H = 400
-
-        # 2) Grab the original (or default) size from your figure:
-        orig_w = fig_box.layout.width  or 700   # Plotly’s default is 700×450
-        orig_h = fig_box.layout.height or 450
-
-        # 3) Compute the same aspect ratio:
-        aspect = orig_w / orig_h
-
-        # 2) compute your base width (aspect×height + 200px)
-        BASE_W = int(aspect * NEW_H) + 200
-
-        # 3) compute the width needed for top_n bars (50px each)
-        BAR_PX = 50
-        requested = top_n or len(top_mets)
-        actual    = len(top_mets)
-        n_for_width = requested if requested <= actual else actual
-        bar_needed = n_for_width * BAR_PX
-        
-        # 4) pick the larger
-        NEW_W = max(BASE_W, bar_needed)
-
-        # 5) Update the figure’s layout so it *really* is NEW_W×NEW_H:
-        fig_box.update_layout(
-            width = NEW_W,
-            height = NEW_H,
-            margin = dict(l=40, r=40, t=40, b=40)
-        )
 
         # the 2 “children” outputs go straight into your placeholders;
         # the Loading spinners live in the layout around them
@@ -505,5 +500,3 @@ def register_callbacks():
             f.write(csv_data)
 
         return dbc.Alert(f"Table saved as `{filename}.csv`.", color="success")
-
-    # … more @callback’s for save buttons, store, etc. …
