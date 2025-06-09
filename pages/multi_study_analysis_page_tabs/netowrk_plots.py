@@ -537,6 +537,22 @@ layout = html.Div([
                                     data=[],
                                     style_cell={'textAlign': 'center'},
                                     style_table={'marginTop': '20px', 'overflowX': 'auto'},
+                                ),
+
+                                # Pathway Coverage Table (Only populated if node level == 'pathway')
+                                dash_table.DataTable(
+                                    id='pathway-coverage-table',
+                                    columns=[
+                                        {"name": "Study", "id": "study_name"},
+                                        {"name": "Total Metabolites", "id": "total_metabolites"},
+                                        {"name": "Mapped to Pathways", "id": "mapped_to_pathways"},
+                                        {"name": "Not Mapped", "id": "not_mapped"},
+                                        {"name": "% Mapped", "id": "pct_mapped"},
+                                        {"name": "# Pathways Covered", "id": "num_pathways_covered"},
+                                    ],
+                                    data=[],
+                                    style_cell={'textAlign': 'center'},
+                                    style_table={'marginTop': '30px', 'overflowX': 'auto'},
                                 )
                             ])
                         )
@@ -1724,58 +1740,115 @@ def register_callbacks():
             
     @callback(
         Output("refmet-conversion-table", "data"),
+        Output("pathway-coverage-table", "data"),
         Input("refresh-network-button-msa", "n_clicks"),
         State("project-files-checklist-msa", "value"),
         State("project-dropdown-pop-msa", "value"),
+        State("network-level-dropdown-msa", "value"),
     )
-    def update_refmet_conversion_table(n_clicks, selected_files, selected_project):
+    def update_refmet_and_pathway_tables(n_clicks, selected_files, selected_project, node_level):
         if not n_clicks or not (selected_project and selected_files):
-            return no_update
+            return no_update, no_update
 
-        # ─── Compute mapping stats per study ──────────────────────────────────────────
-        mapping_records = []
+        # ─── Load Reactome definitions ─────────────────────────────────────────────
+        reactome_dict = {}
+        pathway_names = {}
+        if node_level == "pathway":
+            reactome_paths = sspa.process_gmt(infile='Reactome_Homo_sapiens_pathways_ChEBI_R90.gmt')
+            reactome_dict = sspa.utils.pathwaydf_to_dict(reactome_paths)
+            pathway_names = dict(zip(reactome_paths.index, reactome_paths['Pathway_name']))
+            all_rxn_ids = set().union(*reactome_dict.values())
+
+        # ─── Tables to fill ────────────────────────────────────────────────────────
+        refmet_mapping_records = []
+        pathway_coverage_records = []
 
         for fname in selected_files:
-            path = os.path.join('Projects', selected_project, "processed-datasets", fname)
+            study_name = fname.split("_")[1] if len(fname.split("_")) >= 3 else fname
+            csv_path = os.path.join('Projects', selected_project, "processed-datasets", fname)
+
             try:
-                df = pd.read_csv(path).set_index("database_identifier")
+                df = pd.read_csv(csv_path).set_index("database_identifier")
             except Exception as e:
                 print(f"Error loading {fname}: {e}")
                 continue
 
-            study_name = fname.split("_")[1] if len(fname.split("_")) >= 3 else fname
+            # Get dataset source (e.g., 'metabolomics workbench' or 'refmet ids')
             folder_details = os.path.join("pre-processed-datasets", study_name)
             details = read_study_details_msa(folder_details)
             dataset_source = details.get("Dataset Source", "").lower()
-            if dataset_source not in (
-                    "metabolomics workbench",
-                    "original data - refmet ids",
-                ):
-                continue  # skip non-RefMet sources
 
-            all_cols = list(df.columns)
-            keep_cols = {'database_identifier', 'group_type'}
+            # ─── RefMet → ChEBI Mapping Stats ───────────────────────────────────────
+            if dataset_source in ("metabolomics workbench", "original data - refmet ids"):
+                all_cols = list(df.columns)
+                keep_cols = {'database_identifier', 'group_type'}
+                met_cols = [c for c in all_cols if c not in keep_cols]
+                unmapped = [c for c in met_cols if c not in refmet2chebi]
 
-            # 1) Restrict to only the columns you actually want to map
-            met_cols = [c for c in all_cols if c not in keep_cols]
+                total_refmet = len(met_cols)
+                num_unmapped = len(unmapped)
+                num_mapped = total_refmet - num_unmapped
+                pct_unmapped = (num_unmapped / total_refmet * 100) if total_refmet else 0.0
 
-            # 2) Find which of those can’t be mapped
-            unmapped = [c for c in met_cols if c not in refmet2chebi]
+                refmet_mapping_records.append({
+                    "study_name": study_name,
+                    "total_refmet": total_refmet,
+                    "num_mapped": num_mapped,
+                    "num_unmapped": num_unmapped,
+                    "pct_unmapped": round(pct_unmapped, 1)
+                })
 
-            total_refmet  = len(met_cols)
-            num_unmapped  = len(unmapped)
-            num_mapped    = total_refmet - num_unmapped
-            pct_unmapped  = (num_unmapped / total_refmet * 100) if total_refmet else 0.0
+            # ─── Pathway Mapping Stats (Always if node_level == 'pathway') ───────────
+            if node_level == "pathway":
+                processed_data = df.copy()
+                original_cols = list(processed_data.columns)
+                keep_cols = {'database_identifier', 'group_type'}
 
-            mapping_records.append({
-                "study_name":    study_name,
-                "total_refmet":  total_refmet,
-                "num_mapped":    num_mapped,
-                "num_unmapped":  num_unmapped,
-                "pct_unmapped":  round(pct_unmapped, 1)
-            })
+                if dataset_source in ("metabolomics workbench", "original data - refmet ids"):
+                    drop_columns = []
+                    rename_mapping = {}
 
-        return mapping_records
+                    for col in original_cols:
+                        if col in keep_cols:
+                            rename_mapping[col] = col
+                        else:
+                            new_name = refmet2chebi.get(col)
+                            if not new_name or pd.isna(new_name):
+                                drop_columns.append(col)
+                            else:
+                                rename_mapping[col] = new_name
+
+                    refmet_cols = [c for c in original_cols if c not in keep_cols]
+                    processed_data = processed_data.drop(columns=drop_columns)
+                    processed_data = processed_data.rename(columns=rename_mapping)
+
+                # Strip CHEBI prefix
+                processed_data.columns = processed_data.columns.str.removeprefix("CHEBI:")
+
+                metabolite_cols = set(processed_data.columns) - {"group_type"}
+                total_metabolites = len(metabolite_cols)
+                mapped_metabolites = metabolite_cols.intersection(all_rxn_ids)
+                unmapped_metabolites = metabolite_cols.difference(all_rxn_ids)
+
+                num_mapped = len(mapped_metabolites)
+                num_unmapped = len(unmapped_metabolites)
+                pct_mapped = (num_mapped / total_metabolites * 100) if total_metabolites > 0 else 0.0
+
+                mapped_pathways = {
+                    pid for pid, members in reactome_dict.items()
+                    if set(members).intersection(metabolite_cols)
+                }
+
+                pathway_coverage_records.append({
+                    "study_name": study_name,
+                    "total_metabolites": total_metabolites,
+                    "mapped_to_pathways": num_mapped,
+                    "not_mapped": num_unmapped,
+                    "pct_mapped": round(pct_mapped, 1),
+                    "num_pathways_covered": len(mapped_pathways)
+                })
+
+        return refmet_mapping_records, pathway_coverage_records
 
     # 4) Callback to open/close the modal
     @callback(
