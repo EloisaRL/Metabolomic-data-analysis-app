@@ -1013,11 +1013,12 @@ def register_callbacks():
         if not ctx.triggered:
             return no_update, no_update, no_update
         trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
+        elements = []
+        stylesheet = []
 
         # ─── Handle the bipartite OK click ───────────────────────────────────────────
         #if trigger_id == "bipartite-modal-close" and node_style == "bipartite":
         if close_clicks and node_style == "bipartite":
-            print('In the bipartite graph code')
             # sanity checks
             if not (selected_project and selected_files and selected_disease):
                 #return html.Div("Select a project, study and disease first.")
@@ -1043,13 +1044,11 @@ def register_callbacks():
                 da.pathway_level = False
                 da.node_name      = fname.split("_")[1] if len(fname.split("_")) >= 3 else fname
 
-                print('da testing')
                 try:
                     da.da_testing()
                 except Exception as e:
                     print(f"[da testing] Error in da testing for: {e}")
                     continue
-                print('mets get')
                 mets = getattr(da, "DA_metabolites", [])
                 if not mets:
                     continue
@@ -1198,6 +1197,9 @@ def register_callbacks():
 
             # --- Load & analyze studies at the chosen network level ---
             studies = []
+            all_study_names = [] 
+            # Sort by alphabetically order
+            selected_files.sort()
             for fname in selected_files:
                 path = os.path.join(
                     "Projects", selected_project,
@@ -1210,14 +1212,16 @@ def register_callbacks():
                 # create a little analysis container
                 class Analysis: pass
                 da = Analysis()
-                da.processed_data = df
+                #da.processed_data = df
                 da.node_name     = fname.split("_")[1] if len(fname.split("_")) >= 3 else fname
 
                 # full set of studies, even those that may later be filtered out
-                all_study_names = [
+                """ all_study_names = [
                     fname.split("_")[1] if len(fname.split("_")) >= 3 else fname
                     for fname in selected_files
-                ]
+                ] """
+                name = fname.split("_")[1] if len(fname.split("_")) >= 3 else fname
+                all_study_names.append(name)
 
                 # Build the details file path (unchanged logic).
                 folder_details = os.path.join("pre-processed-datasets", da.node_name)
@@ -1250,6 +1254,8 @@ def register_callbacks():
                             df = df.drop(columns=drop_columns)
                             df = df.rename(columns=rename_mapping)
                             da.processed_data = df
+                        else:
+                            da.processed_data = df
 
                         get_pathway_data(da)
                         
@@ -1264,6 +1270,28 @@ def register_callbacks():
                 else:
                     da.pathway_level = False
                     try:
+                        if dataset_source in (
+                            "metabolomics workbench",
+                            "original data - refmet ids",
+                        ):
+                            keep_cols = {'database_identifier', 'group_type'}
+                            drop_columns = []
+                            rename_mapping = {}
+                            for col in df.columns:
+                                if col in keep_cols:
+                                    rename_mapping[col] = col
+                                else:
+                                    new_name = refmet2chebi.get(col, None)
+                                    if new_name is None or pd.isna(new_name):
+                                        drop_columns.append(col)
+                                    else:
+                                        rename_mapping[col] = new_name
+                            df = df.drop(columns=drop_columns)
+                            df = df.rename(columns=rename_mapping)
+                            da.processed_data = df
+                        else:
+                            da.processed_data = df
+
                         da.da_testing()
                     except Exception:
                         continue
@@ -1311,8 +1339,6 @@ def register_callbacks():
                     # here I take every pathway with at least one covered metabolite
                     #items = sorted(pw for pw, cov in st.pathway_coverage.items() if cov > 0)
                     items = sorted(set(st.DA_pathways))
-                    print('da pathways')
-                    print(items)
 
                 for u, v in combinations(items, 2):
                     pair_counts[(u, v)] += 1
@@ -1395,7 +1421,8 @@ def register_callbacks():
                 }
 
                 if node_style == "pie":
-                    # build pie-as-data-URI
+                    # Building pie charts
+
                     # decide presence by network level
                     if network_level == "diff-metabolite":
                         present = [node in st.DA_metabolites for st in studies]
