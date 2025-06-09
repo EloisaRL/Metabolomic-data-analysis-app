@@ -14,7 +14,7 @@ STEPS = [
 layout = dbc.Container(
     [
         # App title and short description
-        html.H1("Metabolic Data Analysis App", className="mt-5 mb-3"),
+        html.H1("Metabolomic Data Analysis App", className="mt-5 mb-3"),
         dbc.Card(
             dbc.CardBody(
                 [
