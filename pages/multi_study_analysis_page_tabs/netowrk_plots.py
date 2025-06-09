@@ -1,5 +1,5 @@
 # pages/multi_study_analysis_page_tabs/network_plots.py
-from dash import html, dcc, callback, Input, Output, callback_context, State, no_update
+from dash import html, dcc, callback, Input, Output, callback_context, State, no_update, dash_table
 import dash_bootstrap_components as dbc
 import dash_cytoscape as cyto
 from dash.exceptions import PreventUpdate
@@ -507,21 +507,40 @@ layout = html.Div([
                     #html.Div(id="save-feedback-msa"),
                     # Wrap the content in a dcc.Loading component.
                     # --- Cytoscape graph inside a Loading spinner ---
-                    dcc.Loading(
-                        id="loading-network-graphs-msa",
-                        children=cyto.Cytoscape(
-                            id="metabolic-network-cytoscape-msa",
-                            elements=[],              # start empty
-                            layout={'name':'cose'},   # default layout
-                            stylesheet=[],            # default styles
-                            style={
-                                'width':'100%',
-                                'height':'600px',
-                                'backgroundColor':'white'
-                            },
-                            #generateImage={}          # ← seed generateImage up front!
+                    html.Div([
+                        dcc.Loading(
+                            id="loading-network-graphs-msa",
+                            children=html.Div([
+                                # Cytoscape Graph
+                                cyto.Cytoscape(
+                                    id="metabolic-network-cytoscape-msa",
+                                    elements=[],
+                                    layout={'name': 'cose'},
+                                    stylesheet=[],
+                                    style={
+                                        'width': '100%',
+                                        'height': '600px',
+                                        'backgroundColor': 'white'
+                                    }
+                                ),
+
+                                # Conversion Table (Shown Below the Graph)
+                                dash_table.DataTable(
+                                    id='refmet-conversion-table',
+                                    columns=[
+                                        {"name": "Study",           "id": "study_name"},
+                                        {"name": "Total RefMet",    "id": "total_refmet"},
+                                        {"name": "Mapped",          "id": "num_mapped"},
+                                        {"name": "Unmapped",        "id": "num_unmapped"},
+                                        {"name": "% Unmapped",      "id": "pct_unmapped"},
+                                    ],
+                                    data=[],
+                                    style_cell={'textAlign': 'center'},
+                                    style_table={'marginTop': '20px', 'overflowX': 'auto'},
+                                )
+                            ])
                         )
-                    )
+                    ])
                     
                 ])
 
@@ -1035,14 +1054,39 @@ def register_callbacks():
                 csv_path = os.path.join("Projects", selected_project, "processed-datasets", fname)
                 if not os.path.exists(csv_path):
                     continue
-
+                
                 df = pd.read_csv(csv_path).set_index("database_identifier")
                 class Analysis: pass
                 da = Analysis()
-                da.processed_data = df
                 da.da_testing    = da_testing.__get__(da, Analysis)
                 da.pathway_level = False
                 da.node_name      = fname.split("_")[1] if len(fname.split("_")) >= 3 else fname
+
+                folder_details = os.path.join("pre-processed-datasets", da.node_name)
+                details = read_study_details_msa(folder_details)
+                dataset_source = details.get("Dataset Source", "").lower()
+
+                if dataset_source in (
+                    "metabolomics workbench",
+                    "original data - refmet ids",
+                ):
+                    keep_cols = {'database_identifier', 'group_type'}
+                    drop_columns = []
+                    rename_mapping = {}
+                    for col in df.columns:
+                        if col in keep_cols:
+                            rename_mapping[col] = col
+                        else:
+                            new_name = refmet2chebi.get(col, None)
+                            if new_name is None or pd.isna(new_name):
+                                drop_columns.append(col)
+                            else:
+                                rename_mapping[col] = new_name
+                    df = df.drop(columns=drop_columns)
+                    df = df.rename(columns=rename_mapping)
+                    da.processed_data = df
+                else:
+                    da.processed_data = df
 
                 try:
                     da.da_testing()
@@ -1678,6 +1722,61 @@ def register_callbacks():
 
             return elements, {'name': layout_name}, stylesheet
             
+    @callback(
+        Output("refmet-conversion-table", "data"),
+        Input("refresh-network-button-msa", "n_clicks"),
+        State("project-files-checklist-msa", "value"),
+        State("project-dropdown-pop-msa", "value"),
+    )
+    def update_refmet_conversion_table(n_clicks, selected_files, selected_project):
+        if not n_clicks or not (selected_project and selected_files):
+            return no_update
+
+        # ─── Compute mapping stats per study ──────────────────────────────────────────
+        mapping_records = []
+
+        for fname in selected_files:
+            path = os.path.join('Projects', selected_project, "processed-datasets", fname)
+            try:
+                df = pd.read_csv(path).set_index("database_identifier")
+            except Exception as e:
+                print(f"Error loading {fname}: {e}")
+                continue
+
+            study_name = fname.split("_")[1] if len(fname.split("_")) >= 3 else fname
+            folder_details = os.path.join("pre-processed-datasets", study_name)
+            details = read_study_details_msa(folder_details)
+            dataset_source = details.get("Dataset Source", "").lower()
+            if dataset_source not in (
+                    "metabolomics workbench",
+                    "original data - refmet ids",
+                ):
+                continue  # skip non-RefMet sources
+
+            all_cols = list(df.columns)
+            keep_cols = {'database_identifier', 'group_type'}
+
+            # 1) Restrict to only the columns you actually want to map
+            met_cols = [c for c in all_cols if c not in keep_cols]
+
+            # 2) Find which of those can’t be mapped
+            unmapped = [c for c in met_cols if c not in refmet2chebi]
+
+            total_refmet  = len(met_cols)
+            num_unmapped  = len(unmapped)
+            num_mapped    = total_refmet - num_unmapped
+            pct_unmapped  = (num_unmapped / total_refmet * 100) if total_refmet else 0.0
+
+            mapping_records.append({
+                "study_name":    study_name,
+                "total_refmet":  total_refmet,
+                "num_mapped":    num_mapped,
+                "num_unmapped":  num_unmapped,
+                "pct_unmapped":  round(pct_unmapped, 1)
+            })
+
+        return mapping_records
+
     # 4) Callback to open/close the modal
     @callback(
         Output("save-plot-modal-msa", "is_open"),
