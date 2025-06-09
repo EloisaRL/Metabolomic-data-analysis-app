@@ -55,7 +55,8 @@ With a focus on standardization and integration, this tool supports scientific d
 ## Getting Started
 
 ### Prerequisites
-NEED TO ADD requirements file
+View requirements file
+Python version 3.12.9
 
 ### Clone the Repository
 
