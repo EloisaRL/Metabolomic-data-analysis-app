@@ -1,7 +1,5 @@
 # pages/multi_study_analysis.py
-from memory_profiler import memory_usage
 import os
-import pandas as pd
 import dash_bootstrap_components as dbc
 from dash import html, dcc, Input, Output, callback, State, no_update
 

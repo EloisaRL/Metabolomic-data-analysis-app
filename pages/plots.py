@@ -1,8 +1,5 @@
 import os
-import dash
-import pandas as pd
-from datetime import datetime
-from dash import html, dcc, dash_table, callback_context, no_update
+from dash import html, dcc, callback_context, no_update
 from dash.dependencies import Input, Output, State, ALL
 import dash_bootstrap_components as dbc
 from app import app
