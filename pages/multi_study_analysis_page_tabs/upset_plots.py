@@ -95,6 +95,8 @@ def da_testing(self):
 
 
 layout = html.Div([
+                    html.H2("Upset Plots of Co-Occurring Metabolites and Differential Metabolites"),
+
                     # Background processing description in a grey box
                     html.Div(
                         [
@@ -121,8 +123,6 @@ layout = html.Div([
                             "marginBottom": "1.5rem",
                         },
                     ),
-
-                    html.H2("Upset plots of co-occurring metabolites and differential metabolites"),
 
                     # always-visible “min co-occur” input
                     html.Div(

@@ -315,12 +315,10 @@ def register_callbacks():
             # Within the 'Multi-study analysis' folder, create additional subfolders.
             met_upset_plot_path = os.path.join(multi_study_path, "Co-occurring-metabolites-upset-plots")
             diff_met_upset_plot_path = os.path.join(multi_study_path, "Differential-co-occurring-metabolites-upset-plots")
-            met_network_plot_path = os.path.join(multi_study_path, "Metabolites-network-plots")
             diff_met_network_plot_path = os.path.join(multi_study_path, "Differential-metabolites-network-plots")
             diff_path_network_plot_path = os.path.join(multi_study_path, "Differential-pathway-network-plots")
             os.makedirs(met_upset_plot_path, exist_ok=True)
             os.makedirs(diff_met_upset_plot_path, exist_ok=True)
-            os.makedirs(met_network_plot_path, exist_ok=True)
             os.makedirs(diff_met_network_plot_path, exist_ok=True)
             os.makedirs(diff_path_network_plot_path, exist_ok=True)
             

@@ -9,6 +9,7 @@ import base64
 from scipy import stats
 from statsmodels.stats.multitest import multipletests
 import json
+import libchebipy
 
 def da_testing(self):
         '''
@@ -243,6 +244,16 @@ def register_callbacks():
 
         # load and index
         df = pd.read_csv(filepath).set_index("database_identifier")
+
+        # Replace each ChEBI ID in the index with its metabolite name:
+        def _safe_chebi_name(chebi_id):
+            try:
+                name = libchebipy.ChebiEntity(chebi_id).get_name()
+                return name
+            except Exception as e:
+                return chebi_id
+
+        df.columns = df.columns.map(_safe_chebi_name)
 
         # run your da_testing as before...
         class DA: pass

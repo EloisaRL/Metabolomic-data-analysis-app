@@ -28,20 +28,6 @@ refmet = pd.read_csv(r"C:\Users\Eloisa\Documents\ICL\Tim RA Project - Postgradua
 refmet.columns = refmet.columns.str.strip() 
 refmet2chebi = dict(zip(refmet['refmet_name'], refmet['chebi_id']))
 
-""" # adjust path as needed
-CLASSYFIRE_DF = pd.read_csv(
-    os.path.join(os.path.dirname(__file__), "..",
-                 "ChEBI_126_classyfire_21_annotations.csv"),
-    sep=",", 
-    dtype={"CompoundID": str},
-    engine="python",          # use the more forgiving Python parser
-    on_bad_lines="skip"       # drop any row with the wrong number of fields
-)
-
-
-print(CLASSYFIRE_DF.columns.tolist())
- """
-
 def read_study_details_msa(folder):
     details_path = os.path.join(folder, "study_details.txt")
     details = {}
@@ -250,27 +236,17 @@ def get_pathway_data(obj,
 
 
 layout = html.Div([
-                    html.H2("Network Graphs of metabolites, differential metabolites and pathways"),
+                    html.H2("Network Graphs of Differential Metabolites and Pathways"),
 
+                    # Placeholder for dynamic background processing description
                     html.Div(
-                        [
-                            dbc.Button(
-                                html.I(className="bi bi-box-arrow-up-right"),
-                                id="open-network-popup-msa",
-                                color="secondary",
-                                outline=True,
-                                size="sm",
-                                style={"float": "right", "marginBottom": "1rem"}
-                            ),
-                            # Tooltip for hover text
-                            dbc.Tooltip(
-                                "Open in pop up window",
-                                target="open-network-popup-msa",
-                                placement="top",
-                                delay={"show": 200, "hide": 100}
-                            ),
-                        ],
-                        style={"overflow": "auto"}
+                        id="network-background-div",
+                        style={
+                            "backgroundColor": "#f0f0f0",
+                            "padding": "1rem",
+                            "borderRadius": "5px",
+                            "marginBottom": "1rem",
+                        }
                     ),
 
                     # --- Options row at the top ---
@@ -282,14 +258,13 @@ layout = html.Div([
                                 dcc.Dropdown(
                                     id="network-level-dropdown-msa",
                                     options=[
-                                        {"label": "Metabolite", "value": "metabolite"},
                                         {"label": "Differential metabolite", "value": "diff-metabolite"},
                                         {"label": "Pathway",   "value": "pathway"},
                                     ],
                                     value="diff-metabolite",
                                     clearable=False,
                                 )
-                            ], width=2),
+                            ], width=3),
 
                             # Existing layout selector
                             dbc.Col([
@@ -308,7 +283,7 @@ layout = html.Div([
                                     value="cose",
                                     clearable=False,
                                 )
-                            ], width=4),
+                            ], width=3),
 
                             # Node‐style: will be updated dynamically
                             dbc.Col([
@@ -319,7 +294,6 @@ layout = html.Div([
                                     options=[
                                         {"label": "Pie charts",    "value": "pie"},
                                         {"label": "Circle markers","value": "circle"},
-                                        {"label": "Compound coloured","value": "compound"},
                                         {"label": "T statistic","value": "t_statistic"},
                                         {"label": "Bipartite","value": "bipartite"},
                                     ],
@@ -552,6 +526,111 @@ layout = html.Div([
                 ])
 
 def register_callbacks():
+    # Background processing description
+    @callback(
+        Output("network-background-div", "children"),
+        Input("network-level-dropdown-msa", "value"),
+        Input("network-node-style-dropdown-msa", "value"),
+    )
+    def update_background_description(network_level, node_style):
+        """
+        Returns a small html.Div (grey‐boxed) with different text depending
+        on the selected network level and node style.
+        """
+        lines = []
+
+        if network_level == "pathway":
+            # pathway level (pie only)
+            lines.append(
+                html.H4("Background processing description", style={"marginBottom": "0.5rem"})
+            )
+            lines.append(
+                html.P(
+                    "If the dataset uses RefMet IDs (i.e. originates from workbench or is original data), RefMet-to–ChEBI conversion is performed renaming each metabolite column to its corresponding ChEBI ID (dropping any unmapped columns).",
+                    style={"marginBottom": "0.5rem"}
+                )
+            )
+            lines.append(
+                html.P(
+                    "For all datasets, metabolites are mapped to Reactome pathways (file version 90). If two or more metabolites overlap a pathway, it applies single-sample pathway analysis (ssPA) via KPCA to compute an arbitrary score for each pathway in each patient sample. Differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) on those pathway scores to identify differential pathways (FDR adjusted p-value below 0.05).",
+                    style={"marginBottom": "0.5rem"}
+                )
+            )
+            lines.append(
+                html.P(
+                    "The network plot shows the differential pathways which co-occur in two or more studies (the number of studies which they co-occur are represented by the pie charts)."
+                )
+            )
+
+        else:
+            # diff-metabolite level
+            if node_style == "pie":
+                lines.append(
+                    html.H4("Background processing description", style={"marginBottom": "0.5rem"})
+                )
+                lines.append(
+                    html.P(
+                        "For all datasets, differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) on the metabolite data to identify differential metabolites (FDR adjusted p-value below 0.05).",
+                        style={"marginBottom": "0.5rem"}
+                    )
+                )
+                lines.append(
+                    html.P(
+                        "The network plot shows the differential metabolites which co-occur in two or more studies (the number of studies which they co-occur are represented by the pie charts)."
+                    )
+                )
+
+            elif node_style == "circle":
+                lines.append(
+                    html.H4("Background processing description", style={"marginBottom": "0.5rem"})
+                )
+                lines.append(
+                    html.P(
+                        "For all datasets, differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) on the metabolite data to identify differential metabolites (FDR adjusted p-value below 0.05).",
+                        style={"marginBottom": "0.5rem"}
+                    )
+                )
+                lines.append(
+                    html.P(
+                        "The network plot shows the differential metabolites which co-occur in two or more studies (the number of studies which they co-occur are represented by the size of the nodes)."
+                    )
+                )
+
+            elif node_style == "t_statistic":
+                lines.append(
+                    html.H4("Background processing description", style={"marginBottom": "0.5rem"})
+                )
+                lines.append(
+                    html.P(
+                        "For all datasets, differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) on the metabolite data to identify differential metabolites (FDR adjusted p-value below 0.05). This test also produces a t-statistic representing the standardized difference in mean metabolite abundance between the case and control group for that metabolite.",
+                        style={"marginBottom": "0.5rem"}
+                    )
+                )
+                lines.append(
+                    html.P(
+                        "The network plot shows the differential metabolites which co-occur in two or more studies (the t-statistic for each study that found that metabolite differential is shown in the bar graph)."
+                    )
+                )
+
+            else:  # bipartite
+                lines.append(
+                    html.H4("Background processing description", style={"marginBottom": "0.5rem"})
+                )
+                lines.append(
+                    html.P(
+                        "For all datasets, differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) on the metabolite data to identify differential metabolites (FDR adjusted p-value below 0.05). This test also produces a t-statistic representing the standardized difference in mean metabolite abundance between the case and control group for that metabolite.",
+                        style={"marginBottom": "0.5rem"}
+                    )
+                )
+                lines.append(
+                    html.P(
+                        "The network plot shows the differential metabolites which co-occur in two or more studies (the study that the metabolite is differential in is represented by the edges and the more edges the differential metabolite has the lighter the colour of the node)."
+                    )
+                )
+
+        return lines
+
+
     #########################################
     ##### Controls for network settings #####
     #########################################
@@ -567,17 +646,11 @@ def register_callbacks():
             # Only pie charts allowed for pathways
             opts  = [{"label": "Pie charts", "value": "pie"}]
             value = "pie"
-        elif level == "metabolite":
-            opts  = [
-                {"label": "Pie charts",    "value": "pie"},
-            ]
-            value = "pie"
         else:
             # Options for differential metabolites
             opts  = [
                 {"label": "Pie charts",    "value": "pie"},
                 {"label": "Circle markers","value": "circle"},
-                {"label": "Compound coloured","value": "compound"},
                 {"label": "T statistic","value": "t_statistic"},
                 {"label": "Bipartite","value": "bipartite"},
             ]
@@ -940,12 +1013,6 @@ def register_callbacks():
         if not ctx.triggered:
             return no_update, no_update, no_update
         trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
-        #trigger_id = ctx.triggered[0]["prop_id"].split(".")[0] if ctx.triggered else "none"
-        print("=== update_metabolic_network triggered by:", trigger_id)
-        print(" node_style:", node_style)
-        print(" selected_study:", selected_study)
-        print(" dropdown_disease:", selected_disease)
-        print(" input_disease:", input_disease)
 
         # ─── Handle the bipartite OK click ───────────────────────────────────────────
         #if trigger_id == "bipartite-modal-close" and node_style == "bipartite":
@@ -1039,23 +1106,9 @@ def register_callbacks():
                 for met in st.DA_metabolites:
                     if met in cooc_mets:
                         B.add_edge(st.disease, met)
-                        
-            """ B.add_nodes_from(all_mets, bipartite=0)
-            # edges connect disease → metabolite
-            edges = [(s.disease, m) for s in studies for m in s.DA_metabolites]
-            B.add_edges_from(edges) """
-            
-
 
             # 4. extract the two node‐sets
             bottom_nodes, top_nodes = bipartite.sets(B)
-
-            """ # 5. filter out low‐frequency metabolites
-            to_remove = [n for n in top_nodes if B.degree(n) < 2]
-            B.remove_nodes_from(to_remove)
-
-            # after removal, re‐split the sets
-            bottom_nodes, top_nodes = bipartite.sets(B) """
 
             # 6. compute degrees for styling
             degree_dict = dict(B.degree())
@@ -1126,37 +1179,10 @@ def register_callbacks():
             }
             layout_name = layout_map.get(layout_choice, "cose")
 
-            """ # check the post-build RSS before returning
-            rss = psutil.Process().memory_info().rss
-            if rss > MAX_RSS:
-                return html.Div(
-                    f"❌ Graph would use ~{rss/1e6:.0f} MB RAM, exceeding "
-                    f"the {MAX_RSS/1e6:.0f} MB limit for this machine. "
-                    "Try fewer studies or a higher threshold.",
-                    style={"color": "red", "padding": "1em"}
-                ) """
-            
-            """html.Div(
-                    "The biadjacency matrix linking differential metabolites to studies is visualised using a force‐directed layout, "
-                    "such that diseases with similar metabolite profiles cluster together. Node colour reflects the degree of each node (darker nodes have lower degree).",
-                    style={"marginTop": "12px", "fontStyle": "italic", "fontSize": "12px"}
-                ),"""
-
-            """ return html.Div([
-                cyto.Cytoscape(
-                    id="metabolic-network-cytoscape-msa",
-                    elements=elements,
-                    stylesheet=stylesheet,
-                    layout={"name": layout_name},
-                    style={"width": "100%", "height": "500px"}
-                ),
-                html.Button("Download SVG", id="btn-download-network", n_clicks=0),
-            ]) """
             return elements, {'name': layout_name}, stylesheet
 
         # ─── Otherwise fall back to your existing “Refresh” behavior ─────────────────
         if trigger_id == "refresh-network-button-msa":
-            print('In the refresh graph code')
             # 1) never run before any Refresh click
             if not refresh_clicks:
                 return no_update, no_update, no_update
@@ -1169,825 +1195,461 @@ def register_callbacks():
             if not selected_project or not selected_files:
                 #return html.Div("Please select a project and at least one file.")
                 return no_update, no_update, no_update
-            
-            if network_level == "metabolite":
-                studies     = []
-                study_names = []
 
-                for fname in selected_files:
-                    path = os.path.join("Projects", selected_project, "processed-datasets", fname)
-                    if not os.path.exists(path):
-                        continue
-
-                    # read & drop the'group_type' column
-                    df = (
-                        pd.read_csv(path)
-                        .drop(columns=["group_type"], errors="ignore")
-                        .set_index("database_identifier")
-                    )
-
-                    # derive a simple node_name (filename without extension)
-                    node_name = os.path.splitext(fname)[0]
-
-                    # lightweight Study object
-                    st = type("Study", (), {})()
-                    st.node_name      = node_name
-                    st.DA_metabolites = set(df.columns)
-
-                    studies.append(st)
-                    study_names.append(st.node_name)
-
-
-                # 2) Build a Seaborn‐based color map keyed by st.node_name
-                pie_pal   = sns.color_palette("Set3", n_colors=len(study_names)).as_hex()
-                color_map = dict(zip(study_names, pie_pal))
-
-                # 3) Construct Cytoscape elements (nodes + edges)
-                elements   = []
-                #all_mets   = sorted(set.union(*(st.DA_metabolites for st in studies)))
-                # before building all_mets:
-                all_mets_full = set.union(*(st.DA_metabolites for st in studies))
-                # filter to those in ≥2 studies:
-                met_counts = {met: sum(met in st.DA_metabolites for st in studies)
-                            for met in all_mets_full}
-                all_mets = sorted(m for m, c in met_counts.items() if c >= 2)
-                max_count  = len(study_names)  # top of our size scale
-                print('pre-node creation')
-                # (a) Nodes: size ∝ #studies, color by single‐study or grey if shared
-                for met in met_counts:
-                    present = [met in st.DA_metabolites for st in studies]
-                    count   = sum(present)
-
-                    data = {
-                        "id":           met,
-                        "study_count":  count,
-                    }
-
-                    if count == 1:
-                        # unique → use that study's color
-                        idx = present.index(True)
-                        data["background-color"] = color_map[study_names[idx]]
-                    else:
-                        # shared → neutral grey
-                        data["background-color"] = "#999999"
-
-                    elements.append({"data": data})
-                print('after node creation')
-                # (b) Edges: same as before
-                for st in studies:
-                    mets = sorted(st.DA_metabolites)
-                    for i in range(len(mets)):
-                        for j in range(i+1, len(mets)):
-                            elements.append({
-                                "data": {"source": mets[i], "target": mets[j]}
-                            })
-                print('after edge creation')
-                # 4) Stylesheet: mapData on study_count → size from 20px up to 60px
-                stylesheet = [
-                    {
-                        "selector": "node",
-                        "style": {
-                            "label":           "",   # no labels
-                            "background-fit":  "cover",
-                            "width":           f"mapData(study_count, 1, {max_count}, 20, 60)",
-                            "height":          f"mapData(study_count, 1, {max_count}, 20, 60)",
-                        }
-                    },
-                    {
-                        "selector": "edge",
-                        "style": {
-                            "width":       1,
-                            "line-color": "#ccc"
-                        }
-                    }
-                ]
-                print('after stylesheet')
-                # --- Stylesheet ---
-                layout_map = {
-                    "cose": "cose", "fcose": "fcose", "COLA": "cola", "circular": "circle",
-                    "random": "random", "shell": "concentric", "spectral": "grid"
-                }
-                layout_name = layout_map.get(layout_choice, "cose")
-
-                # legend (unchanged)
-                legend_items = []
-                for nm, col in color_map.items():
-                    legend_items.append(
-                        html.Div([
-                            html.Span(style={
-                                'display': 'inline-block',
-                                'width': '12px', 'height': '12px',
-                                'backgroundColor': col, 'marginRight': '6px'
-                            }),
-                            html.Span(nm)
-                        ], style={'marginRight':'12px','display':'inline-flex'})
-                    )
-                legend = html.Div(legend_items,
-                                style={'padding':'8px 0','fontSize':'12px','flexWrap':'wrap'})
-                print('after legend')
-
+            # --- Load & analyze studies at the chosen network level ---
+            studies = []
+            for fname in selected_files:
+                path = os.path.join(
+                    "Projects", selected_project,
+                    "processed-datasets", fname
+                )
+                if not os.path.exists(path):
+                    continue
                 
-                """ # check the post-build RSS before returning
-                rss = psutil.Process().memory_info().rss
-                if rss > MAX_RSS:
-                    return html.Div(
-                        f"❌ Graph would use ~{rss/1e6:.0f} MB RAM, exceeding "
-                        f"the {MAX_RSS/1e6:.0f} MB limit for this machine. "
-                        "Try fewer studies or a higher threshold.",
-                        style={"color": "red", "padding": "1em"}
-                    ) """
+                df = pd.read_csv(path).set_index("database_identifier")
+                # create a little analysis container
+                class Analysis: pass
+                da = Analysis()
+                da.processed_data = df
+                da.node_name     = fname.split("_")[1] if len(fname.split("_")) >= 3 else fname
 
-                # --- Return Cytoscape + legend ---
-                """ return [
-                    cyto.Cytoscape(
-                        id="metabolic-network-cytoscape-msa",
-                        elements=elements,
-                        layout={'name': layout_name},
-                        stylesheet=stylesheet,
-                        style={'flex':'1 1 auto','width':'100%','height':'auto'}
-                    ),
-                    legend
-                ] """
+                # full set of studies, even those that may later be filtered out
+                all_study_names = [
+                    fname.split("_")[1] if len(fname.split("_")) >= 3 else fname
+                    for fname in selected_files
+                ]
 
-                return elements, {'name': layout_name}, stylesheet
+                # Build the details file path (unchanged logic).
+                folder_details = os.path.join("pre-processed-datasets", da.node_name)
+                details = read_study_details_msa(folder_details)
+                dataset_source = details.get("Dataset Source", "").lower()
+                
+                # bind your two methods onto this instance
+                da.da_testing      = da_testing.__get__(da, Analysis)
+                da.get_pathway_data = get_pathway_data.__get__(da, Analysis)
 
-            else:
-                # --- Load & analyze studies at the chosen network level ---
-                studies = []
-                for fname in selected_files:
-                    path = os.path.join(
-                        "Projects", selected_project,
-                        "processed-datasets", fname
-                    )
-                    if not os.path.exists(path):
+                # pick which analysis to run
+                if network_level == "pathway":
+                    try:
+                        if dataset_source in (
+                            "metabolomics workbench",
+                            "original data - refmet ids",
+                        ):
+                            keep_cols = {'database_identifier', 'group_type'}
+                            drop_columns = []
+                            rename_mapping = {}
+                            for col in df.columns:
+                                if col in keep_cols:
+                                    rename_mapping[col] = col
+                                else:
+                                    new_name = refmet2chebi.get(col, None)
+                                    if new_name is None or pd.isna(new_name):
+                                        drop_columns.append(col)
+                                    else:
+                                        rename_mapping[col] = new_name
+                            df = df.drop(columns=drop_columns)
+                            df = df.rename(columns=rename_mapping)
+                            da.processed_data = df
+
+                        get_pathway_data(da)
+                        
+                    except Exception as e:
+                        print(f"[update_metabolic_network] Error computing pathways for {da.node_name}: {e}")
                         continue
                     
-                    df = pd.read_csv(path).set_index("database_identifier")
-                    # create a little analysis container
-                    class Analysis: pass
-                    da = Analysis()
-                    da.processed_data = df
-                    da.node_name     = fname.split("_")[1] if len(fname.split("_")) >= 3 else fname
-
-                    # full set of studies, even those that may later be filtered out
-                    all_study_names = [
-                        fname.split("_")[1] if len(fname.split("_")) >= 3 else fname
-                        for fname in selected_files
-                    ]
-
-                    # Build the details file path (unchanged logic).
-                    folder_details = os.path.join("pre-processed-datasets", da.node_name)
-                    details = read_study_details_msa(folder_details)
-                    dataset_source = details.get("Dataset Source", "").lower()
-                    
-                    # bind your two methods onto this instance
-                    da.da_testing      = da_testing.__get__(da, Analysis)
-                    da.get_pathway_data = get_pathway_data.__get__(da, Analysis)
-
-                    # pick which analysis to run
-                    if network_level == "pathway":
-                        try:
-                            if dataset_source in (
-                                "metabolomics workbench",
-                                "original data - refmet ids",
-                            ):
-                                keep_cols = {'database_identifier', 'group_type'}
-                                drop_columns = []
-                                rename_mapping = {}
-                                for col in df.columns:
-                                    if col in keep_cols:
-                                        rename_mapping[col] = col
-                                    else:
-                                        new_name = refmet2chebi.get(col, None)
-                                        if new_name is None or pd.isna(new_name):
-                                            drop_columns.append(col)
-                                        else:
-                                            rename_mapping[col] = new_name
-                                df = df.drop(columns=drop_columns)
-                                df = df.rename(columns=rename_mapping)
-                                da.processed_data = df
-
-                            get_pathway_data(da)
-                            
-                        except Exception as e:
-                            print(f"[update_metabolic_network] Error computing pathways for {da.node_name}: {e}")
-                            continue
+                    # keep only if any differential pathways
+                    if hasattr(da, "DA_pathways") and len(da.DA_pathways) > 0:
+                        studies.append(da)
                         
-                        # keep only if any differential pathways
-                        if hasattr(da, "DA_pathways") and len(da.DA_pathways) > 0:
-                            studies.append(da)
-                            
-                    else:
-                        da.pathway_level = False
-                        try:
-                            da.da_testing()
-                        except Exception:
-                            continue
+                else:
+                    da.pathway_level = False
+                    try:
+                        da.da_testing()
+                    except Exception:
+                        continue
 
-                        # only keep if DA testing produced metabolites
-                        if hasattr(da, "DA_metabolites") and len(da.DA_metabolites) > 0:
-                            studies.append(da)
+                    # only keep if DA testing produced metabolites
+                    if hasattr(da, "DA_metabolites") and len(da.DA_metabolites) > 0:
+                        studies.append(da)
 
-                if not studies:
-                    #return html.Div("No studies with differentially abundant metabolites.")
-                    return no_update, no_update, no_update
+            if not studies:
+                #return html.Div("No studies with differentially abundant metabolites.")
+                return no_update, no_update, no_update
 
-                print("Number of differential pathways per study:")
+            print("Number of differential pathways per study:")
+            for st in studies:
+                # For metabolite mode you might still have DA_metabolites
+                paths = getattr(st, "DA_pathways", getattr(st, "DA_metabolites", []))
+                print(f"  • {st.node_name}: {len(paths)}")
+            # --- NEW: drop any pathway that only appears in one study ---
+            if network_level == "pathway":
+                # 1) count in how many studies each pathway has coverage>0
+                pathway_study_counts = Counter()
                 for st in studies:
-                    # For metabolite mode you might still have DA_metabolites
-                    paths = getattr(st, "DA_pathways", getattr(st, "DA_metabolites", []))
-                    print(f"  • {st.node_name}: {len(paths)}")
-                # --- NEW: drop any pathway that only appears in one study ---
-                if network_level == "pathway":
-                    # 1) count in how many studies each pathway has coverage>0
-                    pathway_study_counts = Counter()
-                    for st in studies:
-                        for pw, cov in st.pathway_coverage.items():
-                            if cov > 0:
-                                pathway_study_counts[pw] += 1
+                    for pw, cov in st.pathway_coverage.items():
+                        if cov > 0:
+                            pathway_study_counts[pw] += 1
 
-                    # 2) keep only those seen in 2+ studies
-                    valid_pathways = {pw for pw, cnt in pathway_study_counts.items() if cnt > 1}
+                # 2) keep only those seen in 2+ studies
+                valid_pathways = {pw for pw, cnt in pathway_study_counts.items() if cnt > 1}
 
-                    # 3) prune each study’s coverage dict
-                    for st in studies:
-                        st.pathway_coverage = {
-                            pw: cov
-                            for pw, cov in st.pathway_coverage.items()
-                            if pw in valid_pathways
-                        }
-
-                # --- Build co-occurrence graph ---
-                pair_counts = Counter()
+                # 3) prune each study’s coverage dict
                 for st in studies:
-                    if network_level == "diff-metabolite":
-                        # metabolites that passed your DA test
-                        items = sorted(set(st.DA_metabolites))
-                    else:  # pathway mode
-                        # here I take every pathway with at least one covered metabolite
-                        #items = sorted(pw for pw, cov in st.pathway_coverage.items() if cov > 0)
-                        items = sorted(set(st.DA_pathways))
-                        print('da pathways')
-                        print(items)
+                    st.pathway_coverage = {
+                        pw: cov
+                        for pw, cov in st.pathway_coverage.items()
+                        if pw in valid_pathways
+                    }
 
-                    for u, v in combinations(items, 2):
-                        pair_counts[(u, v)] += 1
+            # --- Build co-occurrence graph ---
+            pair_counts = Counter()
+            for st in studies:
+                if network_level == "diff-metabolite":
+                    # metabolites that passed your DA test
+                    items = sorted(set(st.DA_metabolites))
+                else:  # pathway mode
+                    # here I take every pathway with at least one covered metabolite
+                    #items = sorted(pw for pw, cov in st.pathway_coverage.items() if cov > 0)
+                    items = sorted(set(st.DA_pathways))
+                    print('da pathways')
+                    print(items)
 
-                threshold = max(min_cooccurring or 2, 2)
-                edges = [(u, v, c) for (u, v), c in pair_counts.items() if c >= threshold]
-                if not edges:
-                    label = "diff-metabolite" if network_level == "diff-metabolite" else "pathway"
-                    #return html.Div(f"No {label} pairs co-occurring in ≥ {threshold} studies.")
-                    return no_update, no_update, no_update
+                for u, v in combinations(items, 2):
+                    pair_counts[(u, v)] += 1
 
-                G = nx.Graph()
-                for u, v, cnt in edges:
-                    G.add_edge(u, v, weight=cnt)
+            threshold = max(min_cooccurring or 2, 2)
+            edges = [(u, v, c) for (u, v), c in pair_counts.items() if c >= threshold]
+            if not edges:
+                label = "diff-metabolite" if network_level == "diff-metabolite" else "pathway"
+                #return html.Div(f"No {label} pairs co-occurring in ≥ {threshold} studies.")
+                return no_update, no_update, no_update
 
-                # --- Lookup human names (only for metabolites) ---
-                chebi_to_name = {}
-                for node in G.nodes():
-                    if network_level == "diff-metabolite":
-                        try:
-                            chebi_to_name[node] = libchebipy.ChebiEntity(node).get_name()
-                        except Exception:
-                            chebi_to_name[node] = node
-                    else:
-                        # pathway IDs are already human-readable (or you can map them here)
+            G = nx.Graph()
+            for u, v, cnt in edges:
+                G.add_edge(u, v, weight=cnt)
+
+            # --- Lookup human names (only for metabolites) ---
+            chebi_to_name = {}
+            for node in G.nodes():
+                if network_level == "diff-metabolite":
+                    try:
+                        chebi_to_name[node] = libchebipy.ChebiEntity(node).get_name()
+                    except Exception:
                         chebi_to_name[node] = node
+                else:
+                    # pathway IDs are already human-readable (or you can map them here)
+                    chebi_to_name[node] = node
 
-                # --- Prepare Cytoscape elements ---
-                study_names = [st.node_name for st in studies]
+            # --- Prepare Cytoscape elements ---
+            study_names = [st.node_name for st in studies]
 
-                # Precompute palettes
-                pie_pal   = sns.color_palette("Set3", n_colors=len(all_study_names)).as_hex()
-                color_map = dict(zip(all_study_names, pie_pal))
+            # Precompute palettes
+            pie_pal   = sns.color_palette("Set3", n_colors=len(all_study_names)).as_hex()
+            color_map = dict(zip(all_study_names, pie_pal))
 
-                # degree = # of edges incident to each node
-                deg_dict   = dict(G.degree())
-                max_degree = max(deg_dict.values())
+            # degree = # of edges incident to each node
+            deg_dict   = dict(G.degree())
+            max_degree = max(deg_dict.values())
 
-                # ——— compute which studies ever show up in a pie ———
-                used_studies = set()
-                for node in G.nodes():
+            # ——— compute which studies ever show up in a pie ———
+            used_studies = set()
+            for node in G.nodes():
+                if network_level == "diff-metabolite":
+                    present = [node in st.DA_metabolites for st in studies]
+                else:
+                    present = [node in st.DA_pathways for st in studies]
+                for nm, ok in zip(all_study_names, present):
+                    if ok:
+                        used_studies.add(nm)
+
+            # study_counts = in how many studies each node appears
+            if network_level == "diff-metabolite":
+                study_counts = {
+                    node: sum(node in st.DA_metabolites for st in studies)
+                    for node in G.nodes()
+                }
+            else:
+                study_counts = {
+                    node: sum(node in st.DA_pathways for st in studies)
+                    for node in G.nodes()
+                }
+
+            max_count = len(studies)
+
+            # build a gradient palette for study_counts
+            circle_pal = sns.color_palette("BuPu", n_colors=max_count+1).as_hex()
+
+            # size‐scaling parameters stay the same
+            min_size = 30
+            max_size = 80
+
+            elements = []
+            for node in G.nodes():
+                deg     = G.degree(node)
+                count   = study_counts[node]
+                data    = {
+                    'id': node,
+                    'label': chebi_to_name[node],
+                    'degree': deg,
+                    'study_count': count
+                }
+
+                if node_style == "pie":
+                    # build pie-as-data-URI
+                    # decide presence by network level
                     if network_level == "diff-metabolite":
                         present = [node in st.DA_metabolites for st in studies]
-                    else:
+                    else:  # pathway
+                        # pathway_coverage[node] > 0 means that pathway was hit
+                        #present = [st.pathway_coverage.get(node, 0) > 0 for st in studies]
                         present = [node in st.DA_pathways for st in studies]
-                    for nm, ok in zip(all_study_names, present):
-                        if ok:
-                            used_studies.add(nm)
 
-                # study_counts = in how many studies each node appears
-                if network_level == "diff-metabolite":
-                    study_counts = {
-                        node: sum(node in st.DA_metabolites for st in studies)
-                        for node in G.nodes()
-                    }
-                else:
-                    study_counts = {
-                        node: sum(node in st.DA_pathways for st in studies)
-                        for node in G.nodes()
-                    }
-
-                max_count = len(studies)
-
-                # build a gradient palette for study_counts
-                circle_pal = sns.color_palette("BuPu", n_colors=max_count+1).as_hex()
-
-                # size‐scaling parameters stay the same
-                min_size = 30
-                max_size = 80
-
-
-                # --- 1) Class lookup via local ClassyFire dump, numeric IDs in CF DF ---
-                chebi_to_class = {}
-                """ if node_style == "compound":
-                    # 1a) pull out numeric IDs from your G nodes
-                    cpds_curie = list(G.nodes())                           # e.g. ["CHEBI:15377", …]
-                    cpds_num   = [nid.split(":",1)[1] for nid in cpds_curie]  # ["15377", …]
-
-                    # 1b) ensure your CF DF IDs are strings
-                    CLASSYFIRE_DF["CompoundID"] = CLASSYFIRE_DF["CompoundID"].astype(str)
-
-                    # 1c) filter DF by those numeric IDs
-                    cf_sub = CLASSYFIRE_DF[
-                        CLASSYFIRE_DF["CompoundID"].isin(cpds_num)
-                    ].copy()
-
-                    # 1e) build a map from numeric → class
-                    num_to_class = dict(zip(cf_sub["CompoundID"], cf_sub["ChemOntID"]))
-
-                    # 1f) now map back to your CURIE nodes, defaulting to "Unknown"
-                    for nid in cpds_curie:
-                        num = nid.split(":",1)[1]
-                        chebi_to_class[nid] = num_to_class.get(num, "Unknown")
-                        print(chebi_to_class[nid])
-
-                    # 1g) build colours
-                    unique_classes = sorted(set(chebi_to_class.values()))
-                    palette        = sns.color_palette("tab20", n_colors=len(unique_classes)).as_hex()
-                    class_to_color = dict(zip(unique_classes, palette)) """
-
-                elements = []
-                for node in G.nodes():
-                    deg     = G.degree(node)
-                    count   = study_counts[node]
-                    data    = {
-                        'id': node,
-                        'label': chebi_to_name[node],
-                        'degree': deg,
-                        'study_count': count
-                    }
-
-                    if node_style == "pie":
-                        # build pie-as-data-URI
-                        # decide presence by network level
-                        if network_level == "diff-metabolite":
-                            present = [node in st.DA_metabolites for st in studies]
-                        else:  # pathway
-                            # pathway_coverage[node] > 0 means that pathway was hit
-                            #present = [st.pathway_coverage.get(node, 0) > 0 for st in studies]
-                            present = [node in st.DA_pathways for st in studies]
-
-                        #present = [node in st.DA_metabolites for st in studies]
-                        labels  = [nm for nm, ok in zip(all_study_names, present) if ok]
-                        sizes   = [1] * len(labels)
-                        fig, ax = plt.subplots(figsize=(1,1), dpi=300)
-                        fig.patch.set_facecolor('none')
-                        ax.set_facecolor('none')
-                        ax.pie(
-                            sizes,
-                            colors=[color_map[l] for l in labels],
-                            wedgeprops={'linewidth':0, 'edgecolor':'none','antialiased':False}
-                        )
-                        ax.set(aspect='equal')
-                        ax.axis('off')
-                        buf = io.BytesIO()
-                        plt.savefig(buf, format='png', transparent=True,
-                                    bbox_inches='tight', pad_inches=0)
-                        plt.close(fig)
-                        uri = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
-                        data['pieURI'] = uri
-
-
-                    elif node_style == "t_statistic":
-                        # 1) pull out the t-statistics
-                        tstats = [
-                            st.pval_df['Stat'].get(node, np.nan)
-                            for st in studies
-                        ]
-
-                        
-                        # 2) draw a tiny bar chart
-                        fig, ax = plt.subplots(figsize=(1,1), dpi=300)
-                        # make entire figure transparent
-                        fig.patch.set_facecolor('none')
-                        ax.patch.set_facecolor('none')
-
-                        # leave a 5% inset inside the figure so bars don’t butt the border
-                        margin = 0.05
-                        fig.subplots_adjust(
-                            left=margin,
-                            right=1 - margin,
-                            bottom=margin,
-                            top=1 - margin
-                        )
-
-                        # plot your bars
-                        ax.bar(
-                            range(len(study_names)),
-                            tstats,
-                            color=[color_map[nm] for nm in study_names]
-                        ) 
-
-                        
-                        # draw the zero‐line
-                        ax.axhline(0, color='gray', linewidth=0.5)
-
-                        # remove ticks
-                        ax.set_xticks([])
-                        ax.set_yticks([])
-
-                        # reserve a slot for every study, even if its t‐stat is NaN
-                        ax.set_xlim(-0.5, len(study_names) - 0.5)
-                        ax.margins(x=0)
-
-                        # 3) center the zero‐line vertically by choosing symmetric limits
-                        max_abs = np.nanmax(np.abs(tstats))
-                        padding = 1.05  # 5% headroom
-                        ax.set_ylim(-max_abs * padding, max_abs * padding)
-
-                        # 4) move the “bottom” spine to y=0
-                        ax.spines['bottom'].set_position(('data', 0))
-                        # hide the other spines
-                        for spine in ['top','left','right']:
-                            ax.spines[spine].set_visible(False)
-                        # keep only the bottom spine visible
-                        ax.spines['bottom'].set_visible(True)
-
-                        # 5) save without cropping away our empty space
-                        buf = io.BytesIO()
-                        plt.savefig(
-                            buf, format='png', transparent=True,
-                            bbox_inches=None,    # <-- don’t auto-tight-crop
-                            pad_inches=0         # <-- leave exactly the figure size you asked for
-                        )
-                        plt.close(fig)
-                        uri = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
-                        data['barURI'] = uri
-
-
-                    """ elif node_style == "compound":
-                        cls = chebi_to_class[node]
-                        data["compound_class"] = cls
-                        data["compound_color"] = class_to_color[cls] """
-
-                    # assign every node the same class
-                    elements.append({
-                        'data': data,
-                        'classes': 'node'
-                    })
-
-                # edges
-                for u, v, cnt in edges:
-                    elements.append({'data': {'source': u, 'target': v, 'weight': cnt}})
-
-                """ # legend (unchanged)
-                legend_items = []
-                for nm, col in color_map.items():
-                    legend_items.append(
-                        html.Div([
-                            html.Span(style={
-                                'display': 'inline-block',
-                                'width': '12px', 'height': '12px',
-                                'backgroundColor': col, 'marginRight': '6px'
-                            }),
-                            html.Span(nm)
-                        ], style={'marginRight':'12px','display':'inline-flex'})
+                    #present = [node in st.DA_metabolites for st in studies]
+                    labels  = [nm for nm, ok in zip(all_study_names, present) if ok]
+                    sizes   = [1] * len(labels)
+                    fig, ax = plt.subplots(figsize=(1,1), dpi=300)
+                    fig.patch.set_facecolor('none')
+                    ax.set_facecolor('none')
+                    ax.pie(
+                        sizes,
+                        colors=[color_map[l] for l in labels],
+                        wedgeprops={'linewidth':0, 'edgecolor':'none','antialiased':False}
                     )
-                legend = html.Div(legend_items,
-                                style={'padding':'8px 0','fontSize':'12px','flexWrap':'wrap'}) """
-                
-                """ # decide X,Y positions for legend
-                LEGEND_X = 900
-                LEGEND_Y_START = 50
-                LEGEND_Y_GAP = 40
+                    ax.set(aspect='equal')
+                    ax.axis('off')
+                    buf = io.BytesIO()
+                    plt.savefig(buf, format='png', transparent=True,
+                                bbox_inches='tight', pad_inches=0)
+                    plt.close(fig)
+                    uri = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+                    data['pieURI'] = uri
 
-                legend_elements = []
-                y = LEGEND_Y_START
-                for name, color in color_map.items():
-                    legend_elements.append({
-                        "data": {"id": f"legend-{name}", "label": name},
-                        "position": {"x": LEGEND_X, "y": y},
-                        # no locked property, so default is unlocked/grabbable
-                        "classes": "legend-node",
-                        "style": {
-                            "background-color": color,
-                            "shape": "rectangle",
-                            "width": 20,
-                            "height": 20
-                        }
-                    })
-                    y += LEGEND_Y_GAP """
 
-                """ # Build individual legend nodes (fixed positions, locked so layout ignores them)
-                LEGEND_X = 900
-                LEGEND_Y_START = 50
-                LEGEND_Y_GAP = 30
+                elif node_style == "t_statistic":
+                    # 1) pull out the t-statistics
+                    tstats = [
+                        st.pval_df['Stat'].get(node, np.nan)
+                        for st in studies
+                    ]
+
+                    
+                    # 2) draw a tiny bar chart
+                    fig, ax = plt.subplots(figsize=(1,1), dpi=300)
+                    # make entire figure transparent
+                    fig.patch.set_facecolor('none')
+                    ax.patch.set_facecolor('none')
+
+                    # leave a 5% inset inside the figure so bars don’t butt the border
+                    margin = 0.05
+                    fig.subplots_adjust(
+                        left=margin,
+                        right=1 - margin,
+                        bottom=margin,
+                        top=1 - margin
+                    )
+
+                    # plot your bars
+                    ax.bar(
+                        range(len(study_names)),
+                        tstats,
+                        color=[color_map[nm] for nm in study_names]
+                    ) 
+
+                    
+                    # draw the zero‐line
+                    ax.axhline(0, color='gray', linewidth=0.5)
+
+                    # remove ticks
+                    ax.set_xticks([])
+                    ax.set_yticks([])
+
+                    # reserve a slot for every study, even if its t‐stat is NaN
+                    ax.set_xlim(-0.5, len(study_names) - 0.5)
+                    ax.margins(x=0)
+
+                    # 3) center the zero‐line vertically by choosing symmetric limits
+                    max_abs = np.nanmax(np.abs(tstats))
+                    padding = 1.05  # 5% headroom
+                    ax.set_ylim(-max_abs * padding, max_abs * padding)
+
+                    # 4) move the “bottom” spine to y=0
+                    ax.spines['bottom'].set_position(('data', 0))
+                    # hide the other spines
+                    for spine in ['top','left','right']:
+                        ax.spines[spine].set_visible(False)
+                    # keep only the bottom spine visible
+                    ax.spines['bottom'].set_visible(True)
+
+                    # 5) save without cropping away our empty space
+                    buf = io.BytesIO()
+                    plt.savefig(
+                        buf, format='png', transparent=True,
+                        bbox_inches=None,    # <-- don’t auto-tight-crop
+                        pad_inches=0         # <-- leave exactly the figure size you asked for
+                    )
+                    plt.close(fig)
+                    uri = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+                    data['barURI'] = uri
+
+                # assign every node the same class
+                elements.append({
+                    'data': data,
+                    'classes': 'node'
+                })
+
+            # edges
+            for u, v, cnt in edges:
+                elements.append({'data': {'source': u, 'target': v, 'weight': cnt}})
+            
+
+            # filter your color map down to only those studies
+            used_color_map = {
+                nm: col
+                for nm, col in color_map.items()
+                if nm in used_studies
+            }
+
+            if node_style == "pie" or node_style == "t_statistic":
+                # 1) Legend layout constants
+                LEGEND_X        = 900
+                LEGEND_Y_START  = 50
+                LEGEND_Y_GAP    = 30
+                BOX_SIZE        = 20   # size of the color swatch
+                FONT_SIZE       = 12
+                LABEL_MARGIN    = 8    # gap between box and text
+
+                # 2) Build one "legend-node" per entry
                 legend_nodes = []
                 y = LEGEND_Y_START
+
                 for name, color in color_map.items():
+                    if name not in used_studies:
+                        continue   # skip studies that never got a slice
+
                     legend_nodes.append({
-                        "data": {"id": f"legend-{name}", "label": name},
+                        "data":     {"id": f"legend-{name}", "label": name},
                         "position": {"x": LEGEND_X, "y": y},
-                        "locked": True,             # layout will skip moving these
-                        "classes": "legend-node",
+                        "locked":   True,
+                        "grabbable": True,
+                        "classes":  "legend-node",
                         "style": {
-                            "background-color": color,
-                            "shape": "rectangle",
-                            "width": 20,
-                            "height": 20
+                            "background-color": color,   # from the full map
+                            "shape":            "rectangle",
+                            "width":            BOX_SIZE,
+                            "height":           BOX_SIZE
                         }
                     })
                     y += LEGEND_Y_GAP
-                # merge with your main elements
-                elements = elements + legend_nodes """
 
+                elements += legend_nodes
 
+            # --- Stylesheet ---
+            layout_map = {
+                "cose": "cose", "fcose": "fcose", "circular": "circle", "COLA": "cola",
+                "random": "random", "shell": "concentric", "spectral": "grid"
+            }
+            layout_name = layout_map.get(layout_choice, "cose")
 
-                """ # generate _in-memory_ legend
-                legend_uri, lg_w, lg_h = create_legend_svg_datauri(color_map)
-
-                elements.append({
-                    "data": {"id": "legend-image", "label": ""},
-                    "position": {"x": 900, "y": 50},
-                    "locked": False,
-                    "grabbable": True,
-                    "classes": "legend-image"
-                }) """
-                
-
-                # filter your color map down to only those studies
-                used_color_map = {
-                    nm: col
-                    for nm, col in color_map.items()
-                    if nm in used_studies
+            stylesheet = [
+                # reset edges
+                {
+                    'selector': 'edge',
+                    'style': {
+                        'width':       'mapData(weight, {}, {}, 1, 6)'.format(threshold, max(pair_counts.values())),
+                        'line-color': '#ccc', 'curve-style': 'bezier'
+                    }
+                },
+                # base node label/size
+                {
+                    'selector': '.node',
+                    'style': {
+                        'label':         'data(label)',
+                        'text-valign':   'center',
+                        'text-halign':   'center',
+                        'font-size':     '12px',
+                        'border-width':       '2px',    # optional: give it a border
+                        'border-color':       '#fff',   # optional: white border
+                        'width':
+                            f"mapData(degree, 0, {max_degree}, {min_size}, {max_size})",
+                        'height':
+                            f"mapData(degree, 0, {max_degree}, {min_size}, {max_size})"
+                    }
                 }
-
-                if node_style == "pie" or node_style == "t_statistic":
-                    # 1) Legend layout constants
-                    LEGEND_X        = 900
-                    LEGEND_Y_START  = 50
-                    LEGEND_Y_GAP    = 30
-                    BOX_SIZE        = 20   # size of the color swatch
-                    FONT_SIZE       = 12
-                    LABEL_MARGIN    = 8    # gap between box and text
-
-                    # 2) Build one "legend-node" per entry
-                    legend_nodes = []
-                    y = LEGEND_Y_START
-
-                    for name, color in color_map.items():
-                        if name not in used_studies:
-                            continue   # skip studies that never got a slice
-
-                        legend_nodes.append({
-                            "data":     {"id": f"legend-{name}", "label": name},
-                            "position": {"x": LEGEND_X, "y": y},
-                            "locked":   True,
-                            "grabbable": True,
-                            "classes":  "legend-node",
-                            "style": {
-                                "background-color": color,   # from the full map
-                                "shape":            "rectangle",
-                                "width":            BOX_SIZE,
-                                "height":           BOX_SIZE
-                            }
-                        })
-                        y += LEGEND_Y_GAP
-
-                    elements += legend_nodes
-                # merge with your main elements
-                #elements = elements + legend_elements
-
-                """ # --- Legend ---
-                if node_style == "compound":
-                    # Compound‐style legend: one entry per chemical class
-                    legend_items = []
-                    for cls, col in class_to_color.items():
-                        legend_items.append(
-                            html.Div(
-                                [
-                                    # color swatch
-                                    html.Span(style={
-                                        'display': 'inline-block',
-                                        'width': '12px', 'height': '12px',
-                                        'backgroundColor': col,
-                                        'marginRight': '6px',
-                                        'border': '1px solid #ccc'
-                                    }),
-                                    # class name
-                                    html.Span(cls)
-                                ],
-                                style={'marginRight': '12px', 'display': 'inline-flex'}
-                            )
-                        )
-                    legend = html.Div(
-                        legend_items,
-                        style={'padding': '8px 0', 'fontSize': '12px', 'flexWrap': 'wrap'}
-                    )
-
-                else:
-                    # Your original legend (for pie & circle)
-                    legend_items = []
-                    for nm, col in color_map.items():
-                        legend_items.append(
-                            html.Div(
-                                [
-                                    html.Span(style={
-                                        'display': 'inline-block',
-                                        'width': '12px', 'height': '12px',
-                                        'backgroundColor': col,
-                                        'marginRight': '6px'
-                                    }),
-                                    html.Span(nm)
-                                ],
-                                style={'marginRight':'12px','display':'inline-flex'}
-                            )
-                        )
-                    legend = html.Div(
-                        legend_items,
-                        style={'padding':'8px 0','fontSize':'12px','flexWrap':'wrap'}
-                    ) """
-
-                # --- Stylesheet ---
-                layout_map = {
-                    "cose": "cose", "fcose": "fcose", "circular": "circle", "COLA": "cola",
-                    "random": "random", "shell": "concentric", "spectral": "grid"
-                }
-                layout_name = layout_map.get(layout_choice, "cose")
-
-                stylesheet = [
-                    # reset edges
+            ]
+            if node_style == "pie" or node_style == "t_statistic":
+                # 4) Add a single stylesheet rule
+                stylesheet += [
                     {
-                        'selector': 'edge',
-                        'style': {
-                            'width':       'mapData(weight, {}, {}, 1, 6)'.format(threshold, max(pair_counts.values())),
-                            'line-color': '#ccc', 'curve-style': 'bezier'
-                        }
-                    },
-                    # base node label/size
-                    {
-                        'selector': '.node',
-                        'style': {
-                            'label':         'data(label)',
-                            'text-valign':   'center',
-                            'text-halign':   'center',
-                            'font-size':     '12px',
-                            'border-width':       '2px',    # optional: give it a border
-                            'border-color':       '#fff',   # optional: white border
-                            'width':
-                                f"mapData(degree, 0, {max_degree}, {min_size}, {max_size})",
-                            'height':
-                                f"mapData(degree, 0, {max_degree}, {min_size}, {max_size})"
-                        }
+                    "selector": ".legend-node",
+                    "style": {
+                        "label":         "data(label)",    # show the name
+                        "text-valign":   "center",         # vertically centered on the box
+                        "text-halign":   "right",          # text to the right of the node
+                        "text-margin-x": LABEL_MARGIN,     # small gap
+                        "font-size":     f"{FONT_SIZE}px",
+                        "color":         "#000"
+                    }
                     }
                 ]
-                if node_style == "pie" or node_style == "t_statistic":
-                    # 4) Add a single stylesheet rule
-                    stylesheet += [
-                        {
-                        "selector": ".legend-node",
-                        "style": {
-                            "label":         "data(label)",    # show the name
-                            "text-valign":   "center",         # vertically centered on the box
-                            "text-halign":   "right",          # text to the right of the node
-                            "text-margin-x": LABEL_MARGIN,     # small gap
-                            "font-size":     f"{FONT_SIZE}px",
-                            "color":         "#000"
-                        }
-                        }
-                    ]
 
-                if node_style == "pie":
-                    stylesheet.append({
-                        'selector': '.node',
-                        'style': {
-                            'background-image':  'data(pieURI)',
-                            'background-fit':    'none',
-                            'background-width': '200px',
-                            'background-height':'200px',
-                            'background-clip':   'node',
-                            'shape':            'ellipse'
-                        }
-                    })
-                elif node_style == "compound":
-                    stylesheet.append({
-                        "selector": ".node",
-                        "style": {
-                            "background-image": "none",
-                            "background-color": "data(compound_color)",
-                            "shape":            "ellipse"
-                        }
-                    })
-                elif node_style == "t_statistic":
-                    stylesheet.append({
-                        'selector': '.node',
-                        'style': {
-                            # node size driven by degree → min_size/max_size as before
-                            'width':  f"mapData(degree, 0, {max_degree}, {min_size}, {max_size})",
-                            'height': f"mapData(degree, 0, {max_degree}, {min_size}, {max_size})",
+            if node_style == "pie":
+                stylesheet.append({
+                    'selector': '.node',
+                    'style': {
+                        'background-image':  'data(pieURI)',
+                        'background-fit':    'none',
+                        'background-width': '200px',
+                        'background-height':'200px',
+                        'background-clip':   'node',
+                        'shape':            'ellipse'
+                    }
+                })
+            elif node_style == "t_statistic":
+                stylesheet.append({
+                    'selector': '.node',
+                    'style': {
+                        # node size driven by degree → min_size/max_size as before
+                        'width':  f"mapData(degree, 0, {max_degree}, {min_size}, {max_size})",
+                        'height': f"mapData(degree, 0, {max_degree}, {min_size}, {max_size})",
 
-                            # white background behind the chart
-                            'background-color':  'white',
-                            'background-opacity': 1,
+                        # white background behind the chart
+                        'background-color':  'white',
+                        'background-opacity': 1,
 
-                            # chart image comes from your data URI
-                            'background-image':  'data(barURI)',
+                        # chart image comes from your data URI
+                        'background-image':  'data(barURI)',
 
-                            # scale & center the image to the node
-                            'background-fit':     'contain',
-                            'background-position':'center center',
-                            'background-repeat':  'no-repeat',
+                        # scale & center the image to the node
+                        'background-fit':     'contain',
+                        'background-position':'center center',
+                        'background-repeat':  'no-repeat',
 
-                            # clip the image to the node shape
-                            'background-clip':    'node',
-                            'shape':              'round-rectangle',
+                        # clip the image to the node shape
+                        'background-clip':    'node',
+                        'shape':              'round-rectangle',
 
-                            # *** thin grey border ***
-                            'border-width':      '1px',
-                            'border-color':      '#888',      # or 'grey' / '#ccc'
-                            'border-opacity':    1
-                        }
-                    })
-                else:  # circle
-                    stylesheet.append({
-                        'selector': '.node',
-                        'style': {
-                            'background-image':  'none',
-                            'background-color':
-                                f"mapData(study_count, 0, {max_count}, {circle_pal[0]}, {circle_pal[-1]})",
-                            'width':
-                                f"mapData(degree, 0, {max_degree}, {min_size}, {max_size})",
-                            'height':
-                                f"mapData(degree, 0, {max_degree}, {min_size}, {max_size})",
-                            'shape': 'ellipse'
-                        }
-                    })
+                        # *** thin grey border ***
+                        'border-width':      '1px',
+                        'border-color':      '#888',      # or 'grey' / '#ccc'
+                        'border-opacity':    1
+                    }
+                })
+            else:  # circle
+                stylesheet.append({
+                    'selector': '.node',
+                    'style': {
+                        'background-image':  'none',
+                        'background-color':
+                            f"mapData(study_count, 0, {max_count}, {circle_pal[0]}, {circle_pal[-1]})",
+                        'width':
+                            f"mapData(degree, 0, {max_degree}, {min_size}, {max_size})",
+                        'height':
+                            f"mapData(degree, 0, {max_degree}, {min_size}, {max_size})",
+                        'shape': 'ellipse'
+                    }
+                })
 
-                """ # check the post-build RSS before returning
-                rss = psutil.Process().memory_info().rss
-                if rss > MAX_RSS:
-                    return html.Div(
-                        f"❌ Graph would use ~{rss/1e6:.0f} MB RAM, exceeding "
-                        f"the {MAX_RSS/1e6:.0f} MB limit for this machine. "
-                        "Try fewer studies or a higher threshold.",
-                        style={"color": "red", "padding": "1em"}
-                    ) """
-
-                """ # --- Return Cytoscape + legend ---
-                return [
-                    cyto.Cytoscape(
-                        id="metabolic-network-cytoscape-msa",
-                        elements=elements,
-                        layout={'name': layout_name},
-                        stylesheet=stylesheet,
-                        style={'flex':'1 1 auto','width':'100%','height':'auto'}
-                    ),
-                    legend
-                ] """
-
-                """ return [
-                    cyto.Cytoscape(
-                        id="metabolic-network-cytoscape-msa",
-                        elements=elements,
-                        layout={'name': layout_name},
-                        stylesheet=stylesheet,
-                        style={'flex':'1 1 auto','width':'100%','height':'auto'},
-                        generateImage={
-                                            'type': 'png',
-                                            'action': 'store',
-                                            'options': {
-                                                'bg': '#ffffff'    # force a white background
-                                            } 
-                                        } # start in “store” mode
-                    ),
-                    html.Button("Download PNG", id="btn-download-network", n_clicks=0, className="mt-2"),
-                    legend
-                ] """
-
-                """ return [
-                    cyto.Cytoscape(
-                        id="metabolic-network-cytoscape-msa",
-                        elements=elements,
-                        layout={'name': layout_name},
-                        stylesheet=stylesheet,
-                        style={'width':'100%','height':'600px'},
-                        generateImage={}
-                    )
-                ] """
-                return elements, {'name': layout_name}, stylesheet
+            return elements, {'name': layout_name}, stylesheet
             
     # 4) Callback to open/close the modal
     @callback(
@@ -2060,7 +1722,6 @@ def register_callbacks():
 
     # map network levels to folder names
     LEVEL_TO_FOLDER = {
-        "metabolite":      "Metabolites-network-plots",
         "diff-metabolite": "Differential-metabolites-network-plots",
         "pathway":         "Differential-pathway-network-plots",
     }
