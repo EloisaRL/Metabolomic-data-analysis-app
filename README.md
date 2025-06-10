@@ -9,14 +9,17 @@ An interactive Dash application for visualizing and analyzing differential metab
 
 With a focus on standardization and integration, this tool supports scientific discovery through comprehensive, accessible data visualization and analysis.
 
+![image](https://github.com/user-attachments/assets/7b7ffe0e-f397-4394-9858-11038453f6c3)
+
+
 ---
 
 ## Table of Contents
 
 - [Features](#features)  
 - [Getting Started](#getting-started)  
-  - [Prerequisites](#prerequisites)  
-  - [Clone the Repository](#clone-the-repository)  
+  - [Clone the Repository](#clone-the-repository)
+  - [Set up the Environment](#set-up-the-environment) 
   - [Install Dependencies](#install-dependencies)  
   - [Run the App](#run-the-app)  
 - [Usage](#usage)  
@@ -54,10 +57,6 @@ With a focus on standardization and integration, this tool supports scientific d
 
 ## Getting Started
 
-### Prerequisites
-View requirements file
-Python version 3.12.9
-
 ### Clone the Repository
 
 ```bash
@@ -65,8 +64,21 @@ git clone https://github.com/EloisaRL/Metabolomic-data-analysis-app.git
 cd metabolight-data-analysis-app
 ```
 
+### Set up the Environment
+Ensure you are using **Python 3.12.9** (or create a virtual environment with it).    
+
+**Create and activate a virtual environment (optional but recommended):**
+
+```bash
+python -m venv venv
+venv\Scripts\activate      # On macOS/Linux: source venv/bin/activate
+```
 ### Install Dependencies
-NEED TO ADD
+Install all required packages using the `requirements.txt` file:
+
+```bash
+pip install -r requirements.txt
+```
 
 ### Run the App 
 
@@ -78,7 +90,16 @@ You’ll see output similar to:
 ```console
 Dash is running on http://127.0.0.1:8050/  (Press CTRL+C to quit)
 ```
-Ctrl+Click (or Cmd+Click on macOS) the link to open the app in your browser.
+**Ctrl+Click** (or **Cmd+Click** on macOS) the link to open the app in your browser.
+
+## Usage
+
+### Single-Study Analysis
+
+![Animated example](/assets/Single-study-analysis-page.gif)
+
+
+### Multi-Study Analysis
 
 ## Example Data (“Dummy Project”)
 
