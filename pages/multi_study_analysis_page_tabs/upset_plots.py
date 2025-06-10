@@ -105,7 +105,8 @@ layout = html.Div([
                             html.P(
                                 "If the dataset uses RefMet IDs (i.e. originates from workbench or is original data), "
                                 "RefMet-to–ChEBI conversion is performed renaming each metabolite column to its "
-                                "corresponding ChEBI ID (dropping any unmapped columns).",
+                                "corresponding ChEBI ID (dropping any unmapped columns). For all datasets, ChEBI ids are "
+                                "converted into Metabolite names, using libchebipy.ChebiEntity, before creating upset plots.",
                                 style={"marginBottom": "0.5rem"}
                             ),
                             html.P(

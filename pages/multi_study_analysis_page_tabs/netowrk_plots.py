@@ -587,7 +587,7 @@ def register_callbacks():
             )
             lines.append(
                 html.P(
-                    "For all datasets, metabolites are mapped to Reactome pathways (file version 90). If two or more metabolites overlap a pathway, it applies single-sample pathway analysis (ssPA) via KPCA to compute an arbitrary score for each pathway in each patient sample. Differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) on those pathway scores to identify differential pathways (FDR adjusted p-value below 0.05).",
+                    "For all datasets, ChEBI ids are mapped to Reactome pathways (file version 90). If two or more metabolites overlap a pathway, it applies single-sample pathway analysis (ssPA) via KPCA to compute an arbitrary score for each pathway in each patient sample. Differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) on those pathway scores to identify differential pathways (FDR adjusted p-value below 0.05).",
                     style={"marginBottom": "0.5rem"}
                 )
             )
@@ -605,7 +605,7 @@ def register_callbacks():
                 )
                 lines.append(
                     html.P(
-                        "For all datasets, differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) on the metabolite data to identify differential metabolites (FDR adjusted p-value below 0.05).",
+                        "For all datasets, differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) on the metabolite data to identify differential metabolites (FDR adjusted p-value below 0.05). Then ChEBI ids are converted into Metabolite names using libchebipy.ChebiEntity, prior to creating network plot.",
                         style={"marginBottom": "0.5rem"}
                     )
                 )
@@ -621,7 +621,7 @@ def register_callbacks():
                 )
                 lines.append(
                     html.P(
-                        "For all datasets, differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) on the metabolite data to identify differential metabolites (FDR adjusted p-value below 0.05).",
+                        "For all datasets, differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) on the metabolite data to identify differential metabolites (FDR adjusted p-value below 0.05). Then ChEBI ids are converted into Metabolite names using libchebipy.ChebiEntity, prior to creating network plot.",
                         style={"marginBottom": "0.5rem"}
                     )
                 )
@@ -637,7 +637,7 @@ def register_callbacks():
                 )
                 lines.append(
                     html.P(
-                        "For all datasets, differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) on the metabolite data to identify differential metabolites (FDR adjusted p-value below 0.05). This test also produces a t-statistic representing the standardized difference in mean metabolite abundance between the case and control group for that metabolite.",
+                        "For all datasets, differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) on the metabolite data to identify differential metabolites (FDR adjusted p-value below 0.05). This test also produces a t-statistic representing the standardized difference in mean metabolite abundance between the case and control group for that metabolite. Then ChEBI ids are converted into Metabolite names using libchebipy.ChebiEntity, prior to creating network plot.",
                         style={"marginBottom": "0.5rem"}
                     )
                 )
@@ -653,7 +653,7 @@ def register_callbacks():
                 )
                 lines.append(
                     html.P(
-                        "For all datasets, differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) on the metabolite data to identify differential metabolites (FDR adjusted p-value below 0.05). This test also produces a t-statistic representing the standardized difference in mean metabolite abundance between the case and control group for that metabolite.",
+                        "For all datasets, differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) on the metabolite data to identify differential metabolites (FDR adjusted p-value below 0.05). This test also produces a t-statistic representing the standardized difference in mean metabolite abundance between the case and control group for that metabolite. Then ChEBI ids are converted into Metabolite names using libchebipy.ChebiEntity, prior to creating network plot.",
                         style={"marginBottom": "0.5rem"}
                     )
                 )
