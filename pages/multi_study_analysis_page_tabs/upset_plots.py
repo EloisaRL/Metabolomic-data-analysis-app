@@ -10,6 +10,7 @@ import base64
 from scipy import stats
 from statsmodels.stats.multitest import multipletests
 import plotly.io as pio
+import libchebipy
 
 UPLOAD_FOLDER = "pre-processed-datasets"
 
@@ -363,8 +364,31 @@ def register_callbacks():
                 to_rename = {c: refmet2chebi[c] for c in df.columns if c in refmet2chebi}
                 df = df.rename(columns=to_rename)
 
+            ##### Renaming to from ChEBI -> Metabolite name #####
+            df_renamed = df.copy()
+
+            # Define columns to exclude from renaming
+            exceptions = {'database_identifier', 'group_type'}
+
+            # Build a mapping of old column names to new names
+            new_column_names = {}
+
+            for col in df_renamed.columns:
+                if col in exceptions:
+                    new_column_names[col] = col
+                else:
+                    chebi_id = str(col).replace("CHEBI:", "")
+                    try:
+                        entity = libchebipy.ChebiEntity(chebi_id)
+                        new_column_names[col] = entity.get_name()
+                    except Exception:
+                        new_column_names[col] = col  # Fallback if not a valid ChEBI ID
+
+            # Apply the renaming
+            df_renamed.columns = [new_column_names[col] for col in df_renamed.columns]
+
             # now every column name is guaranteed to be a CheBI string
-            st.metabolites = set(df.columns)
+            st.metabolites = set(df_renamed.columns)
 
             studies.append(st)
 
@@ -439,14 +463,51 @@ def register_callbacks():
                 df = df.drop(columns=unmapped)
 
                 # 4) rename only those that _are_ in your lookup
-                to_rename = {c: refmet2chebi[c] for c in df.columns 
+                keep_cols = {'database_identifier', 'group_type'}
+                drop_columns = []
+                rename_mapping = {}
+                for col in df.columns:
+                    if col in keep_cols:
+                        rename_mapping[col] = col
+                    else:
+                        new_name = refmet2chebi.get(col, None)
+                        if new_name is None or pd.isna(new_name):
+                            drop_columns.append(col)
+                        else:
+                            rename_mapping[col] = new_name
+                df = df.drop(columns=drop_columns)
+                df = df.rename(columns=rename_mapping)
+                """ to_rename = {c: refmet2chebi[c] for c in df.columns 
                             if c in refmet2chebi}
-                df = df.rename(columns=to_rename)
+                df = df.rename(columns=to_rename) """
+
+            ##### Renaming to from ChEBI -> Metabolite name #####
+            df_renamed = df.copy()
+
+            # Define columns to exclude from renaming
+            exceptions = {'database_identifier', 'group_type'}
+
+            # Build a mapping of old column names to new names
+            new_column_names = {}
+
+            for col in df_renamed.columns:
+                if col in exceptions:
+                    new_column_names[col] = col
+                else:
+                    chebi_id = str(col).replace("CHEBI:", "")
+                    try:
+                        entity = libchebipy.ChebiEntity(chebi_id)
+                        new_column_names[col] = entity.get_name()
+                    except Exception:
+                        new_column_names[col] = col  # Fallback if not a valid ChEBI ID
+
+            # Apply the renaming
+            df_renamed.columns = [new_column_names[col] for col in df_renamed.columns]
 
             class DA:
                 pass
             da = DA()
-            da.processed_data = df
+            da.processed_data = df_renamed
             da.pathway_data = None
             da.node_name = node_name
             #da.node_name = f"{file}"
