@@ -240,13 +240,20 @@ layout = dbc.Container(
             # Define the modal that will ask for the analysis project name
             dbc.Modal(
                 [
-                    dbc.ModalBody(
+                    dbc.ModalBody([
+                        dbc.Label("Select an Existing Project"),
+                        dcc.Dropdown(
+                            id="dropdown-existing-projects",
+                            placeholder="Choose existing project (optional)"
+                        ),
+                        html.Hr(),
+                        dbc.Label("Or Enter a New Project Name"),
                         dbc.Input(
                             id="input-analysis-project",
-                            placeholder="Enter the Name of the analysis project",
+                            placeholder="Enter the name of a new project",
                             type="text"
                         )
-                    ),
+                    ]),
                     dbc.ModalFooter(
                         dbc.Button(
                             "Confirm",
@@ -256,9 +263,9 @@ layout = dbc.Container(
                     )
                 ],
                 id="modal-analysis-project",
-                is_open=True,          # Shown immediately when the tab loads
-                backdrop="static",     # Prevent closing on clicking outside
-                keyboard=False         # Prevent closing via the ESC key
+                is_open=True,
+                backdrop="static",
+                keyboard=False
             ),
             dbc.Toast(
                 id="save-toast",

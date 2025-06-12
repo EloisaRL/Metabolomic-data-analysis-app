@@ -253,7 +253,7 @@ def register_callbacks():
         # Enable the summary tab only if the study is confirmed.
         return not confirmed """
 
-    @callback(
+    """ @callback(
         [Output("modal-analysis-project", "is_open"),
         Output("project-name-display", "children"),
         Output("dummy-output", "children"),
@@ -327,6 +327,116 @@ def register_callbacks():
                 f"Created/verified folder: {project_folder_path}\n"
                 f"In 'Plots': {single_study_path}, {preprocessing_analysis_path}, {multi_study_path}"
             )
+            return False, display_text, folder_structure_message, project_folder_path
+
+        return is_open, "", "", "" """
+    
+    @callback(
+        [Output("dropdown-existing-projects", "options"),
+        Output("input-analysis-project", "value"),
+        Output("dropdown-existing-projects", "value")],
+        [Input("modal-analysis-project", "is_open"),
+        Input("dropdown-existing-projects", "value"),
+        Input("input-analysis-project", "value")]
+    )
+    def manage_project_inputs(is_open, dropdown_value, input_value):
+        ctx = callback_context
+        trigger_id = ctx.triggered_id  # Get which input triggered the callback
+
+        # Default outputs: no change
+        dropdown_options = no_update
+        input_val = no_update
+        dropdown_val = no_update
+
+        # Populate dropdown when modal opens
+        if trigger_id == "modal-analysis-project" and is_open:
+            if os.path.exists("Projects"):
+                folders = os.listdir("Projects")
+                dropdown_options = [
+                    {"label": folder.replace("-", " "), "value": folder}
+                    for folder in folders if os.path.isdir(os.path.join("Projects", folder))
+                ]
+            else:
+                dropdown_options = []
+
+        # If user selected a dropdown item, clear the input
+        elif trigger_id == "dropdown-existing-projects" and dropdown_value:
+            input_val = ""
+
+        # If user typed in the input, clear the dropdown selection
+        elif trigger_id == "input-analysis-project" and input_value:
+            dropdown_val = None
+
+        return dropdown_options, input_val, dropdown_val
+    
+    @callback(
+        [Output("modal-analysis-project", "is_open"),
+        Output("project-name-display", "children"),
+        Output("dummy-output", "children"),
+        Output("project-folder-store_dpp", "data")],
+        Input("confirm-analysis-project-btn", "n_clicks"),
+        State("input-analysis-project", "value"),
+        State("dropdown-existing-projects", "value"),
+        State("modal-analysis-project", "is_open")
+    )
+    def update_project_name_and_create_folders(n_clicks, new_project_name, selected_project_folder, is_open):
+        if n_clicks:
+            # Determine the project name and folder
+            if selected_project_folder:
+                sanitized_name = selected_project_folder  # Already in hyphen format
+                display_text = sanitized_name.replace("-", " ")
+            elif new_project_name:
+                display_text = new_project_name
+                sanitized_name = new_project_name.replace(" ", "-")
+            else:
+                return is_open, "Project Name Not Provided", "", ""
+
+            projects_dir = "Projects"
+            project_folder_path = os.path.join(projects_dir, sanitized_name)
+
+            # Ensure the Projects folder exists
+            os.makedirs(projects_dir, exist_ok=True)
+
+            # Create main project folder
+            os.makedirs(project_folder_path, exist_ok=True)
+
+            # Create subfolders
+            processed_datasets_path = os.path.join(project_folder_path, "Processed-datasets")
+            plots_path = os.path.join(project_folder_path, "Plots")
+            os.makedirs(processed_datasets_path, exist_ok=True)
+            os.makedirs(plots_path, exist_ok=True)
+
+            # Subfolders under Plots
+            single_study_path = os.path.join(plots_path, "Single-study-analysis")
+            preprocessing_analysis_path = os.path.join(plots_path, "Preprocessing-analysis")
+            multi_study_path = os.path.join(plots_path, "Multi-study-analysis")
+            os.makedirs(single_study_path, exist_ok=True)
+            os.makedirs(preprocessing_analysis_path, exist_ok=True)
+            os.makedirs(multi_study_path, exist_ok=True)
+
+            # Single-study-analysis subfolders
+            os.makedirs(os.path.join(single_study_path, "Differential-metabolites-box-plots"), exist_ok=True)
+            os.makedirs(os.path.join(single_study_path, "Differential-metabolites-table-plots"), exist_ok=True)
+            os.makedirs(os.path.join(single_study_path, "Differential-pathway-box-plots"), exist_ok=True)
+            os.makedirs(os.path.join(single_study_path, "Differential-pathway-table-plots"), exist_ok=True)
+
+            # Preprocessing-analysis subfolders
+            os.makedirs(os.path.join(preprocessing_analysis_path, "PCA-plots"), exist_ok=True)
+            os.makedirs(os.path.join(preprocessing_analysis_path, "Box-plots"), exist_ok=True)
+            os.makedirs(os.path.join(preprocessing_analysis_path, "Residual-plots"), exist_ok=True)
+
+            # Multi-study-analysis subfolders
+            os.makedirs(os.path.join(multi_study_path, "Co-occurring-metabolites-upset-plots"), exist_ok=True)
+            os.makedirs(os.path.join(multi_study_path, "Differential-co-occurring-metabolites-upset-plots"), exist_ok=True)
+            os.makedirs(os.path.join(multi_study_path, "Differential-metabolites-network-plots"), exist_ok=True)
+            os.makedirs(os.path.join(multi_study_path, "Differential-pathway-network-plots"), exist_ok=True)
+
+            # Optional debug message
+            folder_structure_message = (
+                f"Created/verified folder: {project_folder_path}\n"
+                f"In 'Plots': {single_study_path}, {preprocessing_analysis_path}, {multi_study_path}"
+            )
+
             return False, display_text, folder_structure_message, project_folder_path
 
         return is_open, "", "", ""
