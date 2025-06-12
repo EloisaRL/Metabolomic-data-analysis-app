@@ -11,10 +11,10 @@
       "outliers": "SA 8",
       "group_filter": {
         "Control": [
-          "COVID-19"
+          "HEALTHY"
         ],
         "Case": [
-          "HEALTHY"
+          "COVID-19"
         ]
       }
     },
