@@ -473,23 +473,30 @@ layout = html.Div([
                         [
                             dbc.ModalHeader("Name of plot"),
                             dbc.ModalBody(
-                                dcc.Input(
-                                    id="plot-name-input-msa",
-                                    type="text",
-                                    placeholder="Enter plot name",
-                                    style={"width": "100%"},
-                                )
+                                [
+                                    dbc.Alert(
+                                        # add a warning emoji manually instead of icon=True
+                                        [html.Span("⚠️", className="me-2"),
+                                        "Note: Your plot will be saved to your Downloads folder."],
+                                        color="warning",
+                                        className="mb-3",
+                                    ),
+                                    dcc.Input(
+                                        id="plot-name-input-msa",
+                                        type="text",
+                                        placeholder="Enter plot name",
+                                        style={"width": "100%"},
+                                    ),
+                                ]
                             ),
                             dbc.ModalFooter(
-                                # Save button replaces Close
                                 dbc.Button(
                                     "Save",
                                     id="confirm-save-plot-button-msa",
                                     n_clicks=0,
-                                    type="button", 
+                                    type="button",
                                     color="primary",
                                     className="ms-auto",
-                                    
                                 )
                             ),
                         ],
@@ -1869,7 +1876,7 @@ def register_callbacks():
         return is_open
 
     # 5) Callback to trigger the client‐side SVG download
-    """ @callback(
+    @callback(
         Output("metabolic-network-cytoscape-msa", "generateImage"),
         Input("confirm-save-plot-button-msa", "n_clicks"),
         State("project-dropdown-pop-msa",       "value"),
@@ -1890,9 +1897,9 @@ def register_callbacks():
             "type":     "svg",
             "action":   "download",
             "filename": filename
-        } """
+        } 
 
-    @callback(
+    """ @callback(
         Output("metabolic-network-cytoscape-msa", "generateImage"),
         Input("confirm-save-plot-button-msa", "n_clicks"),
         State("project-dropdown-pop-msa",       "value"),
@@ -1970,7 +1977,7 @@ def register_callbacks():
             f.write(svg_bytes)
 
         # Optionally return something into the Store so you know it ran:
-        return {"status": "saved", "path": dest}
+        return {"status": "saved", "path": dest} """
     
 
     """ # Trigger a store‐PNG
