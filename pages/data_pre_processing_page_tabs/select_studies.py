@@ -123,16 +123,16 @@ def register_callbacks():
         Output("overwrite-warning-modal_dpp", "is_open"),
         Output("overwrite-study-name_dpp", "children"),
 
-        Input("upload-data_dpp",        "contents"),
-        Input("upload-study-btn_dpp",   "n_clicks"),
-        Input("confirm-overwrite-btn_dpp", "n_clicks"),
-        Input("cancel-overwrite-btn_dpp",  "n_clicks"),
+        Input("upload-data_dpp",            "contents"),
+        Input("upload-study-btn_dpp",       "n_clicks"),
+        Input("confirm-overwrite-btn_dpp",  "n_clicks"),
+        Input("cancel-overwrite-btn_dpp",   "n_clicks"),
 
-        State("upload-data_dpp",               "filename"),
-        State("uploaded-file-store_dpp",       "data"),
-        State("selected-files-checklist_dpp",  "value"),
-        State("study-name_dpp",                "value"),
-        State("dataset-source_dpp",            "value"),
+        State("upload-data_dpp",            "filename"),
+        State("uploaded-file-store_dpp",    "data"),
+        State("selected-files-checklist_dpp","value"),
+        State("study-name_dpp",             "value"),
+        State("dataset-source_dpp",         "value"),
         prevent_initial_call=True,
     )
     def handle_upload_all(contents,
@@ -140,7 +140,7 @@ def register_callbacks():
                         confirm_clicks,
                         cancel_clicks,
                         filenames,
-                        store,
+                        store,           # now a Dict[str,str]
                         checked_names,
                         study_name,
                         dataset_source):
@@ -150,7 +150,6 @@ def register_callbacks():
             raise PreventUpdate
         trigger = ctx.triggered[0]["prop_id"].split(".")[0]
 
-        # helper to write files + details
         def do_write(files_to_write):
             folder = os.path.join(UPLOAD_FOLDER, study_name)
             os.makedirs(folder, exist_ok=True)
@@ -162,7 +161,7 @@ def register_callbacks():
                 with open(os.path.join(folder, name), "wb") as fd:
                     fd.write(data)
                 saved.append(name)
-            # (re)write details
+            # rewrite details file
             with open(os.path.join(folder, "study_details.txt"), "w") as fd:
                 fd.write(f"Study Name: {study_name}\n")
                 fd.write(f"Dataset Source: {DATASET_SOURCE_LABELS.get(dataset_source, dataset_source)}\n")
@@ -173,163 +172,115 @@ def register_callbacks():
             if not contents:
                 raise PreventUpdate
 
-            staged       = store or []
+            # Merge new files into our map
+            staged_map = store or {}
             prev_checked = set(checked_names or [])
-            existing     = {f["name"] for f in staged}
-            new_names    = []
 
             for name, content in zip(filenames, contents):
-                if name not in existing:
-                    staged.append({"name": name, "content": content})
-                    new_names.append(name)
+                if name not in staged_map:
+                    staged_map[name] = content
 
-            options = [{"label": f["name"], "value": f["name"]} for f in staged]
-            value   = list(prev_checked.union(new_names))
+            options = [{"label": n, "value": n} for n in staged_map.keys()]
+            # carry forward any previously checked + newly added
+            value = list(prev_checked.union(staged_map.keys()))
 
-            # leave modal closed, no status change
-            return no_update, staged, options, value, False, no_update
+            return (
+                no_update,     # upload-status unchanged
+                staged_map,    # new store: Dict[name->content]
+                options,
+                value,
+                False,         # overwrite-warning closed
+                no_update
+            )
 
         # 2) Upload button clicked: either write or show warning
         if trigger == "upload-study-btn_dpp":
-            staged = store or []
+            staged_map = store or {}
             checked = set(checked_names or [])
 
-            if not staged:
-                return ("⚠️ No files selected.",
-                        no_update, no_update, no_update,
-                        False, no_update)
-
-            to_upload = [f for f in staged if f["name"] in checked]
-            if not to_upload:
-                return ("⚠️ No files ticked for upload.",
-                        no_update, no_update, no_update,
-                        False, no_update)
+            # which names to upload
+            to_upload_names = [n for n in staged_map if n in checked]
+            if not to_upload_names:
+                return (
+                    "⚠️ No files ticked for upload.",
+                    no_update, no_update, no_update,
+                    False, no_update
+                )
 
             folder = os.path.join(UPLOAD_FOLDER, study_name)
             if os.path.exists(folder):
-                # show overwrite warning
-                return (no_update, no_update, no_update, no_update,
-                        True, study_name)
+                # prompt overwrite
+                return (
+                    no_update, no_update, no_update, no_update,
+                    True, study_name
+                )
             else:
-                # write immediately
+                # build full list of dicts
+                to_upload = [
+                    {"name": n, "content": staged_map[n]}
+                    for n in to_upload_names
+                ]
                 saved = do_write(to_upload)
                 status = f"✅ Uploaded: {', '.join(saved)}"
-                opts = [{"label": n, "value": n} for n in saved]
-                return (status, to_upload, opts, saved,
-                        False, no_update)
+                opts   = [{"label": n, "value": n} for n in saved]
+
+                # remove written files from the staged map
+                for n in saved:
+                    staged_map.pop(n, None)
+
+                return (
+                    status,
+                    staged_map,   # keep any remaining staged files
+                    opts,
+                    saved,        # mark these as checked
+                    False,        # close overwrite-warning
+                    no_update
+                )
 
         # 3) Confirm‐overwrite clicked: force write into existing
         if trigger == "confirm-overwrite-btn_dpp":
-            staged = store or []
+            staged_map = store or {}
             checked = set(checked_names or [])
-            to_upload = [f for f in staged if f["name"] in checked]
 
-            if not to_upload:
-                return ("⚠️ No files ticked for upload.",
-                        no_update, no_update, no_update,
-                        False, no_update)
+            to_upload_names = [n for n in staged_map if n in checked]
+            if not to_upload_names:
+                return (
+                    "⚠️ No files ticked for upload.",
+                    no_update, no_update, no_update,
+                    False, no_update
+                )
 
+            to_upload = [
+                {"name": n, "content": staged_map[n]}
+                for n in to_upload_names
+            ]
             saved = do_write(to_upload)
             status = f"✅ Appended to '{study_name}': {', '.join(saved)}"
-            # after overwrite, drop all staged (they’re now in folder)
-            return (status, [], [], [],
-                    False, no_update)
+
+            # clear them out
+            for n in saved:
+                staged_map.pop(n, None)
+
+            options = [{"label": n, "value": n} for n in staged_map.keys()]
+            return (
+                status,
+                staged_map,
+                options,
+                [],      # nothing checked after overwrite
+                False,
+                no_update
+            )
 
         # 4) Cancel‐overwrite clicked: just close the warning
         if trigger == "cancel-overwrite-btn_dpp":
-            return (no_update, no_update, no_update, no_update,
-                    False, no_update)
+            return (
+                no_update, no_update, no_update, no_update,
+                False, no_update
+            )
 
         # fallback
         return no_update, no_update, no_update, no_update, False, no_update
 
-
-    """ @callback(
-        Output("summary-tab_dpp", "disabled"),
-        Input("study-confirmed-store_dpp", "data"),
-        State("selected-study-store_dpp", "data")
-    )
-    def update_summary_tab(confirmed, selected_studies):
-        # Enable the summary tab only if the study is confirmed.
-        return not confirmed """
-
-    """ @callback(
-        [Output("modal-analysis-project", "is_open"),
-        Output("project-name-display", "children"),
-        Output("dummy-output", "children"),
-        Output("project-folder-store_dpp", "data")],
-        Input("confirm-analysis-project-btn", "n_clicks"),
-        State("input-analysis-project", "value"),
-        State("modal-analysis-project", "is_open")
-    )
-    def update_project_name_and_create_folders(n_clicks, project_name, is_open):
-        if n_clicks:
-            # Use the provided project name or a default message.
-            display_text = project_name if project_name else "Project Name Not Provided"
-            
-            # Define the top-level Projects folder.
-            projects_dir = "Projects"
-            if not os.path.exists(projects_dir):
-                os.makedirs(projects_dir)
-            
-            # Sanitize the project name (replace spaces with hyphens)
-            sanitized_name = display_text.replace(" ", "-")
-            project_folder_path = os.path.join(projects_dir, sanitized_name)
-            
-            # Create the main project folder if it doesn't exist.
-            if not os.path.exists(project_folder_path):
-                os.makedirs(project_folder_path)
-            
-            # Create the 'Processed-datasets' and 'Plots' folders inside the project folder.
-            processed_datasets_path = os.path.join(project_folder_path, "Processed-datasets")
-            plots_path = os.path.join(project_folder_path, "Plots")
-            os.makedirs(processed_datasets_path, exist_ok=True)
-            os.makedirs(plots_path, exist_ok=True)
-            
-            # Within the 'Plots' folder, create additional subfolders.
-            single_study_path = os.path.join(plots_path, "Single-study-analysis")
-            preprocessing_analysis_path = os.path.join(plots_path, "Preprocessing-analysis")
-            multi_study_path = os.path.join(plots_path, "Multi-study-analysis")
-            os.makedirs(single_study_path, exist_ok=True)
-            os.makedirs(preprocessing_analysis_path, exist_ok=True)
-            os.makedirs(multi_study_path, exist_ok=True)
-
-            # Within the 'Single-study analysis' folder, create additional subfolders.
-            diff_met_box_plot_path = os.path.join(single_study_path, "Differential-metabolites-box-plots")
-            diff_met_table_path = os.path.join(single_study_path, "Differential-metabolites-table-plots")
-            diff_path_box_plot_path = os.path.join(single_study_path, "Differential-pathway-box-plots")
-            diff_path_table_path = os.path.join(single_study_path, "Differential-pathway-table-plots")
-            os.makedirs(diff_met_box_plot_path, exist_ok=True)
-            os.makedirs(diff_met_table_path, exist_ok=True)
-            os.makedirs(diff_path_box_plot_path, exist_ok=True)
-            os.makedirs(diff_path_table_path, exist_ok=True)
-
-            # Within the 'Preprocessing analysis' folder, create additional subfolders.
-            pca_plot_path = os.path.join(preprocessing_analysis_path, "PCA-plots")
-            box_plot_path = os.path.join(preprocessing_analysis_path, "Box-plots")
-            residual_plot_path = os.path.join(preprocessing_analysis_path, "Residual-plots")
-            os.makedirs(pca_plot_path, exist_ok=True)
-            os.makedirs(box_plot_path, exist_ok=True)
-            os.makedirs(residual_plot_path, exist_ok=True)
-
-            # Within the 'Multi-study analysis' folder, create additional subfolders.
-            met_upset_plot_path = os.path.join(multi_study_path, "Co-occurring-metabolites-upset-plots")
-            diff_met_upset_plot_path = os.path.join(multi_study_path, "Differential-co-occurring-metabolites-upset-plots")
-            diff_met_network_plot_path = os.path.join(multi_study_path, "Differential-metabolites-network-plots")
-            diff_path_network_plot_path = os.path.join(multi_study_path, "Differential-pathway-network-plots")
-            os.makedirs(met_upset_plot_path, exist_ok=True)
-            os.makedirs(diff_met_upset_plot_path, exist_ok=True)
-            os.makedirs(diff_met_network_plot_path, exist_ok=True)
-            os.makedirs(diff_path_network_plot_path, exist_ok=True)
-            
-            # Optional debug message.
-            folder_structure_message = (
-                f"Created/verified folder: {project_folder_path}\n"
-                f"In 'Plots': {single_study_path}, {preprocessing_analysis_path}, {multi_study_path}"
-            )
-            return False, display_text, folder_structure_message, project_folder_path
-
-        return is_open, "", "", "" """
     
     @callback(
         [Output("dropdown-existing-projects", "options"),

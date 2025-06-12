@@ -91,7 +91,7 @@ def select_studies_view_dpp():
 layout = dbc.Container(
         [
             # Hidden stores for state management.
-            dcc.Store(id="uploaded-file-store_dpp", data=[]),
+            dcc.Store(id="uploaded-file-store_dpp", data={}),
             dcc.Store(id="selected-study-store_dpp", data=[]),
             dcc.Store(id="study-confirmed-store_dpp", data=False),
             dcc.Store(id="process-data-status_dpp", data=False),
@@ -129,22 +129,39 @@ layout = dbc.Container(
                 }
             ),
             # Modal for uploading a new study...
-            dbc.Modal(
-                [
-                    dbc.ModalHeader("Upload a new study"),
-                    dbc.ModalBody(select_studies_view_dpp()),
-                    dbc.ModalFooter(
+            html.Div(
+                dcc.Loading(
+                    id="loading-upload-modal",
+                    type="circle",
+                    fullscreen=False,                          # only cover this component
+                    style={"position": "relative"},            # enable absolute overlay
+                    overlay_style={                            # dims the modal
+                        "position": "absolute",
+                        "top": 0,
+                        "left": 0,
+                        "width": "100%",
+                        "height": "100%",
+                        "backgroundColor": "rgba(0, 0, 0, 0.3)",
+                        "zIndex": 1060                          # above the modal content
+                    },
+                    children=dbc.Modal(
                         [
-                            dbc.Button("Upload", id="upload-study-btn_dpp", color="primary"),
-                            dbc.Button("Close",  id="close-upload-study-btn_dpp", color="secondary"),
+                            dbc.ModalHeader("Upload a new study"),
+                            dbc.ModalBody(select_studies_view_dpp()),
+                            dbc.ModalFooter(
+                                [
+                                    dbc.Button("Upload", id="upload-study-btn_dpp", color="primary"),
+                                    dbc.Button("Close",  id="close-upload-study-btn_dpp", color="secondary"),
+                                ],
+                                className="d-flex justify-content-end"
+                            ),
                         ],
-                        className="d-flex justify-content-end"
-                    ),
-                ],
-                id="upload-study-modal_dpp",
-                is_open=False,
-                backdrop="static",
-                size="xl",
+                        id="upload-study-modal_dpp",
+                        is_open=False,
+                        backdrop="static",
+                        size="xl",
+                    )
+                )
             ),
             # warning modal: shown when a folder with the same study name already exists
             dbc.Modal(
