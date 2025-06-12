@@ -12,7 +12,7 @@ import plotly.io as pio
 import base64
 import json
 
-refmet = pd.read_csv(r"C:\Users\Eloisa\Documents\ICL\Tim RA Project - Postgraduate\my_dash_app\refmet.csv", dtype=object)
+refmet = pd.read_csv("refmet.csv", dtype=object)
 refmet.columns = refmet.columns.str.strip() 
 name2pubchem = dict(zip(refmet['refmet_name'], refmet['chebi_id']))
 

@@ -24,7 +24,7 @@ import glob
 
 UPLOAD_FOLDER = "pre-processed-datasets"
 
-refmet = pd.read_csv(r"C:\Users\Eloisa\Documents\ICL\Tim RA Project - Postgraduate\my_dash_app\refmet.csv", dtype=object)
+refmet = pd.read_csv("refmet.csv", dtype=object)
 refmet.columns = refmet.columns.str.strip() 
 refmet2chebi = dict(zip(refmet['refmet_name'], refmet['chebi_id']))
 
@@ -1927,7 +1927,7 @@ def register_callbacks():
 
     from werkzeug.utils import secure_filename
     import re
-    PROJECTS_ROOT = os.path.abspath(os.path.expanduser(r"C:\Users\Eloisa\Documents\ICL\Tim RA Project - Postgraduate\my_dash_app\Projects"))
+    PROJECTS_ROOT = os.path.abspath(os.path.expanduser("Projects"))
 
     @callback(
     Output("svg-store", "data"),
