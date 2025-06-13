@@ -1,8 +1,9 @@
 # pages/multi_study_analysis.py
 import os
 import dash_bootstrap_components as dbc
-from dash import html, dcc, Input, Output, callback, State, no_update
-
+from dash import html, dcc, Input, Output, callback, State, no_update, callback_context
+import os, base64
+import plotly.io as pio
 
 from .multi_study_analysis_page_tabs.upset_plots import layout    as upset_layout
 from .multi_study_analysis_page_tabs.upset_plots import register_callbacks as register_upset_cb
@@ -62,6 +63,22 @@ project_modal = dbc.Modal(
 layout = html.Div([
     project_modal,
     dcc.Store(id="svg-store", storage_type="memory"),
+    dbc.Toast(
+        id="save-toast-msa",
+        header="",
+        icon="",
+        duration=3000,
+        is_open=False,
+        dismissable=True,
+        style={
+            "position": "fixed",
+            "top": 10,
+            "right": 10,
+            "width": 250,
+            "zIndex": 9999,
+        },
+        children="",
+    ),
     # Header that shows the selected project title.
     html.Div(
         [
@@ -175,3 +192,135 @@ def update_files_checklist(selected_project):
         return options
     return []
 
+@callback(
+    [
+        Output("save-toast-msa", "is_open"),
+        Output("save-toast-msa", "children"),
+        Output("save-toast-msa", "header"),
+        Output("save-toast-msa", "icon"),
+    ],
+    [
+        Input("confirm-save-plot-button-upset-msa", "n_clicks"),
+        Input("confirm-save-plot-button-diff-msa",  "n_clicks"),
+    ],
+    [
+        State("project-dropdown-pop-msa",      "value"),
+        State("plot-name-input-upset-msa",    "value"),
+        State("upset-plot-store-msa",         "data"),
+        State("plot-name-input-diff-msa",     "value"),
+        State("diff-plot-store-msa",          "data"),
+    ],
+    prevent_initial_call=True
+)
+def show_save_toast_msa(n_upset, n_diff,
+                        project,
+                        upset_fn, upset_payload,
+                        diff_fn,  diff_payload):
+    ctx = callback_context
+    trigger = ctx.triggered[0]["prop_id"].split(".")[0]
+
+    def toast(open_, msg, hdr, icn):
+        return open_, msg, hdr, icn
+
+    def mk_msg(kind, name=None, relpath=None):
+        if kind == "no_proj":
+            return "Select a project before saving.", "Warning", "warning"
+        if kind == "no_name":
+            return "Enter a name before saving.",    "Warning", "warning"
+        if kind == "no_data":
+            return "No plot data available to save.", "Error",   "danger"
+        # success
+        if kind == "upset":
+            return (
+                f"Upset plot '{name}.svg' saved in '{relpath}'.",
+                "Success",
+                "success"
+            )
+        if kind == "diff":
+            return (
+                f"Differential plot '{name}.svg' saved in '{relpath}'.",
+                "Success",
+                "success"
+            )
+
+    # Common base directory
+    base = os.path.join(
+        "Projects", project or "",
+        "Plots", "Multi-study-analysis"
+    )
+
+    # Validate project
+    if trigger in (
+        "confirm-save-plot-button-upset-msa",
+        "confirm-save-plot-button-diff-msa"
+    ) and not project:
+        msg, hdr, icn = mk_msg("no_proj")
+        return toast(True, msg, hdr, icn)
+
+    # 1) Upset plot
+    if trigger == "confirm-save-plot-button-upset-msa":
+        if not upset_fn:
+            msg, hdr, icn = mk_msg("no_name")
+            return toast(True, msg, hdr, icn)
+        if not upset_payload:
+            msg, hdr, icn = mk_msg("no_data")
+            return toast(True, msg, hdr, icn)
+
+        subdir = "Co-occurring-metabolites-upset-plots"
+        full_dir = os.path.join(base, subdir)
+        if not os.path.isdir(full_dir):
+            rel = os.path.relpath(full_dir)
+            msg = (
+                f"❌ Could not save '{upset_fn}.svg'; "
+                f"folder '{rel}' not found."
+            )
+            return toast(True, msg, "Error", "danger")
+
+        out_path = os.path.join(full_dir, f"{upset_fn}.svg")
+        # Save as Plotly or raw SVG
+        if upset_payload.get("type") == "plotly":
+            fig = pio.from_json(upset_payload["data"])
+            pio.write_image(fig, out_path, format="svg")
+        else:
+            svg_bytes = base64.b64decode(upset_payload["data"])
+            with open(out_path, "wb") as f:
+                f.write(svg_bytes)
+
+        rel = os.path.relpath(full_dir)
+        msg, hdr, icn = mk_msg("upset", upset_fn, rel)
+        return toast(True, msg, hdr, icn)
+
+    # 2) Differential upset plot
+    if trigger == "confirm-save-plot-button-diff-msa":
+        if not diff_fn:
+            msg, hdr, icn = mk_msg("no_name")
+            return toast(True, msg, hdr, icn)
+        if not diff_payload:
+            msg, hdr, icn = mk_msg("no_data")
+            return toast(True, msg, hdr, icn)
+
+        subdir = "Differential-co-occurring-metabolites-upset-plots"
+        full_dir = os.path.join(base, subdir)
+        if not os.path.isdir(full_dir):
+            rel = os.path.relpath(full_dir)
+            msg = (
+                f"❌ Could not save '{diff_fn}.svg'; "
+                f"folder '{rel}' not found."
+            )
+            return toast(True, msg, "Error", "danger")
+
+        out_path = os.path.join(full_dir, f"{diff_fn}.svg")
+        if diff_payload.get("type") == "plotly":
+            fig = pio.from_json(diff_payload["data"])
+            pio.write_image(fig, out_path, format="svg")
+        else:
+            svg_bytes = base64.b64decode(diff_payload["data"])
+            with open(out_path, "wb") as f:
+                f.write(svg_bytes)
+
+        rel = os.path.relpath(full_dir)
+        msg, hdr, icn = mk_msg("diff", diff_fn, rel)
+        return toast(True, msg, hdr, icn)
+
+    # default: no change
+    return toast(False, no_update, no_update, no_update)

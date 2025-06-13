@@ -185,7 +185,6 @@ layout = html.Div([
                             is_open=False,
                             size="sm",
                         ),
-                        html.Div(id="save-feedback-pathway-chart"),
 
 
                         # always‐visible Save button for the **table**
@@ -240,7 +239,6 @@ layout = html.Div([
                             is_open=False,
                             size="sm",
                         ),
-                        html.Div(id="save-feedback-pathway-table"),
 
                     ], style={"padding": "1rem"})
 
@@ -605,7 +603,6 @@ def register_callbacks():
 
     # Save **chart** as SVG
     @callback(
-        Output("save-feedback-pathway-chart","children"),
         Input("confirm-save-plot-button-pathway-chart","n_clicks"),
         [
         State("plot-name-input-pathway-chart","value"),
@@ -614,14 +611,19 @@ def register_callbacks():
         ]
     )
     def save_pathway_chart(nc, fn, payload, project):
+        # no n_clicks yet → do nothing
         if not nc:
-            return no_update
+            return
+        # validation errors printed to console
         if not project:
-            return dbc.Alert("Select a project before saving.", color="warning")
+            print("⚠️ save_table: no project selected.")
+            return
         if not fn:
-            return dbc.Alert("Enter a filename.", color="warning")
+            print("⚠️ save_table: no filename provided.")
+            return
         if not payload:
-            return dbc.Alert("No chart data.", color="danger")
+            print("❌ save_table: no table data to save.")
+            return
 
         fig = pio.from_json(payload["data"])
         w = fig.layout.width  or 700
@@ -634,12 +636,10 @@ def register_callbacks():
         path = os.path.join(out_dir, f"{fn}.svg")
 
         pio.write_image(fig, path, format="svg", width=int(w), height=int(h))
-        return dbc.Alert(f"Chart saved as `{fn}.svg` ({w}×{h}px).", color="success")
 
 
     # Save **table** as CSV
     @callback(
-        Output("save-feedback-pathway-table","children"),
         Input("confirm-save-plot-button-pathway-table","n_clicks"),
         [
         State("plot-name-input-pathway-table","value"),
@@ -648,14 +648,19 @@ def register_callbacks():
         ]
     )
     def save_pathway_table(nc, fn, payload, project):
+        # no n_clicks yet → do nothing
         if not nc:
-            return no_update
+            return
+        # validation errors printed to console
         if not project:
-            return dbc.Alert("Select a project before saving.", color="warning")
+            print("⚠️ save_table: no project selected.")
+            return
         if not fn:
-            return dbc.Alert("Enter a filename.", color="warning")
+            print("⚠️ save_table: no filename provided.")
+            return
         if not payload:
-            return dbc.Alert("No table data.", color="danger")
+            print("❌ save_table: no table data to save.")
+            return
 
         data = base64.b64decode(payload["data"])
         out_dir = os.path.join("Projects", project,
@@ -666,4 +671,3 @@ def register_callbacks():
         with open(path, "wb") as f:
             f.write(data)
 
-        return dbc.Alert(f"Table saved as `{fn}.csv`.", color="success")

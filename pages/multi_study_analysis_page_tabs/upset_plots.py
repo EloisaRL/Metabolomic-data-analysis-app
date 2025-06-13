@@ -672,14 +672,19 @@ def register_callbacks():
         ]
     )
     def save_upset_plot(n_clicks, project, filename, payload):
+        # no n_clicks yet → do nothing
         if not n_clicks:
-            return no_update
+            return
+        # validation errors printed to console
         if not project:
-            return dbc.Alert("Select a project before saving.", color="warning")
+            print("⚠️ save_table: no project selected.")
+            return
         if not filename:
-            return dbc.Alert("Enter a name before saving.", color="warning")
+            print("⚠️ save_table: no filename provided.")
+            return
         if not payload:
-            return dbc.Alert("No plot data available.", color="danger")
+            print("❌ save_table: no table data to save.")
+            return
 
         # Build the full directory:
         base_dir = os.path.join("Projects", project,
@@ -736,14 +741,19 @@ def register_callbacks():
         ]
     )
     def save_diff_plot(n_clicks, project, filename, payload):
+        # no n_clicks yet → do nothing
         if not n_clicks:
-            return no_update
+            return
+        # validation errors printed to console
         if not project:
-            return dbc.Alert("Select a project before saving.", color="warning")
+            print("⚠️ save_table: no project selected.")
+            return
         if not filename:
-            return dbc.Alert("Enter a name before saving.", color="warning")
+            print("⚠️ save_table: no filename provided.")
+            return
         if not payload:
-            return dbc.Alert("No plot data available.", color="danger")
+            print("❌ save_table: no table data to save.")
+            return
 
         # Build the full directory:
         base_dir = os.path.join("Projects", project,
@@ -754,12 +764,6 @@ def register_callbacks():
             # print to console:
             print(f"ERROR: Cannot save plot — directory not found: {base_dir}")
             # show a red alert to the user:
-            return dbc.Alert(
-                f"❌ Could not save `{filename}.svg` because the folder "
-                f"`{os.path.relpath(base_dir)}` does not exist.",
-                color="danger",
-                dismissable=True
-            )
 
         out_path = os.path.join(base_dir, f"{filename}.svg")
 
@@ -772,7 +776,3 @@ def register_callbacks():
             with open(out_path, "wb") as f:
                 f.write(svg_bytes)
 
-        return dbc.Alert(
-            f"Saved Differential plot as `{filename}.svg` in `{os.path.relpath(base_dir)}`.",
-            color="success"
-        )

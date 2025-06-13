@@ -154,7 +154,6 @@ layout = html.Div([
                         is_open=False,
                         size="sm",
                     ),
-                    html.Div(id="save-feedback-chart"),
 
 
                     # always‐visible Save button for the **table**
@@ -211,7 +210,6 @@ layout = html.Div([
                         is_open=False,
                         size="sm",
                     ),
-                    html.Div(id="save-feedback-table"),
 
                 ], style={"padding": "1rem"})
 
@@ -447,7 +445,6 @@ def register_callbacks():
 
     # Save **chart** as SVG
     @callback(
-        Output("save-feedback-chart","children"),
         Input("confirm-save-plot-chart","n_clicks"),
         [
         State("plot-name-input-chart","value"),
@@ -456,14 +453,19 @@ def register_callbacks():
         ]
     )
     def save_chart(n_clicks, filename, payload, project):
+       # no n_clicks yet → do nothing
         if not n_clicks:
-            return no_update
+            return
+        # validation errors printed to console
         if not project:
-            return dbc.Alert("Select a project before saving.", color="warning")
+            print("⚠️ save_table: no project selected.")
+            return
         if not filename:
-            return dbc.Alert("Enter a name before saving.", color="warning")
+            print("⚠️ save_table: no filename provided.")
+            return
         if not payload:
-            return dbc.Alert("No chart data.", color="danger")
+            print("❌ save_table: no table data to save.")
+            return
 
         # Rebuild the figure from JSON
         fig = pio.from_json(payload["data"])
@@ -493,13 +495,11 @@ def register_callbacks():
             height=int(height),
         )
 
-        return dbc.Alert(f"Chart saved as `{filename}.svg` ({width}×{height}px).", color="success")
 
 
 
     # Save **table** as CSV
     @callback(
-        Output("save-feedback-table","children"),
         Input("confirm-save-plot-table","n_clicks"),
         [
         State("plot-name-input-table","value"),
@@ -508,14 +508,19 @@ def register_callbacks():
         ]
     )
     def save_table(n_clicks, filename, payload, project):
+        # no n_clicks yet → do nothing
         if not n_clicks:
-            return no_update
+            return
+        # validation errors printed to console
         if not project:
-            return dbc.Alert("Select a project before saving.", color="warning")
+            print("⚠️ save_table: no project selected.")
+            return
         if not filename:
-            return dbc.Alert("Enter a name before saving.", color="warning")
+            print("⚠️ save_table: no filename provided.")
+            return
         if not payload:
-            return dbc.Alert("No table data.", color="danger")
+            print("❌ save_table: no table data to save.")
+            return
 
         out_dir = os.path.join(
             "Projects",
@@ -531,4 +536,4 @@ def register_callbacks():
         with open(out_path, "wb") as f:
             f.write(csv_data)
 
-        return dbc.Alert(f"Table saved as `{filename}.csv`.", color="success")
+
