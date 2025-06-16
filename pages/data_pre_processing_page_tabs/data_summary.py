@@ -15,6 +15,8 @@ import numbers
 import ast
 import pandas as pd
 import time
+import logging
+logger = logging.getLogger(__name__)
 
 
 UPLOAD_FOLDER = "pre-processed-datasets"
@@ -348,7 +350,9 @@ def static_preprocess_workbench(folder, preprocessing_steps=None, outliers=None,
     # Find all CSV files in the study folder.
     files = glob.glob(os.path.join(folder, "*.csv"))
     if len(files) == 0:
-        raise Exception("No CSV files found in the folder.")
+        #raise Exception("No CSV files found in the folder.")
+        logger.error("Data summary tab - No CSV files found in the folder.")
+        return None
     
     def preprocess(df):
         # Workbench CSVs are assumed to have at least the following columns:
@@ -384,7 +388,9 @@ def static_preprocess_workbench(folder, preprocessing_steps=None, outliers=None,
         data_filt = df.copy()
 
         if 'Samples' not in data_filt.columns or 'Class' not in data_filt.columns:
-            raise Exception("CSV file must contain 'Samples' and 'Class' columns.")
+            #raise Exception("CSV file must contain 'Samples' and 'Class' columns.")
+            logger.error("Data summary tab - CSV file must contain 'Samples' and 'Class' columns.")
+            return None
         data_filt[identifier_name] = data_filt['Samples']
         data_filt.index = data_filt[identifier_name]
         
@@ -443,8 +449,8 @@ def static_preprocess_workbench(folder, preprocessing_steps=None, outliers=None,
                 mets_dict['Group'] = 'Group'
                 data_filt.columns = data_filt.columns.map(mets_dict)  
 
-            except Exception as e:
-                print("Error converting to RefMet IDs:", e)
+            except Exception:
+                logger.exception("Data summary tab - Error converting to RefMet IDs")
 
         # Drop any columns with missing names and try to drop empty column names.
         data_filt = data_filt.loc[:, data_filt.columns.notna()]
@@ -486,8 +492,8 @@ def static_preprocess_workbench(folder, preprocessing_steps=None, outliers=None,
     for f in files:
         try:
             df = pd.read_csv(f)
-        except Exception as e:
-            print(f"Error reading file {f}: {e}")
+        except Exception:
+            logger.exception(f"Data summary tab - Error reading file {f}")
             continue
         proc_data = preprocess(df)
         if proc_data is None:
@@ -533,7 +539,9 @@ def static_preprocess_workbench(folder, preprocessing_steps=None, outliers=None,
         proc_dfs.append(proc_data)
     
     if len(proc_dfs) == 0:
-        raise Exception("No valid processed data from CSV files.")
+        logger.error("Data summary tab - No valid processed data from CSV files")
+        return None 
+        #raise Exception("No valid processed data from CSV files.")
     # If more than one CSV file was processed, combine them.
     if len(proc_dfs) > 1:
         # Concatenate along columns. raw_data_combined = pd.concat(proc_dfs, axis=1, join='inner')
@@ -652,7 +660,9 @@ def static_preprocess(folder, metadata, preprocessing_steps=None, outliers=None,
     files = glob.glob(f"{folder}/*maf.tsv")
     
     if len(files) == 0:
-        raise Exception("No assay files found in the folder.")
+        logger.error("Data summary tab - No assay files found in the folder.")
+        return None 
+        #raise Exception("No assay files found in the folder.")
 
     proc_dfs = []
     for f in files:
@@ -701,7 +711,9 @@ def static_preprocess(folder, metadata, preprocessing_steps=None, outliers=None,
         proc_dfs.append(proc_data)
     print('processed all data files')
     if len(proc_dfs) == 0:
-        raise Exception("No valid processed data from assay files.")
+        logger.error("Data summary tab - No valid processed data from assay files.")
+        return None 
+        #raise Exception("No valid processed data from assay files.")
 
     if len(proc_dfs) > 1:
         """ print('first type of combining')
@@ -937,7 +949,7 @@ layout = html.Div([
                 ], style={"padding": "1rem"})
 
 def register_callbacks():
-
+    # Callback to enable the data summary tab if all details have been given for all studies
     @callback(
         [
             Output("summary-tab_dpp",             "disabled"),
@@ -971,6 +983,7 @@ def register_callbacks():
                     with open(SELECTED_STUDIES_FILE, "r", encoding="utf-8") as f:
                         payload = json.load(f).get("studies", {})
                 except Exception:
+                    logger.exception("Data summary tab - Error reading SELECTED_STUDIES_FILE")
                     payload = {}
 
                 # check every selected study
@@ -986,12 +999,16 @@ def register_callbacks():
                         break
                 disabled = not ok
 
+                if ok:
+                    logger.info("Data summary tab - All selected studies have complete details — enabling Data Summary tab")
+
             # after checking, disable the interval so it doesn't fire again
             return disabled, True, no_update
 
         # fallback — do nothing
         raise PreventUpdate
 
+    # Callback to hide the process data button once clicked so the data isn't processed twice
     @callback(
         Output("process-data-btn_dpp", "style"),
         Input("process-data-btn_dpp", "n_clicks"),
@@ -1004,6 +1021,7 @@ def register_callbacks():
         # Should never get here, but just in case
         return no_update
 
+    # Callback to process data the data
     @callback(
         [Output("process-data-status_dpp", "children"),
         Output("processing-complete-store_dpp", "data")],
@@ -1035,22 +1053,19 @@ def register_callbacks():
             try:
                 with open(SELECTED_STUDIES_FILE) as f:
                     temp = json.load(f)
-            except Exception as e:
-                print(f"Error reading temp steps file: {e}")
-
-        messages = []
-        print('Starting iteration over studies')
+            except Exception:
+                logger.exception("Data summary tab - Error reading SELECTED_STUDIES_FILE")
 
         # Iterate over all selected studies.
         for study in selected_studies:
             folder = os.path.join(UPLOAD_FOLDER, study)
             if not os.path.isdir(folder):
-                messages.append(f"No folder for study: {study}")
+                logger.error(f"Data summary tab - No folder for study: {study}")
                 continue
 
             full_path, _ = get_file_from_study_dpp(study)
             if not full_path:
-                messages.append(f"No data file found for study: {study}")
+                logger.error(f"Data summary tab - No data file found for study: {study}")
                 continue
 
             details = read_study_details_dpp(folder)
@@ -1065,9 +1080,10 @@ def register_callbacks():
                 outliers = [value.strip() for value in outliers.split(",") if value.strip()]
             try:
                 md_filter_local = temp.get("studies", {}).get(study, {}).get("group_filter")
-            except Exception as e:
-                print(f"Error parsing metadata filter for study {study}: {e}")
-                md_filter_local = default_md_filter
+            except Exception:
+                logger.exception(f"Data summary tab - Error parsing metadata filter for study {study}")
+                #md_filter_local = default_md_filter
+                continue
 
             # Retrieve preprocessing steps.
             preprocessing_steps = temp.get("studies", {}).get(study, {}).get("preprocessing")
@@ -1087,12 +1103,13 @@ def register_callbacks():
             try:
                 with open(SELECTED_STUDIES_FILE, "w", encoding="utf-8") as f:
                     json.dump(temp, f, indent=2)
-            except Exception as e:
-                print("Error writing filename to file:", e)
+            except Exception:
+                logger.exception("Data summary tab - Error writing filename back into SELECTED_STUDIES_FILE")
 
             # Retrieve the confirmed group type from the temp file.
             saved_group = temp.get("studies", {}).get(study, {}).get("group_type")
             if not saved_group:
+                logger.error(f"Data summary tab - Group not confirmed for study: {study}")
                 return html.Div("Group not confirmed for one or more studies."), False
 
             group_selection = saved_group
@@ -1115,7 +1132,7 @@ def register_callbacks():
                     processed_df['group_type'] = processed_df['Group'].map(group_mapping)
                     if processed_df['group_type'].isnull().any():
                         missing_groups = processed_df.loc[processed_df['group_type'].isnull(), 'Group'].unique()
-                        print(f"Warning: The following group names were not found in the metadata filter: {missing_groups}")
+                        logger.error(f"Data summary tab - The following group names were not found in the metadata filter: {missing_groups}")
 
                     # 1) Drop the old Group column
                     processed_df = processed_df.drop(columns=["Group"], errors="ignore")
@@ -1146,7 +1163,8 @@ def register_callbacks():
 
                     # 3) handle zero or many matches, and pick one
                     if not matches:
-                        raise FileNotFoundError(f"No metadata file found matching {pattern!r}")
+                        logger.error(f"Data summary tab - No metadata file found matching pattern: {pattern!r}")
+                        raise PreventUpdate
                     elif len(matches) > 1:
                         # you could choose the newest, the first, or raise an error
                         matches.sort()  # alphabetical; or sort by os.path.getmtime for newest
@@ -1155,9 +1173,10 @@ def register_callbacks():
                     if os.path.exists(meta_filepath):
                         try:
                             metadata_df = pd.read_csv(meta_filepath, sep="\t", encoding="unicode_escape")
-                        except Exception as e:
-                            print(f"Error reading metadata file for study {study}: {e}")
-                            metadata_df = default_metadata
+                        except Exception:
+                            logger.exception(f"Data summary tab - Error reading metadata file for study {study}")
+                            #metadata_df = default_metadata
+                            continue
                     else:
                         metadata_df = default_metadata
 
@@ -1170,7 +1189,7 @@ def register_callbacks():
                     processed_df['group_type'] = processed_df['Group'].map(group_mapping)
                     if processed_df['group_type'].isnull().any():
                         missing_groups = processed_df.loc[processed_df['group_type'].isnull(), 'Group'].unique()
-                        print(f"Warning: The following group names were not found in the metadata filter: {missing_groups}")
+                        logger.error(f"Data summary tab - The following group names were not found in the metadata filter: {missing_groups}")
                     
                     # 1) Drop the old Group column
                     processed_df = processed_df.drop(columns=["Group"], errors="ignore")
@@ -1192,14 +1211,11 @@ def register_callbacks():
 
                     # 5) Save
                     processed_df.to_csv(path, index=False)
-            except Exception as e:
-                messages.append(f"Error processing study {study}: {e}")
-                continue
 
-            try:
-                messages.append(f"Saved {filename} → {final_save_folder}")
-            except Exception as e:
-                messages.append(f"Error saving for study {study}: {e}")
+                logger.info(f"Data summary tab - Saved {filename} -> {final_save_folder}")
+            except Exception:
+                logger.exception(f"Data summary tab - Error processing study {study}")
+                continue
 
         # After processing all studies, save the SELECTED_STUDIES_FILE into the project folder 
         # under the new name "project_details_file.json".
@@ -1210,7 +1226,6 @@ def register_callbacks():
         else:
             dest_path = "project_details_file.json"
 
-        messages = []
         try:
             # 1) Load the incoming payload
             with open(SELECTED_STUDIES_FILE, "r", encoding="utf-8") as f:
@@ -1229,9 +1244,9 @@ def register_callbacks():
             # 3) Merge: replace or append each new study
             for study_name, details in new_studies.items():
                 if study_name in existing_studies:
-                    messages.append(f"Updated details for study {study_name}")
+                    logger.info(f"Data summary tab - Updated details for study {study_name} in {project_folder}")
                 else:
-                    messages.append(f"Added new study {study_name}")
+                    logger.info(f"Data summary tab - Added new study {study_name} in {project_folder}")
                 existing_studies[study_name] = details
 
             # 4) Write back the merged payload
@@ -1239,17 +1254,14 @@ def register_callbacks():
             with open(dest_path, "w", encoding="utf-8") as f:
                 json.dump(merged, f, indent=2)
 
-            messages.append(f"Project details file saved as {dest_path}")
 
-        except Exception as e:
-            messages.append(f"Error saving project details file: {e}")
+        except Exception:
+            logger.exception(f"Data summary tab - Error saving details for study {study_name} in {project_folder}")
 
-        # Now you can return or log `messages` as before
-        for msg in messages:
-            print(msg)
 
         processing_complete = True
-        return html.Div([html.P(m) for m in messages]), processing_complete 
+        logger.info("Data summary tab - All studies have been pre-processed")
+        return None, processing_complete 
 
     @callback(
         Output("processed-file-check-interval_dpp", "disabled"),
@@ -1287,8 +1299,8 @@ def register_callbacks():
             try:
                 with open(SELECTED_STUDIES_FILE) as f:
                     steps_map = json.load(f)
-            except Exception as e:
-                print("Error reading temp steps file:", e)
+            except Exception:
+                logger.exception("Data summary tab - Error reading SELECTED_STUDIES_FILE")
 
         preprocessing_steps = steps_map.get("studies", {}).get(selected_study, {}).get("preprocessing")
         flows = [os.path.splitext(f)[0] for f in os.listdir("data_preprocessing_flows") if f.endswith(".txt")]
@@ -1307,8 +1319,9 @@ def register_callbacks():
 
         try:
             df = pd.read_csv(filepath)
-        except Exception as e:
-            return html.Div(f"Error reading processed file: {e}")
+        except Exception:
+            logger.exception("Data summary tab - Error reading processed file")
+            return html.Div("Error reading processed file")
 
         #df_head = df.head(100).reset_index().rename(columns={"index": "database_identifier"})
         df_head = df.head(100)
@@ -1444,41 +1457,6 @@ def register_callbacks():
             options = [{"label": study, "value": study} for study in selected_studies]
             return options, options[0]["value"]
         return [], None
-
-    """ @callback(
-        [Output("summary-missing-values-checklist_dpp", "value"),
-        Output("summary-transformation-checklist_dpp", "value"),
-        Output("summary-standardisation-checklist_dpp", "value")],
-        [Input("data_pre_process_tabs", "active_tab"),
-        Input("selected-studies-dropdown-summary_dpp", "value")]
-    )
-    def populate_preprocessing_checklists_summary(active_tab, selected_study):
-        # Only run if we're in the summary tab and a study is selected.
-        if active_tab not in ["summary"] or not selected_study:
-            return [], [], []
-        
-        try:
-            with open(SELECTED_STUDIES_FILE) as f:
-                data = json.load(f)
-                saved = data.get("studies", {}).get(selected_study, {}).get("preprocessing", None)
-        except Exception as e:
-            print("Error reading selected studies file:", e)
-            return [], [], []
-
-        
-        flows = [os.path.splitext(f)[0] for f in os.listdir("data_preprocessing_flows") if f.endswith(".txt")]
-        if isinstance(saved, list) and len(saved) == 1 and saved[0] in flows:
-            steps = get_flow_steps(saved[0])
-        else:
-            steps = saved if saved else ["knn_imputer", "log_transform", "standard_scaler"]
-        
-        missing_values = [step for step in steps if step in ['knn_imputer', 'mean_imputer', 'iterative_imputer']]
-        transformation = [step for step in steps if step in ['log_transform', 'cube_root']]
-        standardisation = [step for step in steps if step in ['standard_scaler', 'min_max_scaler', 'robust_scaler', 'max_abs_scaler']]
-        
-        return (missing_values[0] if missing_values else None,
-            transformation[0] if transformation else None,
-            standardisation[0] if standardisation else None) """
     
     @callback(
         [
@@ -1507,8 +1485,8 @@ def register_callbacks():
         try:
             with open(SELECTED_STUDIES_FILE, "r", encoding="utf-8") as f:
                 payload = json.load(f)
-        except Exception as e:
-            print("Error reading selected studies file:", e)
+        except Exception:
+            logger.exception("Data summary tab - Error reading SELECTED_STUDIES_FILE")
             raise PreventUpdate
 
         study = payload.get("studies", {}).get(selected_study, {})

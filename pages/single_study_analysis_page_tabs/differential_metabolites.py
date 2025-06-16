@@ -10,6 +10,8 @@ from scipy import stats
 from statsmodels.stats.multitest import multipletests
 import json
 import libchebipy
+import logging
+logger = logging.getLogger(__name__)
 
 def da_testing(self):
         '''
@@ -265,8 +267,9 @@ def register_callbacks():
 
         try:
             da.da_testing()
-        except Exception as e:
-            err = dbc.Alert(f"Error running differential analysis: {e}", color="danger")
+        except Exception:
+            logger.exception(f"Differential metabolite tab - Error running differential analysis for: {selected_file}")
+            err = dbc.Alert("Error running differential analysis", color="danger")
             return err, None, None, None
 
         sig = da.pval_df[da.pval_df["FDR_P-value"] < 0.05]
@@ -411,6 +414,9 @@ def register_callbacks():
             style={"width":"100%","padding":"0 1rem","boxSizing":"border-box"}
         )
 
+        # ✅ Log success
+        logger.info(f"Differential metabolite tab - Successfully produced differential metabolites summary chart and table for: {selected_file}")
+
         return (
             chart_child,
             {"type":"plotly","data":fig_json},
@@ -458,13 +464,13 @@ def register_callbacks():
             return
         # validation errors printed to console
         if not project:
-            print("⚠️ save_table: no project selected.")
+            logger.error("Differential metabolite tab - No project selected for chart")
             return
         if not filename:
-            print("⚠️ save_table: no filename provided.")
+            logger.error("Differential metabolite tab - No filename provided for chart")
             return
         if not payload:
-            print("❌ save_table: no table data to save.")
+            logger.error("Differential metabolite tab - No chart data to save")
             return
 
         # Rebuild the figure from JSON
@@ -495,6 +501,9 @@ def register_callbacks():
             height=int(height),
         )
 
+        # ✅ Log success
+        logger.info(f"Differential metabolite tab - Successfully saved chart: {out_path}")
+
 
 
 
@@ -513,13 +522,13 @@ def register_callbacks():
             return
         # validation errors printed to console
         if not project:
-            print("⚠️ save_table: no project selected.")
+            logger.error("Differential metabolite tab - No project selected for table")
             return
         if not filename:
-            print("⚠️ save_table: no filename provided.")
+            logger.error("Differential metabolite tab - No filename provided for table")
             return
         if not payload:
-            print("❌ save_table: no table data to save.")
+            logger.error("Differential metabolite tab - No table data to save")
             return
 
         out_dir = os.path.join(
@@ -535,5 +544,8 @@ def register_callbacks():
         out_path = os.path.join(out_dir, f"{filename}.csv")
         with open(out_path, "wb") as f:
             f.write(csv_data)
+
+        # ✅ Log success
+        logger.info(f"Differential metabolite tab - Successfully saved table: {out_path}")
 
 

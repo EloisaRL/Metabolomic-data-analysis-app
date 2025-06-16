@@ -11,6 +11,8 @@ from scipy import stats
 from statsmodels.stats.multitest import multipletests
 import plotly.io as pio
 import libchebipy
+import logging
+logger = logging.getLogger(__name__)
 
 UPLOAD_FOLDER = "pre-processed-datasets"
 
@@ -315,8 +317,8 @@ def register_callbacks():
                 continue
             try:
                 df = pd.read_csv(path).set_index("database_identifier")
-            except Exception as e:
-                print(f"Error loading {fname}: {e}")
+            except Exception:
+                logger.exception(f"Upset plots tab - Error reading processed data csv file {fname}")
                 continue
 
             # quick container for name + metabolite set
@@ -427,8 +429,8 @@ def register_callbacks():
             try:
                 df = pd.read_csv(filepath)
                 df = df.set_index('database_identifier')
-            except Exception as e:
-                print(f"Error loading {file}: {e}")
+            except Exception:
+                logger.exception(f"Upset plots tab - Error reading processed data csv file {file}")
                 continue
             
             # Extract the node name: use the word after the first '_' but before the second '_'
@@ -516,8 +518,8 @@ def register_callbacks():
             da.da_testing = da_testing.__get__(da, DA)
             try:
                 da.da_testing()
-            except Exception as e:
-                print(f"Error processing {file}: {e}")
+            except Exception:
+                logger.exception(f"Upset plots tab - Error performing differential metabolite testing on {file}")
                 continue
             
             studies.append(da)
@@ -677,13 +679,13 @@ def register_callbacks():
             return
         # validation errors printed to console
         if not project:
-            print("⚠️ save_table: no project selected.")
+            logger.error("Upset plots tab - No project selected for upset plot of co-occuring metabolites")
             return
         if not filename:
-            print("⚠️ save_table: no filename provided.")
+            logger.error("Upset plots tab - No filename provided for upset plot of co-occuring metabolites")
             return
         if not payload:
-            print("❌ save_table: no table data to save.")
+            logger.error("Upset plots tab - No co-occuring metabolites upset plot to save")
             return
 
         # Build the full directory:
@@ -691,15 +693,7 @@ def register_callbacks():
                                 "Plots", "Multi-study-analysis", "Co-occurring-metabolites-upset-plots")
         # If it doesn't exist, bail out with an error
         if not os.path.isdir(base_dir):
-            # print to console:
-            print(f"ERROR: Cannot save plot — directory not found: {base_dir}")
-            # show a red alert to the user:
-            return dbc.Alert(
-                f"❌ Could not save `{filename}.svg` because the folder "
-                f"`{os.path.relpath(base_dir)}` does not exist.",
-                color="danger",
-                dismissable=True
-            )
+            logger.error(f"Upset plots tab - Cannot save plot — directory not found: {base_dir}")
 
         out_path = os.path.join(base_dir, f"{filename}.svg")
 
@@ -711,11 +705,8 @@ def register_callbacks():
             svg_bytes = base64.b64decode(payload["data"])
             with open(out_path, "wb") as f:
                 f.write(svg_bytes)
-
-        return dbc.Alert(
-            f"Saved Upset plot as `{filename}.svg` in `{os.path.relpath(base_dir)}`.",
-            color="success"
-        )
+        
+        logger.info(f"Upset plots tab - Successfully saved co-occuring metabolites upset plot: {out_path}")
 
 
     # Differential‐plot modal toggle (unchanged)
@@ -746,13 +737,13 @@ def register_callbacks():
             return
         # validation errors printed to console
         if not project:
-            print("⚠️ save_table: no project selected.")
+            logger.error("Upset plots tab - No project selected for upset plot of co-occuring differential metabolites")
             return
         if not filename:
-            print("⚠️ save_table: no filename provided.")
+            logger.error("Upset plots tab - No filename provided for upset plot of co-occuring differential metabolites")
             return
         if not payload:
-            print("❌ save_table: no table data to save.")
+            logger.error("Upset plots tab - No co-occuring differential metabolites upset plot to save")
             return
 
         # Build the full directory:
@@ -761,9 +752,7 @@ def register_callbacks():
         
         # If it doesn't exist, bail out with an error
         if not os.path.isdir(base_dir):
-            # print to console:
-            print(f"ERROR: Cannot save plot — directory not found: {base_dir}")
-            # show a red alert to the user:
+            logger.error(f"Upset plots tab - Cannot save plot — directory not found: {base_dir}")
 
         out_path = os.path.join(base_dir, f"{filename}.svg")
 
@@ -775,4 +764,6 @@ def register_callbacks():
             svg_bytes = base64.b64decode(payload["data"])
             with open(out_path, "wb") as f:
                 f.write(svg_bytes)
+
+        logger.info(f"Upset plots tab - Successfully saved co-occuring differential metabolites upset plot: {out_path}")
 

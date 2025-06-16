@@ -2,6 +2,19 @@ from dash import html, dcc
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output
 
+import logging
+from logging.handlers import RotatingFileHandler
+
+# Set up rotating log file
+log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+log_handler = RotatingFileHandler('app.log', maxBytes=1_000_000, backupCount=5)
+log_handler.setFormatter(log_formatter)
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+logger.addHandler(log_handler)
+
+logger.info("Dash app initialized")
+
 from pages import home, data_pre_processing, datasets, single_study_analysis, multi_study_analysis, plots
 from app import app
 
@@ -130,6 +143,7 @@ app.layout = html.Div([sidebar,
 )
 
 def display_page_and_title(pathname, search):
+    logger.info(f"Route accessed: {pathname}")
     if pathname == "/data-pre-processing":
         return data_pre_processing.layout, "Data Pre-Processing"
     elif pathname == "/datasets":

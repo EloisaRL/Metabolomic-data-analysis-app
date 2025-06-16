@@ -117,8 +117,6 @@ layout = dbc.Container(
             dcc.Store(id="start-ts-store", data={}),
             dcc.Interval(id="folder-interval", interval=500, disabled=True),
 
-
-            html.Div(id="dummy-output", style={"display": "none"}),
             dcc.Store(id="project-folder-store_dpp", data=""),  
             html.Div(
                 id="project-name-display",

@@ -20,6 +20,8 @@ import io
 import base64
 import matplotlib.pyplot as plt
 import glob
+import logging
+logger = logging.getLogger(__name__)
 
 
 UPLOAD_FOLDER = "pre-processed-datasets"
@@ -759,9 +761,7 @@ def register_callbacks():
             if not selected_study:
                 raise PreventUpdate
             selected_study = selected_study[0]
-        print('Selected study')
         study_name = selected_study.split("_")[1] if len(selected_study.split("_")) >= 3 else selected_study
-        print(study_name)
         folder = os.path.join(UPLOAD_FOLDER, study_name)
         if not os.path.exists(folder):
             return [], {"display": "none"}
@@ -800,6 +800,7 @@ def register_callbacks():
 
             # 3) handle zero or many matches, and pick one
             if not matches:
+                logger.error(f"Network plots tab - Metadata not found matching {pattern!r}")
                 raise FileNotFoundError(f"No metadata file found matching {pattern!r}")
             elif len(matches) > 1:
                 # you could choose the newest, the first, or raise an error
@@ -851,6 +852,7 @@ def register_callbacks():
         study_name = selected_study.split("_")[1] if len(selected_study.split("_")) >= 3 else selected_study
         folder = os.path.join(UPLOAD_FOLDER, study_name)
         if not os.path.exists(folder):
+            logger.error(f"Network plots tab - Data folder not found for {folder}")
             return "Data folder not found."
 
         details       = read_study_details_msa(folder)
@@ -880,6 +882,7 @@ def register_callbacks():
                                     seen.add(parts[idx])
                             labels = sorted(seen)
                 except Exception:
+                    logger.exception(f"Network plots tab - Error reading CSV file for {selected_study}")
                     return "Error reading CSV file."
 
         elif dataset_source == "metabolights":
@@ -891,6 +894,7 @@ def register_callbacks():
 
             # 3) handle zero or many matches, and pick one
             if not matches:
+                logger.error(f"Network plots tab - No metadata file found matching {pattern!r}")
                 raise FileNotFoundError(f"No metadata file found matching {pattern!r}")
             elif len(matches) > 1:
                 # you could choose the newest, the first, or raise an error
@@ -903,6 +907,7 @@ def register_callbacks():
                     if selected_group in meta_df.columns:
                         labels = sorted(meta_df[selected_group].dropna().unique())
                 except Exception:
+                    logger.exception(f"Network plots tab - Error reading metadata file for {selected_study}")
                     return "Error reading metadata file."
         else:
             return "Unsupported dataset source."
@@ -1113,8 +1118,8 @@ def register_callbacks():
 
                 try:
                     da.da_testing()
-                except Exception as e:
-                    print(f"[da testing] Error in da testing for: {e}")
+                except Exception:
+                    logger.exception(f"Network plots tab - Error in da testing for {fname}")
                     continue
                 mets = getattr(da, "DA_metabolites", [])
                 if not mets:
@@ -1131,12 +1136,9 @@ def register_callbacks():
                 da.DA_metabolites  = mets
                 studies.append(da)
 
-            # DEBUG: make sure we collected something
-            print(f"Collected {len(studies)} studies with DA metabolites")
-
             # if nothing to plot
             if not studies:
-                #return html.Div("No differential metabolites found across selected studies.")
+                logger.error("Network plots tab - No differential metabolites found across selected studies.")
                 return no_update, no_update, no_update
 
             # --- build metabolite co-occurrence counts ----------
@@ -1273,6 +1275,7 @@ def register_callbacks():
                     "processed-datasets", fname
                 )
                 if not os.path.exists(path):
+                    logger.error(f"Network plots tab - This path doesn't exist: {path}")
                     continue
                 
                 df = pd.read_csv(path).set_index("database_identifier")
@@ -1326,8 +1329,8 @@ def register_callbacks():
 
                         get_pathway_data(da)
                         
-                    except Exception as e:
-                        print(f"[update_metabolic_network] Error computing pathways for {da.node_name}: {e}")
+                    except Exception:
+                        logger.exception(f"Network plots tab - Error computing pathways for {da.node_name}")
                         continue
                     
                     # keep only if any differential pathways
@@ -1361,6 +1364,7 @@ def register_callbacks():
 
                         da.da_testing()
                     except Exception:
+                        logger.exception(f"Network plots tab - Error computing pathways for {da.node_name}")
                         continue
 
                     # only keep if DA testing produced metabolites
@@ -1414,7 +1418,7 @@ def register_callbacks():
             edges = [(u, v, c) for (u, v), c in pair_counts.items() if c >= threshold]
             if not edges:
                 label = "diff-metabolite" if network_level == "diff-metabolite" else "pathway"
-                #return html.Div(f"No {label} pairs co-occurring in ≥ {threshold} studies.")
+                logger.error(f"Network plots tab - No {label} pairs co-occurring in ≥ {threshold} studies.")
                 return no_update, no_update, no_update
 
             G = nx.Graph()
@@ -1777,7 +1781,7 @@ def register_callbacks():
             try:
                 df = pd.read_csv(csv_path).set_index("database_identifier")
             except Exception as e:
-                print(f"Error loading {fname}: {e}")
+                logger.exception(f"Network plots tab - Error reading csv {fname}")
                 continue
 
             # Get dataset source (e.g., 'metabolomics workbench' or 'refmet ids')
@@ -1892,6 +1896,8 @@ def register_callbacks():
 
         # 2) build filename: proj_<level>__<base>
         filename = f"{proj}_{lvl}__{base}"
+
+        logger.info(f"Network plots tab - Saving network plot to downloads folder with name: {filename}")
 
         return {
             "type":     "svg",

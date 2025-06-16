@@ -11,6 +11,8 @@ import plotly.express as px
 import plotly.io as pio
 import base64
 import json
+import logging
+logger = logging.getLogger(__name__)
 
 refmet = pd.read_csv("refmet.csv", dtype=object)
 refmet.columns = refmet.columns.str.strip() 
@@ -264,6 +266,7 @@ def register_callbacks():
         processed_filepath = os.path.join("Projects", selected_project, "processed-datasets", selected_file)
         
         if not os.path.exists(processed_filepath):
+            logger.error(f"Differential pathway tab - Processed file '{processed_filepath}' not found")
             return html.Div(f"Processed file '{processed_filepath}' not found."), None, None, None
 
         # Extract the study name from the file name.
@@ -281,9 +284,9 @@ def register_callbacks():
             # Load the processed data and set its index.
             processed_data = pd.read_csv(processed_filepath)
             processed_data = processed_data.set_index('database_identifier')
-            print(processed_data)
-        except Exception as e:
-            return html.Div(f"Error reading processed file: {e}"), None, None, None
+        except Exception:
+            logger.exception(f"Differential pathway tab - Error reading processed file: {selected_file}")
+            return html.Div(f"Error reading processed file"), None, None, None
         
         try:
             # Process GMT file and obtain pathway definitions.
@@ -556,6 +559,9 @@ def register_callbacks():
                 style={"width":"100%","padding":"0 1rem","boxSizing":"border-box"}
             )
 
+            # ✅ Log success
+            logger.info(f"Differential pathway tab - Successfully perform pathway analysis on: {selected_file}")
+
             return (
                 html.Div(
                     [
@@ -570,8 +576,9 @@ def register_callbacks():
                     sig_sorted.reset_index().to_csv(index=False).encode()
                 ).decode()}
             )
-        except Exception as e:
-            return html.Div(f"Error during pathway analysis: {e}"), None, None, None
+        except Exception:
+            logger.exception(f"Differential pathway tab - Error during pathway analysis: {selected_file}")
+            return html.Div(f"Error during pathway analysis"), None, None, None
 
     # Chart modal
     @callback(
@@ -616,13 +623,13 @@ def register_callbacks():
             return
         # validation errors printed to console
         if not project:
-            print("⚠️ save_table: no project selected.")
+            logger.error("Differential pathway tab - No project selected for chart")
             return
         if not fn:
-            print("⚠️ save_table: no filename provided.")
+            logger.error("Differential pathway tab - No filename provided for chart")
             return
         if not payload:
-            print("❌ save_table: no table data to save.")
+            logger.error("Differential pathway tab - No chart data to save")
             return
 
         fig = pio.from_json(payload["data"])
@@ -636,6 +643,9 @@ def register_callbacks():
         path = os.path.join(out_dir, f"{fn}.svg")
 
         pio.write_image(fig, path, format="svg", width=int(w), height=int(h))
+
+        # ✅ Log success
+        logger.info(f"Differential pathway tab - Successfully saved chart: {path}")
 
 
     # Save **table** as CSV
@@ -653,13 +663,13 @@ def register_callbacks():
             return
         # validation errors printed to console
         if not project:
-            print("⚠️ save_table: no project selected.")
+            logger.error("Differential pathway tab - No project selected for table")
             return
         if not fn:
-            print("⚠️ save_table: no filename provided.")
+            logger.error("Differential pathway tab - No filename provided for table")
             return
         if not payload:
-            print("❌ save_table: no table data to save.")
+            logger.error("Differential pathway tab - No table data to save")
             return
 
         data = base64.b64decode(payload["data"])
@@ -670,4 +680,7 @@ def register_callbacks():
         path = os.path.join(out_dir, f"{fn}.csv")
         with open(path, "wb") as f:
             f.write(data)
+
+        # ✅ Log success
+        logger.info(f"Differential pathway tab - Successfully saved table: {path}")
 

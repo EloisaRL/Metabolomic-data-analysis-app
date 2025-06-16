@@ -1,0 +1,40 @@
+2025-06-13 13:46:57,510 - INFO - Dash app initialized
+2025-06-13 13:47:21,498 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-13 13:47:22,825 - INFO - Dash app initialized
+2025-06-13 13:47:46,338 - INFO - Route accessed: /
+2025-06-13 13:47:50,096 - INFO - Route accessed: /data-pre-processing
+2025-06-13 13:48:14,662 - INFO - Route accessed: /datasets
+2025-06-13 13:48:17,176 - INFO - Route accessed: /single_study_analysis
+2025-06-13 13:48:22,080 - INFO - Route accessed: /multi-study-analysis
+2025-06-13 13:48:26,707 - INFO - Route accessed: /plots
+2025-06-13 16:20:20,625 - INFO - Dash app initialized
+2025-06-13 16:20:29,217 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-13 16:20:30,412 - INFO - Dash app initialized
+2025-06-13 16:20:37,186 - INFO - Route accessed: /
+2025-06-13 16:20:40,265 - INFO - Route accessed: /data-pre-processing
+2025-06-13 16:22:41,313 - INFO - Dash app initialized
+2025-06-13 16:22:48,634 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-13 16:22:49,965 - INFO - Dash app initialized
+2025-06-13 16:23:02,098 - INFO - Route accessed: /
+2025-06-13 16:23:04,520 - INFO - Route accessed: /data-pre-processing
+2025-06-13 16:23:07,727 - INFO - Successfully created new project 'Dummy project' at 'Projects\Dummy-project'
+2025-06-13 16:23:10,191 - INFO - Studies selected for processing: ['MTBLS1866']
+2025-06-13 16:23:48,372 - INFO - Updated details for study MTBLS1866 in Projects\Dummy-project
+2025-06-13 16:23:48,378 - INFO - Project details file saved as Projects\Dummy-project\project_details_file.json
+2025-06-13 16:23:51,866 - INFO - Dash app initialized
+2025-06-13 16:24:01,959 - INFO - Route accessed: /data-pre-processing
+2025-06-13 16:24:02,056 - INFO - Route accessed: /data-pre-processing
+2025-06-13 16:26:03,632 - INFO - Dash app initialized
+2025-06-13 16:26:08,767 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-13 16:26:09,868 - INFO - Dash app initialized
+2025-06-13 16:26:16,065 - INFO - Route accessed: /
+2025-06-13 16:26:18,936 - INFO - Route accessed: /data-pre-processing
+2025-06-13 16:26:22,310 - INFO - Successfully created new project 'Dummy project' at 'Projects\Dummy-project'
+2025-06-13 16:26:25,255 - INFO - Studies selected for processing: ['MTBLS1866']
+2025-06-13 16:26:45,331 - INFO - Saved processed_MTBLS1866_knn_imputer_log_transform_standard_scaler.csv -> Projects\Dummy-project\Processed-datasets
+2025-06-13 16:26:45,331 - INFO - Updated details for study MTBLS1866 in Projects\Dummy-project
+2025-06-13 16:26:45,339 - INFO - Project details file saved as Projects\Dummy-project\project_details_file.json

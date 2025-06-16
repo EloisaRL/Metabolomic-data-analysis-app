@@ -4,6 +4,8 @@ import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 import os
 import base64
+import logging
+logger = logging.getLogger(__name__)
 
 
 UPLOAD_FOLDER = "pre-processed-datasets"
@@ -78,6 +80,7 @@ def register_callbacks():
         )
         return table
 
+    # Callback to toggle when the confirm study selection button is active
     @callback(
         Output("confirm-study-selection-btn_dpp", "disabled"),
         Input("studies-table_dpp", "selected_rows")
@@ -88,6 +91,7 @@ def register_callbacks():
             return False
         return True
 
+    # Callback to toggle when the exploration tab is active
     @callback(
         Output("exploration-tab_dpp", "disabled"),
         Input("study-confirmed-store_dpp", "data")
@@ -115,6 +119,7 @@ def register_callbacks():
                 return False
         return is_open
     
+    # Callback to control the selecting and uploading of files in the upload new study pop up 
     @callback(
         Output("upload-status_dpp", "children"),
         Output("uploaded-file-store_dpp", "data"),
@@ -140,7 +145,7 @@ def register_callbacks():
                         confirm_clicks,
                         cancel_clicks,
                         filenames,
-                        store,           # now a Dict[str,str]
+                        store,           
                         checked_names,
                         study_name,
                         dataset_source):
@@ -161,10 +166,13 @@ def register_callbacks():
                 with open(os.path.join(folder, name), "wb") as fd:
                     fd.write(data)
                 saved.append(name)
+                logger.info(f"Select studies tab - Saved file '{name}' to study '{study_name}'")
             # rewrite details file
-            with open(os.path.join(folder, "study_details.txt"), "w") as fd:
+            details_path = os.path.join(folder, "study_details.txt")
+            with open(details_path, "w") as fd:
                 fd.write(f"Study Name: {study_name}\n")
                 fd.write(f"Dataset Source: {DATASET_SOURCE_LABELS.get(dataset_source, dataset_source)}\n")
+            logger.info(f"Select studies tab - Updated study details at '{details_path}' for study '{study_name}'")
             return saved
 
         # 1) File‐picker: stage & checklist update
@@ -201,6 +209,7 @@ def register_callbacks():
             # which names to upload
             to_upload_names = [n for n in staged_map if n in checked]
             if not to_upload_names:
+                logger.warning(f"Select studies tab - Upload triggered but no files were selected for study '{study_name}'")
                 return (
                     "⚠️ No files ticked for upload.",
                     no_update, no_update, no_update,
@@ -209,6 +218,7 @@ def register_callbacks():
 
             folder = os.path.join(UPLOAD_FOLDER, study_name)
             if os.path.exists(folder):
+                logger.warning(f"Select studies tab - Study '{study_name}' already exists. Prompting for overwrite.")
                 # prompt overwrite
                 return (
                     no_update, no_update, no_update, no_update,
@@ -244,11 +254,13 @@ def register_callbacks():
 
             to_upload_names = [n for n in staged_map if n in checked]
             if not to_upload_names:
+                logger.warning(f"Select studies tab - Upload triggered but no files were selected for study '{study_name}'")
                 return (
                     "⚠️ No files ticked for upload.",
                     no_update, no_update, no_update,
                     False, no_update
                 )
+            logger.info(f"Select studies tab - Overwriting existing study '{study_name}' with files: {to_upload_names}")
 
             to_upload = [
                 {"name": n, "content": staged_map[n]}
@@ -281,7 +293,7 @@ def register_callbacks():
         # fallback
         return no_update, no_update, no_update, no_update, False, no_update
 
-    
+    # Callback to toggle project name selection or create a new project
     @callback(
         [Output("dropdown-existing-projects", "options"),
         Output("input-analysis-project", "value"),
@@ -320,10 +332,10 @@ def register_callbacks():
 
         return dropdown_options, input_val, dropdown_val
     
+    # Callback to create a new project 
     @callback(
         [Output("modal-analysis-project", "is_open"),
         Output("project-name-display", "children"),
-        Output("dummy-output", "children"),
         Output("project-folder-store_dpp", "data")],
         Input("confirm-analysis-project-btn", "n_clicks"),
         State("input-analysis-project", "value"),
@@ -336,11 +348,13 @@ def register_callbacks():
             if selected_project_folder:
                 sanitized_name = selected_project_folder  # Already in hyphen format
                 display_text = sanitized_name.replace("-", " ")
+                is_new         = False
             elif new_project_name:
                 display_text = new_project_name
                 sanitized_name = new_project_name.replace(" ", "-")
+                is_new         = True
             else:
-                return is_open, "Project Name Not Provided", "", ""
+                return is_open, "Project Name Not Provided", ""
 
             projects_dir = "Projects"
             project_folder_path = os.path.join(projects_dir, sanitized_name)
@@ -382,12 +396,12 @@ def register_callbacks():
             os.makedirs(os.path.join(multi_study_path, "Differential-metabolites-network-plots"), exist_ok=True)
             os.makedirs(os.path.join(multi_study_path, "Differential-pathway-network-plots"), exist_ok=True)
 
-            # Optional debug message
-            folder_structure_message = (
-                f"Created/verified folder: {project_folder_path}\n"
-                f"In 'Plots': {single_study_path}, {preprocessing_analysis_path}, {multi_study_path}"
-            )
+            # ✅ Log selection vs. creation
+            if is_new:
+                logger.info(f"Select studies tab - Successfully created new project '{display_text}' at '{project_folder_path}'")
+            else:
+                logger.info(f"Select studies tab - Selected existing project '{display_text}' at '{project_folder_path}'")
 
-            return False, display_text, folder_structure_message, project_folder_path
+            return False, display_text, project_folder_path
 
-        return is_open, "", "", ""
+        return is_open, "", ""

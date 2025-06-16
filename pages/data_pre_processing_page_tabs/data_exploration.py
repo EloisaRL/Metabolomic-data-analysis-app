@@ -18,6 +18,8 @@ import re
 import numbers
 import ast
 import plotly.io as pio
+import logging
+logger = logging.getLogger(__name__)
 
 UPLOAD_FOLDER = "pre-processed-datasets"
 # Path to the temporary file that holds the selected studies
@@ -478,8 +480,8 @@ def static_preprocess_workbench(folder, preprocessing_steps=None, outliers=None,
                 mets_dict['Group'] = 'Group'
                 data_filt.columns = data_filt.columns.map(mets_dict)  
 
-            except Exception as e:
-                print("Error converting metabolie names to RefMet IDs:", e)
+            except Exception:
+                logger.exception("Data exploration tab - Error converting metabolie names to RefMet IDs")
 
         data_filt = data_filt.loc[:, data_filt.columns.notna()]
 
@@ -520,8 +522,8 @@ def static_preprocess_workbench(folder, preprocessing_steps=None, outliers=None,
     for f in files:
         try:
             df = pd.read_csv(f)
-        except Exception as e:
-            print(f"Error reading file {f}: {e}")
+        except Exception:
+            logger.exception(f"Data exploration tab - Error reading file {f}")
             continue
         proc_data = preprocess(df)
         if proc_data is None:
@@ -1235,23 +1237,8 @@ layout = html.Div(
                     style={"padding": "1rem"}
                 )
 
-def register_callbacks():
-    """ @callback(
-        [Output("selected-studies-dropdown_dpp", "options"),
-        Output("selected-studies-dropdown_dpp", "value")],
-        [Input("selected-study-store_dpp", "data")],
-        State("selected-studies-dropdown_dpp", "value"),
-    )
-    def update_selected_studies_dropdown(selected_studies, current_value):
-        if selected_studies:
-            options = [{"label": study, "value": study} for study in selected_studies]
-            # Only override if the current value is not set or is no longer valid.
-            if current_value in selected_studies:
-                return options, current_value
-            else:
-                return options, options[0]["value"]
-        return [], None """
-    
+def register_callbacks(): 
+    # Callback to let the user know when all the details nescessary have been provided for a study in the dropdown   
     @callback(
         [
             Output("selected-studies-dropdown_dpp", "options"),
@@ -1279,6 +1266,7 @@ def register_callbacks():
             with open(SELECTED_STUDIES_FILE, "r", encoding="utf-8") as f:
                 payload = json.load(f).get("studies", {})
         except Exception:
+            logger.exception("Data exploration tab - Error reading SELECTED_STUDIES_FILE")
             payload = {}
 
         options = []
@@ -1300,7 +1288,7 @@ def register_callbacks():
         else:
             return options, options[0]["value"]
 
-
+    
     @callback(
         [Output("selected-study-store_dpp", "data"),
         Output("study-confirmed-store_dpp", "data")],
@@ -1347,8 +1335,9 @@ def register_callbacks():
                     os.makedirs(os.path.dirname(SELECTED_STUDIES_FILE), exist_ok=True)
                     with open(SELECTED_STUDIES_FILE, "w") as f:
                         json.dump(payload, f, indent=2)
-                except Exception as e:
-                    print(f"Error writing temp file: {e}")
+                except Exception:
+                    logger.exception("Data exploration tab - Error writing SELECTED_STUDIES_FILE")
+                logger.info(f"Data exploration tab - Studies selected for processing: {selected_studies}")
                 # Return the full list of selected studies.
                 return selected_studies, True
             else:
@@ -1361,8 +1350,8 @@ def register_callbacks():
                 try:
                     with open(SELECTED_STUDIES_FILE, "r") as f:
                         payload = json.load(f)
-                except Exception as e:
-                    print("Error reading SELECTED_STUDIES_FILE:", e)
+                except Exception:
+                    logger.exception("Data exploration tab - Error reading SELECTED_STUDIES_FILE")
                     payload = {"studies": {}}
 
                 # Update the payload with the group selection for the current study.
@@ -1370,8 +1359,8 @@ def register_callbacks():
                 try:
                     with open(SELECTED_STUDIES_FILE, "w") as f:
                         json.dump(payload, f, indent=2)
-                except Exception as e:
-                    print("Error writing group selection to file:", e)
+                except Exception:
+                    logger.exception("Data exploration tab - Error writing group selection to SELECTED_STUDIES_FILE")
                 # Return the original full list of selected studies.
                 return stored_study, True
             else:
@@ -1380,7 +1369,7 @@ def register_callbacks():
         else:
             raise PreventUpdate
 
-
+    # Callback controls showing the different group types for a study
     @callback(
         [Output("group-identification-modal_dpp", "is_open"),
         Output("group-label-dropdown_dpp", "options")],
@@ -1423,8 +1412,8 @@ def register_callbacks():
         try:
             with open(SELECTED_STUDIES_FILE, "r") as f:
                 payload = json.load(f)
-        except Exception as e:
-            print("Error reading SELECTED_STUDIES_FILE:", e)
+        except Exception:
+            logger.exception("Data exploration tab - Error reading SELECTED_STUDIES_FILE")
             payload = {"selected_studies": [], "preprocessing": {}}
 
         saved_group = payload.get("studies", {}).get(selected_study, {}).get("group_type")
@@ -1449,8 +1438,8 @@ def register_callbacks():
                         class_value = df_temp.iloc[0]["Class"]
                         groups = [grp.strip() for grp in class_value.split("|") if grp.strip()]
                         group_options = [{"label": grp, "value": grp} for grp in groups]
-                except Exception as e:
-                    print("Error reading CSV for group extraction:", e)
+                except Exception:
+                    logger.exception("Data exploration tab - Error reading CSV for group extraction")
         elif dataset_source == "metabolights":
             # 1) build the pattern
             pattern = os.path.join(folder, "s_*.txt")
@@ -1460,7 +1449,8 @@ def register_callbacks():
 
             # 3) handle zero or many matches, and pick one
             if not matches:
-                raise FileNotFoundError(f"No metadata file found matching {pattern!r}")
+                logger.error(f"Data exploration tab - No metadata file found matching pattern: {pattern!r}")
+                raise PreventUpdate
             elif len(matches) > 1:
                 # you could choose the newest, the first, or raise an error
                 matches.sort()  # alphabetical; or sort by os.path.getmtime for newest
@@ -1478,6 +1468,7 @@ def register_callbacks():
         # Open the modal with the appropriate group options.
         return True, group_options
 
+    # Callback controls showing the group options for selected group type for a study
     @callback(
         Output("group-label-space", "children"),
         [Input("group-label-dropdown_dpp", "value"),
@@ -1527,8 +1518,9 @@ def register_callbacks():
             csv_path = os.path.join(folder, csv_files[0])
             try:
                 df = pd.read_csv(csv_path)
-            except Exception as e:
-                return f"Error reading CSV file: {e}"
+            except Exception:
+                logger.exception(f"Data exploration tab - Error reading CSV file: {csv_path}")
+                return "Error reading CSV file"
             
             if "Class" not in df.columns or df.empty:
                 return "CSV missing 'Class' column or is empty."
@@ -1568,18 +1560,19 @@ def register_callbacks():
 
             # 3) handle zero or many matches, and pick one
             if not matches:
-                raise FileNotFoundError(f"No metadata file found matching {pattern!r}")
+                logger.error(f"Data exploration tab - No metadata file found matching pattern: {pattern!r}")
+                raise PreventUpdate
             elif len(matches) > 1:
                 # you could choose the newest, the first, or raise an error
                 matches.sort()  # alphabetical; or sort by os.path.getmtime for newest
             meta_filepath = matches[0]
-            #meta_filepath = os.path.join(folder, "s_*.txt")
             if not os.path.exists(meta_filepath):
                 return "Metadata file not found."
             try:
                 metadata_df = pd.read_csv(meta_filepath, sep="\t", encoding="unicode_escape")
-            except Exception as e:
-                return f"Error reading metadata file: {e}"
+            except Exception:
+                logger.exception("Data exploration tab - Error reading metadata file")
+                return "Error reading metadata file"
             
             if selected_group not in metadata_df.columns:
                 return f"Selected column '{selected_group}' not found in metadata."
@@ -1598,6 +1591,7 @@ def register_callbacks():
         else:
             return "Unsupported dataset source."
     
+    # Callback to produce the PCA, Residual, and box graphs based on the options chosen in the sidebar
     @callback(
         [
             Output("pca-graph_dpp", "figure"),
@@ -1635,7 +1629,6 @@ def register_callbacks():
         Produces PCA, residual, and box plots for the selected study.
         Applies sidebar outliers and control/case filters (or None if unset).
         """
-
         
         # Early exits
         if active_tab != "exploration" or not selected_study:
@@ -1666,8 +1659,8 @@ def register_callbacks():
         try:
             with open(SELECTED_STUDIES_FILE, "r") as f:
                 payload = json.load(f)
-        except Exception as e:
-            print("Error reading SELECTED_STUDIES_FILE:", e)
+        except Exception:
+            logger.exception("Data exploration tab - Error reading SELECTED_STUDIES_FILE")
             payload = {"studies": {}}
 
         saved_group = payload.get("studies", {}).get(selected_study, {}).get("group_type")
@@ -1720,13 +1713,16 @@ def register_callbacks():
                 pattern = os.path.join(folder, "s_*.txt")
                 matches = glob.glob(pattern)
                 if not matches:
-                    raise FileNotFoundError(f"No metadata file matching {pattern!r}")
+                    logger.error(f"Data exploration tab - No metadata file found matching pattern: {pattern!r}")
+                    raise PreventUpdate
                 matches.sort()
                 meta_fp = matches[0]
                 try:
                     metadata_df = pd.read_csv(meta_fp, sep="\t", encoding="unicode_escape")
                 except Exception:
-                    metadata_df = default_metadata
+                    logger.exception("Data exploration tab - Error reading metadata file")
+                    #metadata_df = default_metadata
+                    raise PreventUpdate
 
                 return static_preprocess(
                     folder,
@@ -1751,6 +1747,7 @@ def register_callbacks():
                 payload = json.load(open(SELECTED_STUDIES_FILE))
                 group_selection = payload["studies"][selected_study]["group_type"]
             except Exception:
+                logger.exception("Data exploration tab - Error reading group type in SELECTED_STUDIES_FILE")
                 return {}, {}, {}
 
             try:
@@ -1760,8 +1757,8 @@ def register_callbacks():
                 fig_pca, fig_residual = pca_plot(df)
                 fig_box          = box_plot(df)
                 return fig_pca, fig_residual, fig_box
-            except Exception as e:
-                print("Error on refresh preprocess:", e)
+            except Exception:
+                logger.exception("Data exploration tab - Error on refresh preprocess, triggered by refresh button")
                 return {}, {}, {}
 
         # Otherwise only after confirm…
@@ -1769,10 +1766,12 @@ def register_callbacks():
             payload = json.load(open(SELECTED_STUDIES_FILE))
             group_selection = payload["studies"].get(selected_study, {}).get("group_type")
         except Exception:
-            group_selection = None
-
-        if not group_selection:
+            logger.exception("Data exploration tab - Error reading group type in SELECTED_STUDIES_FILE")
+            #group_selection = None
             return {}, {}, {}
+
+        #if not group_selection:
+        #    return {}, {}, {}
 
         try:
             df = do_preprocess()
@@ -1781,20 +1780,17 @@ def register_callbacks():
             fig_pca, fig_residual = pca_plot(df)
             fig_box          = box_plot(df)
             return fig_pca, fig_residual, fig_box
-        except Exception as e:
-            print("Error in final preprocess branch:", e)
+        except Exception:
+            logger.exception("Data exploration tab - Error in preprocess, not triggered by refresh button")
             return {}, {}, {}
 
 
-    @callback(
+    """ @callback(
         Output("modal-state-store", "data"),
         [Input("selected-studies-dropdown_dpp", "value"),
         Input("data_pre_process_tabs", "active_tab")]
     )
     def update_modal_store(selected_study, active_tab):
-        import os
-        from dash.exceptions import PreventUpdate
-
         # Only show the modal when on the "exploration" tab.
         if active_tab != "exploration":
             return False
@@ -1833,7 +1829,7 @@ def register_callbacks():
             # Open the modal if there is at least one group option available.
             if group_options:
                 return True
-        return False
+        return False """
     
     # Save only the study details
     @callback(
@@ -1885,7 +1881,7 @@ def register_callbacks():
         # Leave the button text unchanged
         return no_update
 
-
+    # Callback to control clicks on graphs for outlier selection
     @callback(
         Output("active-input-store_dpp", "data"),
         Input("div-outliers_dpp", "n_clicks")
@@ -1895,6 +1891,7 @@ def register_callbacks():
             raise PreventUpdate
         return "side-outliers_dpp"
     
+    # Callback to control values for study details based on clicks and values already saved in the file
     @callback(
         [
             Output("side-control-group_dpp", "options"),
@@ -1941,6 +1938,7 @@ def register_callbacks():
             payload = json.load(open(SELECTED_STUDIES_FILE))
             study_info = payload.get("studies", {}).get(selected_study, {})
         except Exception:
+            logger.exception("Data exploration tab - Error reading SELECTED_STUDIES_FILE")
             study_info = {}
 
         saved_group   = study_info.get("group_type", "")
@@ -1979,6 +1977,7 @@ def register_callbacks():
                 try:
                     raw_filter = ast.literal_eval(s)
                 except Exception:
+                    logger.exception("Data exploration tab - Error parsing saved group_filter into lists")
                     raw_filter = {}
         if not isinstance(raw_filter, dict):
             raw_filter = {}
@@ -2028,7 +2027,7 @@ def register_callbacks():
         # Fallback (shouldn’t happen)
         return options, options, file_outliers, file_control, file_case
 
-
+    # Callback to toggle activation of exploration tab
     @callback(
         Output("no-data-modal_dpp", "is_open"),
         [Input("data_pre_process_tabs", "active_tab"),
@@ -2044,93 +2043,7 @@ def register_callbacks():
             return False
         return is_open
 
-    """ @callback(
-        [
-            Output("prebuilt-flows_dpp", "value"),
-            Output("missing-values-checklist_dpp", "value"),
-            Output("transformation-checklist_dpp", "value"),
-            Output("standardisation-checklist_dpp", "value")
-        ],
-        [
-            Input("data_pre_process_tabs", "active_tab"),
-            Input("selected-studies-dropdown_dpp", "value"),
-            Input("prebuilt-flows_dpp", "value"),
-            Input("missing-values-checklist_dpp", "value"),
-            Input("transformation-checklist_dpp", "value"),
-            Input("standardisation-checklist_dpp", "value")
-        ]
-    )
-    def merged_preprocessing_options(active_tab, selected_study,
-                                    prebuilt_flow_val, missing_values_val,
-                                    transformation_val, standardisation_val):
-        ctx = callback_context
-
-        # If not on the exploration tab or no study is selected, reset all fields.
-        if active_tab != "exploration" or not selected_study:
-            return "", None, None, None
-
-        # If nothing triggered, return the current values.
-        if not ctx.triggered:
-            return prebuilt_flow_val, missing_values_val, transformation_val, standardisation_val
-
-        trigger_id = ctx.triggered[0]["prop_id"]
-
-        # --- Population from saved settings ---
-        # Triggered when the active tab or selected study changes.
-        if trigger_id in ["data_pre_process_tabs.active_tab", "selected-studies-dropdown_dpp.value"]:
-            try:
-                with open(SELECTED_STUDIES_FILE) as f:
-                    data = json.load(f)
-                saved = data.get("studies", {}).get(selected_study, {}).get("preprocessing", None)
-            except Exception as e:
-                print("Error reading selected studies file:", e)
-                saved = None
-
-            # Get available prebuilt flows from the directory.
-            flows = [os.path.splitext(f)[0] for f in os.listdir("data_preprocessing_flows") if f.endswith(".txt")]
-
-            # Check: If saved steps is a single prebuilt flow, return it.
-            if isinstance(saved, list) and len(saved) == 1 and saved[0] in flows:
-                return saved[0], None, None, None
-
-            # Use default steps if there are no saved steps.
-            if not saved:
-                saved = ["knn_imputer", "log_transform", "standard_scaler"]
-
-            # Otherwise, parse the saved steps into the three categories.
-            missing_values = [step for step in saved if step in ['knn_imputer', 'mean_imputer', 'iterative_imputer']]
-            transformation = [step for step in saved if step in ['log_transform', 'cube_root']]
-            standardisation = [step for step in saved if step in ['standard_scaler', 'min_max_scaler', 'robust_scaler', 'max_abs_scaler']]
-            mv_val = missing_values[0] if missing_values else None
-            tr_val = transformation[0] if transformation else None
-            st_val = standardisation[0] if standardisation else None
-            # Since custom options are being loaded, clear any prebuilt selection.
-            return "", mv_val, tr_val, st_val
-
-        # --- Mutual exclusion updates ---
-        # If the prebuilt flow selection changes:
-        if trigger_id == "prebuilt-flows_dpp.value":
-            # When a prebuilt flow is selected, clear all custom options.
-            if prebuilt_flow_val:
-                return prebuilt_flow_val, None, None, None
-            else:
-                return "", missing_values_val, transformation_val, standardisation_val
-
-        # If any of the custom processing options change:
-        if trigger_id in [
-            "missing-values-checklist_dpp.value",
-            "transformation-checklist_dpp.value",
-            "standardisation-checklist_dpp.value"
-        ]:
-            # If any custom option is now selected, clear the prebuilt flow.
-            if missing_values_val or transformation_val or standardisation_val:
-                return "", missing_values_val, transformation_val, standardisation_val
-            else:
-                return prebuilt_flow_val, missing_values_val, transformation_val, standardisation_val
-
-        # Fallback: return the current values.
-        return prebuilt_flow_val, missing_values_val, transformation_val, standardisation_val """
-    
+    # Callback to control mutual exclusion of preprocessing options and preprocessing flow
     @callback(
         [
             Output("prebuilt-flows_dpp",            "value"),
@@ -2191,8 +2104,8 @@ def register_callbacks():
                 saved = data.get("studies", {}) \
                             .get(selected_study, {}) \
                             .get("preprocessing", None)
-            except Exception as e:
-                print("Error reading selected studies file:", e)
+            except Exception:
+                logger.exception("Data exploration tab - Error reading SELECTED_STUDIES_FILE")
                 saved = None
 
             flows = [
@@ -2287,6 +2200,7 @@ def register_callbacks():
             to_list(prev_std)
         )
     
+    # Callback to show pop up to save preprocessing options as a pre-built flow
     @callback(
         Output("save-flow-modal_dpp", "is_open"),
         [
@@ -2306,6 +2220,7 @@ def register_callbacks():
             return False
         return is_open
     
+    # Callback to save preprocessing options as pre-built flow and save preprocessing for study
     @callback(
         Output("dummy-save-status_dpp", "children"),
         [
@@ -2395,13 +2310,14 @@ def register_callbacks():
             try:
                 with open(SELECTED_STUDIES_FILE, "w") as f:
                     json.dump(data, f, indent=2)
-            except Exception as e:
-                print(f"Error saving preprocessing steps: {e}")
+            except Exception:
+                logger.exception("Data exploration tab - Error saving preprocessing steps")
 
             return ""
         
         raise PreventUpdate
 
+    # Callback to populate the pre-built preprocessing flow list and the preprocessing steps shown in the tooltip when hoving over a pre-bulit flow
     @callback(
         [Output("prebuilt-flows_dpp", "options"),
         Output("prebuilt-tooltips-container_dpp", "children")],
@@ -2548,9 +2464,8 @@ def register_callbacks():
             # Write out
             pio.write_image(fig, path, format="svg", width=int(w), height=int(h))
 
-        except Exception as e:
-            # Log or handle your error however you like
-            print(f"Error saving PCA plot '{filename}.svg': {e}")
+        except Exception:
+            logger.exception(f"Data exploration tab - Error saving PCA plot '{filename}.svg'")
             # keep the modal open, no UI‐change
             return no_update
 
@@ -2569,7 +2484,7 @@ def register_callbacks():
         ],
         [
             State("save-plot-modal-residual_dpp", "is_open"),
-            State("plot-name-input-residual_dpp", "value"),  # assume you have an input for the filename
+            State("plot-name-input-residual_dpp", "value"),  
         ],
         prevent_initial_call=True
     )
@@ -2638,9 +2553,8 @@ def register_callbacks():
             # Write out
             pio.write_image(fig, path, format="svg", width=int(w), height=int(h))
 
-        except Exception as e:
-            # Log the error, leave modal & feedback alone
-            print(f"Error saving residual plot '{filename}.svg': {e}")
+        except Exception:
+            logger.exception(f"Data exploration tab - Error saving residual plot '{filename}.svg'")
             return no_update
 
         else:
@@ -2721,9 +2635,8 @@ def register_callbacks():
             # Write out
             pio.write_image(fig, path, format="svg", width=int(w), height=int(h))
 
-        except Exception as e:
-            # Log the error, leave modal & feedback alone
-            print(f"Error saving box plot '{filename}.svg': {e}")
+        except Exception:
+            logger.exception(f"Data exploration tab - Error saving box plot '{filename}.svg'")
             return no_update
 
         else:
@@ -2744,12 +2657,12 @@ def register_callbacks():
             Input("confirm-save-pca_dpp",           "n_clicks"),
             Input("confirm-save-residual_dpp",      "n_clicks"),
             Input("confirm-save-box_dpp",           "n_clicks"),
-            Input("summary-tab_dpp",                "n_clicks"),   # NEW
+            Input("summary-tab_dpp",                "n_clicks"),  
         ],
         [
-            State("summary-tab_dpp",                "disabled"),   # NEW
-            State("selected-studies-dropdown_dpp",  "value"),      # for naming
-            State("selected-study-store_dpp",       "data"),       # list of all studies
+            State("summary-tab_dpp",                "disabled"),   
+            State("selected-studies-dropdown_dpp",  "value"),      
+            State("selected-study-store_dpp",       "data"),      
             # PCA
             State("plot-name-input-pca_dpp",       "value"),
             State("pca-graph_dpp",                 "figure"),
@@ -2797,37 +2710,48 @@ def register_callbacks():
         if btn == "confirm-study-details_dpp":
             header, icon = "Success", "success"
             message = f"Study details have been saved for {study_label}."
+            logger.info(f"Data exploration tab - Study details have been saved for {study_label}")
 
         elif btn == "confirm-data-processing_dpp":
             header, icon = "Success", "success"
             message = f"Pre-processing options have been saved for {study_label}."
+            logger.info(f"Data exploration tab - Pre-processing options have been saved for {study_label}")
 
         elif btn == "confirm-save-pca_dpp":
             if not pca_filename:
                 message = f"Please enter a filename for the PCA plot for {study_label}."
+                logger.warning(f"Data exploration tab - No filename given for the PCA plot for {study_label}")
             elif not pca_fig:
                 message = f"No PCA plot data available to save for {study_label}."
+                logger.warning(f"Data exploration tab - No PCA plot data available to save for {study_label}")
             else:
                 header, icon = "Success", "success"
                 message = f"PCA plot '{pca_filename}.svg' has been saved for {study_label}."
+                logger.info(f"Data exploration tab - PCA plot '{pca_filename}.svg' has been saved for {study_label}")
 
         elif btn == "confirm-save-residual_dpp":
             if not res_filename:
                 message = f"Please enter a filename for the residuals plot for {study_label}."
+                logger.warning(f"Data exploration tab - No filename given for the residuals plot for {study_label}")
             elif not res_fig:
                 message = f"No residuals plot data available to save for {study_label}."
+                logger.warning(f"Data exploration tab - No residuals plot data available to save for {study_label}")
             else:
                 header, icon = "Success", "success"
                 message = f"Residuals plot '{res_filename}.svg' has been saved for {study_label}."
+                logger.info(f"Data exploration tab - Residuals plot '{res_filename}.svg' has been saved for {study_label}")
 
         elif btn == "confirm-save-box_dpp":
             if not box_filename:
                 message = f"Please enter a filename for the box plot for {study_label}."
+                logger.warning(f"Data exploration tab - No filename given for the box plot for {study_label}")
             elif not box_fig:
                 message = f"No box plot data available to save for {study_label}."
+                logger.warning(f"Data exploration tab - No box plot data available to save for {study_label}")
             else:
                 header, icon = "Success", "success"
                 message = f"Box plot '{box_filename}.svg' has been saved for {study_label}."
+                logger.info(f"Data exploration tab - Box plot '{res_filename}.svg' has been saved for {study_label}")
 
         else:
             # unknown trigger
@@ -2835,192 +2759,3 @@ def register_callbacks():
 
         return True, message, header, icon 
     
-    """ @callback(
-        [
-            # 1) Toast outputs
-            Output("save-toast", "is_open"),
-            Output("save-toast", "children"),
-            Output("save-toast", "header"),
-            Output("save-toast", "icon"),
-
-            # 2) Tab‐guard outputs
-            Output("data_pre_process_tabs", "active_tab"),
-            Output("tabs-prev_tab",          "data"),
-        ],
-        [
-            # All “Confirm” buttons plus any active_tab change
-            Input("confirm-study-details_dpp",   "n_clicks"),
-            Input("confirm-data-processing_dpp", "n_clicks"),
-            Input("confirm-save-pca_dpp",        "n_clicks"),
-            Input("confirm-save-residual_dpp",   "n_clicks"),
-            Input("confirm-save-box_dpp",        "n_clicks"),
-            Input("data_pre_process_tabs",       "active_tab"),
-        ],
-        [
-            # We need to know which tab was previously active, and which studies are selected
-            State("tabs-prev_tab",              "data"),
-            State("selected-studies-dropdown_dpp","value"),
-            State("selected-study-store_dpp",   "data"),
-
-            # For PCA/residual/box confirmations:
-            State("plot-name-input-pca_dpp",      "value"),
-            State("pca-graph_dpp",                "figure"),
-            State("plot-name-input-residual_dpp", "value"),
-            State("residual-graph_dpp",           "figure"),
-            State("plot-name-input-box_dpp",      "value"),
-            State("box-graph_dpp",                "figure"),
-        ],
-        prevent_initial_call=True
-    )
-    def merged_save_and_guard_callback(
-        n_click_details,
-        n_click_options,
-        n_click_pca,
-        n_click_residual,
-        n_click_box,
-        new_active_tab,
-
-        prev_tab,
-        selected_dropdown,
-        selected_store,
-
-        pca_filename,
-        pca_fig,
-        res_filename,
-        res_fig,
-        box_filename,
-        box_fig
-    ):
-        ctx = callback_context
-        if not ctx.triggered:
-            raise PreventUpdate
-
-        trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
-
-        # Default outputs:
-        toast_is_open = False
-        toast_msg     = ""
-        toast_hdr     = ""
-        toast_icon    = "danger"
-        out_active_tab = new_active_tab
-        out_prev_tab   = prev_tab
-
-        # Helper to normalize “selected study” for single‐study confirmations
-        study_name = None
-        if isinstance(selected_dropdown, list):
-            study_name = selected_dropdown[0] if selected_dropdown else None
-        else:
-            study_name = selected_dropdown
-        study_label = study_name or "the study"
-
-        #
-        # 1) Handle each Confirm‐button case exactly as before:
-        #
-        if trigger_id == "confirm-study-details_dpp":
-            toast_is_open = True
-            toast_hdr     = "Success"
-            toast_icon    = "success"
-            toast_msg     = f"Study details have been saved for {study_label}."
-
-        elif trigger_id == "confirm-data-processing_dpp":
-            toast_is_open = True
-            toast_hdr     = "Success"
-            toast_icon    = "success"
-            toast_msg     = f"Pre-processing options have been saved for {study_label}."
-
-        elif trigger_id == "confirm-save-pca_dpp":
-            if not pca_filename:
-                toast_is_open = True
-                toast_msg     = f"Please enter a filename for the PCA plot for {study_label}."
-            elif not pca_fig:
-                toast_is_open = True
-                toast_msg     = f"No PCA plot data available to save for {study_label}."
-            else:
-                toast_is_open = True
-                toast_hdr     = "Success"
-                toast_icon    = "success"
-                toast_msg     = f"PCA plot '{pca_filename}.svg' has been saved for {study_label}."
-
-        elif trigger_id == "confirm-save-residual_dpp":
-            if not res_filename:
-                toast_is_open = True
-                toast_msg     = f"Please enter a filename for the residuals plot for {study_label}."
-            elif not res_fig:
-                toast_is_open = True
-                toast_msg     = f"No residuals plot data available to save for {study_label}."
-            else:
-                toast_is_open = True
-                toast_hdr     = "Success"
-                toast_icon    = "success"
-                toast_msg     = f"Residuals plot '{res_filename}.svg' has been saved for {study_label}."
-
-        elif trigger_id == "confirm-save-box_dpp":
-            if not box_filename:
-                toast_is_open = True
-                toast_msg     = f"Please enter a filename for the box plot for {study_label}."
-            elif not box_fig:
-                toast_is_open = True
-                toast_msg     = f"No box plot data available to save for {study_label}."
-            else:
-                toast_is_open = True
-                toast_hdr     = "Success"
-                toast_icon    = "success"
-                toast_msg     = f"Box plot '{box_filename}.svg' has been saved for {study_label}."
-
-        #
-        # 2) Handle “tab‐switch” logic for Data Summary:
-        #
-        elif trigger_id == "data_pre_process_tabs":
-            # If they clicked away from prev_tab to a different tab that is NOT “summary”, allow it:
-            if new_active_tab != "summary":
-                out_prev_tab = new_active_tab
-                # no toast for normal tab switches
-                return toast_is_open, toast_msg, toast_hdr, toast_icon, out_active_tab, out_prev_tab
-
-            # They are attempting to go to “summary”. Check selected_store / JSON
-            try:
-                with open(SELECTED_STUDIES_FILE, "r", encoding="utf-8") as f:
-                    payload = json.load(f).get("studies", {})
-            except Exception:
-                payload = {}
-
-            missing_details = []
-            for s in (selected_store or []):
-                info    = payload.get(s, {})
-                gf      = info.get("group_filter", {})
-                control = gf.get("Control") or []
-                case    = gf.get("Case")    or []
-                prep    = info.get("preprocessing") or []
-                missing = []
-                if not control:
-                    missing.append("control group")
-                if not case:
-                    missing.append("case group")
-                if not isinstance(prep, list) or not prep:
-                    missing.append("preprocessing options")
-                if missing:
-                    missing_details.append(f"{s}: {', '.join(missing)}")
-
-            if missing_details:
-                # Block switching to “summary” and show toast
-                out_active_tab = prev_tab  # bounce back
-                out_prev_tab   = prev_tab  # keep the same “previous” tab
-                toast_is_open  = True
-                toast_hdr      = "Incomplete Details"
-                toast_icon     = "warning"
-                toast_msg      = (
-                    "You must fill in details for the following studies:<br>"
-                    + "<br>".join(missing_details)
-                )
-            else:
-                # All good—allow the switch
-                out_prev_tab = "summary"
-            # return both the (possibly modified) tab and the toast
-            return toast_is_open, toast_msg, toast_hdr, toast_icon, out_active_tab, out_prev_tab
-
-        else:
-            # Unknown trigger – do nothing
-            raise PreventUpdate
-
-        # If we reach here, it was a Confirm‐button click; no tab‐guard changes needed.
-        return toast_is_open, toast_msg, toast_hdr, toast_icon, out_active_tab, out_prev_tab """
