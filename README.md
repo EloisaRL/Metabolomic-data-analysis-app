@@ -94,11 +94,31 @@ Dash is running on http://127.0.0.1:8050/  (Press CTRL+C to quit)
 
 ## Usage
 
+The app allows users to perform two types of analysis: single-study analysis and multi-study analysis. Both types of analysis perform differential testing to identify either differential metabolites or differential pathways, but they differ in the way these results are visualised.
+
 ### Single-Study Analysis
 
+Single-study analysis produces a box plot of the top 10 metabolites/pathways (the number of metabolites/pathways visualised can be determined by the user) and a csv table with the all the differential metabolites/pathways for the selected study.
+
+#### Differential metabolites tab
+![Differential-metabolites-tab-ssa-page](https://github.com/user-attachments/assets/8b208f0e-ec04-4007-b4c9-2c640aa35198)
+
+#### Differential pathways tab
+![Differential-pathways-tab-ssa-page](https://github.com/user-attachments/assets/493cc472-b44d-409e-8221-e4dd288f1e1a)
 
 
 ### Multi-Study Analysis
+
+Multi-study analysis produces upset plots of the co-occuring metabolites and differential metabolites (metabolites are matched based on the metabolite name, **not** the ChEBI id) for the selected studies. Also, cytoscape-based network graphs are produced as either differential metabolites (metabolites are matched based on the metabolite name) or differential pathways as the nodes, for the selected studies. 
+
+#### Upset plots tab
+![Upset-plots-tab-msa-page](https://github.com/user-attachments/assets/4900b142-2d4e-44db-b2da-a0e4aa385b00)
+
+#### Network plots tab - differential metabolites network graph
+![Network-plots-tab-msa-page](https://github.com/user-attachments/assets/3caadc60-d008-4df3-868b-d21429a96b4e)
+
+#### Network plots tab - differential pathways network graph
+![Network-plots-tab-msa-page-pathways](https://github.com/user-attachments/assets/253fc0c2-f06b-4272-a49b-fd5b351d762b)
 
 
 ## Example Data (“Dummy Project”)
