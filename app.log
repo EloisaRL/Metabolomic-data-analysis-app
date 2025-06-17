@@ -112,3 +112,21 @@ AttributeError: 'NoneType' object has no attribute 'replace'
 2025-06-17 14:29:17,384 - INFO - Route accessed: /multi-study-analysis
 2025-06-17 14:29:30,735 - INFO - Route accessed: /
 2025-06-17 14:29:32,018 - INFO - Route accessed: /multi-study-analysis
+2025-06-17 15:05:58,115 - INFO - Dash app initialized
+2025-06-17 15:06:07,240 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-17 15:06:08,533 - INFO - Dash app initialized
+2025-06-17 15:06:15,731 - INFO - Route accessed: /
+2025-06-17 15:06:26,550 - INFO - Route accessed: /single_study_analysis
+2025-06-17 15:06:49,061 - INFO - Differential pathway tab - Successfully perform pathway analysis on: processed_MTBLS1866_knn_imputer_log_transform_standard_scaler.csv
+2025-06-17 15:06:49,064 - INFO - Differential metabolite tab - Successfully produced differential metabolites summary chart and table for: processed_MTBLS1866_knn_imputer_log_transform_standard_scaler.csv
+2025-06-17 15:07:15,921 - INFO - Differential metabolite tab - Successfully produced differential metabolites summary chart and table for: processed_MTBLS2014_knn_imputer_log_transform_standard_scaler.csv
+2025-06-17 15:07:24,538 - INFO - Differential metabolite tab - Successfully produced differential metabolites summary chart and table for: processed_MTBLS2224_knn_imputer_log_transform_standard_scaler.csv
+2025-06-17 15:07:42,255 - INFO - Differential pathway tab - Successfully perform pathway analysis on: processed_MTBLS2224_knn_imputer_log_transform_standard_scaler.csv
+2025-06-17 15:09:56,933 - INFO - Differential metabolite tab - Successfully produced differential metabolites summary chart and table for: processed_MTBLS1866_knn_imputer_log_transform_standard_scaler.csv
+2025-06-17 15:10:04,309 - INFO - Differential pathway tab - Successfully perform pathway analysis on: processed_MTBLS1866_knn_imputer_log_transform_standard_scaler.csv
+2025-06-17 15:11:36,342 - INFO - Route accessed: /multi-study-analysis
+2025-06-17 15:16:20,259 - INFO - Dash app initialized
+2025-06-17 15:19:12,180 - INFO - Route accessed: /multi-study-analysis
+2025-06-17 15:25:17,819 - INFO - Network plots tab - Saving network plot to downloads folder with name: Dummy-project_pathway__Example-network-plot-differential-pathways
+2025-06-17 15:26:09,866 - INFO - Route accessed: /plots
