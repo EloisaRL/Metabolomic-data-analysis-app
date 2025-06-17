@@ -84,3 +84,31 @@ AttributeError: 'NoneType' object has no attribute 'replace'
 2025-06-17 13:16:39,275 - INFO - Route accessed: /plots
 2025-06-17 13:16:46,227 - INFO - Dash app initialized
 2025-06-17 13:16:52,713 - INFO - Route accessed: /plots
+2025-06-17 13:18:47,109 - INFO - Dash app initialized
+2025-06-17 13:18:51,663 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-17 13:18:52,659 - INFO - Dash app initialized
+2025-06-17 13:18:58,344 - INFO - Route accessed: /
+2025-06-17 13:18:59,970 - INFO - Route accessed: /data-pre-processing
+2025-06-17 13:19:03,741 - INFO - Select studies tab - Selected existing project 'Dummy project' at 'Projects\Dummy-project'
+2025-06-17 13:19:24,637 - INFO - Data exploration tab - Studies selected for processing: ['MTBLS1866']
+2025-06-17 13:19:40,288 - INFO - Data exploration tab - Residuals plot 'MTBLS1866 - all groups.svg' has been saved for MTBLS1866
+2025-06-17 13:19:46,344 - INFO - Data exploration tab - Box plot 'MTBLS1866 - all groups.svg' has been saved for MTBLS1866
+2025-06-17 13:20:05,818 - INFO - Data exploration tab - PCA plot 'MTBLS1866 - healthy and covid-19.svg' has been saved for MTBLS1866
+2025-06-17 13:20:15,201 - INFO - Data exploration tab - Residuals plot 'MTBLS1866 - healthy and covid-19.svg' has been saved for MTBLS1866
+2025-06-17 13:20:23,946 - INFO - Data exploration tab - Box plot 'MTBLS1866 - healthy and covid-19.svg' has been saved for MTBLS1866
+2025-06-17 13:20:26,984 - INFO - Route accessed: /plots
+2025-06-17 13:20:55,265 - INFO - Route accessed: /single_study_analysis
+2025-06-17 13:21:16,611 - INFO - Differential pathway tab - Successfully perform pathway analysis on: processed_MTBLS1866_knn_imputer_log_transform_standard_scaler.csv
+2025-06-17 13:21:17,662 - INFO - Differential metabolite tab - Successfully produced differential metabolites summary chart and table for: processed_MTBLS1866_knn_imputer_log_transform_standard_scaler.csv
+2025-06-17 13:21:52,092 - INFO - Differential pathway tab - Successfully saved chart: Projects\Dummy-project\Plots\Single-study-analysis\Differential-pathway-box-plots\MTBLS1866 top 10 pathways.svg
+2025-06-17 13:22:03,238 - INFO - Differential pathway tab - Successfully saved table: Projects\Dummy-project\Plots\Single-study-analysis\Differential-pathway-table-plots\MTBLS1866 differential pathways.csv
+2025-06-17 13:22:05,413 - INFO - Route accessed: /plots
+2025-06-17 14:28:58,609 - INFO - Dash app initialized
+2025-06-17 14:29:06,455 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-17 14:29:07,698 - INFO - Dash app initialized
+2025-06-17 14:29:14,483 - INFO - Route accessed: /
+2025-06-17 14:29:17,384 - INFO - Route accessed: /multi-study-analysis
+2025-06-17 14:29:30,735 - INFO - Route accessed: /
+2025-06-17 14:29:32,018 - INFO - Route accessed: /multi-study-analysis

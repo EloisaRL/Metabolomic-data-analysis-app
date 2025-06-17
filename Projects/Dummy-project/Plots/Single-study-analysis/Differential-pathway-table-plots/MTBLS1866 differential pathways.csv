@@ -1,0 +1,40 @@
+index,P-value,Stat,Direction,FDR_P-value
+G alpha (i) signalling events,1.807e-07,-5.651,Down,6.080e-06
+Metabolism of lipids,1.993e-07,5.629,Up,6.080e-06
+Sensory Perception,3.252e-06,-4.96,Down,6.612e-05
+Hydroxycarboxylic acid-binding receptors,5.890e-06,-4.813,Down,8.982e-05
+SLC-mediated transmembrane transport,2.333e-05,4.46,Up,2.372e-04
+Transport of small molecules,2.261e-05,4.469,Up,2.372e-04
+Disease,3.866e-05,4.327,Up,3.369e-04
+"Transport of vitamins, nucleosides, and related molecules",9.080e-05,4.097,Up,6.924e-04
+Organic cation/anion/zwitterion transport,2.209e-04,-3.848,Down,1.497e-03
+Olfactory Signaling Pathway,2.919e-04,3.768,Up,1.781e-03
+Glycerophospholipid biosynthesis,3.843e-04,3.688,Up,1.953e-03
+Phospholipid metabolism,3.843e-04,3.688,Up,1.953e-03
+Signaling by GPCR,4.878e-04,3.618,Up,2.126e-03
+GPCR downstream signalling,4.878e-04,3.618,Up,2.126e-03
+Signal Transduction,6.073e-04,3.552,Up,2.470e-03
+Metabolism of carbohydrates,1.270e-03,-3.326,Down,4.841e-03
+GPCR ligand binding,1.495e-03,3.275,Up,5.366e-03
+Class A/1 (Rhodopsin-like receptors),1.635e-03,3.247,Up,5.540e-03
+"Transport of bile salts and organic acids, metal ions and amine compounds",1.804e-03,3.215,Up,5.792e-03
+Visual phototransduction,2.286e-03,3.139,Up,5.915e-03
+Retinoid metabolism and transport,2.286e-03,3.139,Up,5.915e-03
+Metabolism of fat-soluble vitamins,2.286e-03,3.139,Up,5.915e-03
+Transport of fatty acids,2.327e-03,3.133,Up,5.915e-03
+Defective SLC27A4 causes ichthyosis prematurity syndrome (IPS),2.327e-03,3.133,Up,5.915e-03
+SLC transporter disorders,3.215e-03,3.027,Up,7.844e-03
+Disorders of transmembrane transporters,3.371e-03,3.011,Up,7.909e-03
+Phase II - Conjugation of compounds,7.276e-03,-2.746,Down,1.644e-02
+Regulation of insulin secretion,1.396e-02,-2.507,Down,2.661e-02
+Free fatty acids regulate insulin secretion,1.396e-02,-2.507,Down,2.661e-02
+Integration of energy metabolism,1.396e-02,-2.507,Down,2.661e-02
+"Synthesis, secretion, and inactivation of Glucose-dependent Insulinotropic Polypeptide (GIP)",1.396e-02,-2.507,Down,2.661e-02
+Fatty Acids bound to GPR40 (FFAR1) regulate insulin secretion,1.396e-02,-2.507,Down,2.661e-02
+Triglyceride metabolism,2.137e-02,2.342,Up,3.342e-02
+Metabolism of vitamins and cofactors,1.954e-02,2.377,Up,3.342e-02
+Digestion of dietary lipid,2.137e-02,2.342,Up,3.342e-02
+Triglyceride catabolism,2.137e-02,2.342,Up,3.342e-02
+Digestion,2.137e-02,2.342,Up,3.342e-02
+Digestion and absorption,2.137e-02,2.342,Up,3.342e-02
+Hemostasis,2.137e-02,2.342,Up,3.342e-02
