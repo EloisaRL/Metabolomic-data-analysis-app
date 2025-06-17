@@ -2432,6 +2432,7 @@ def register_callbacks():
         Output("save-feedback-pca_dpp", "children"),
         Input("confirm-save-pca_dpp", "n_clicks"),
         [
+            State("dropdown-existing-projects", "value"),
             State("input-analysis-project", "value"),
             State("selected-studies-dropdown_dpp", "value"),
             State("plot-name-input-pca_dpp",        "value"),
@@ -2439,7 +2440,8 @@ def register_callbacks():
         ],
         prevent_initial_call=True
     )
-    def save_pca_plot(n_clicks, project_name, study, filename, fig_json):      
+    def save_pca_plot(n_clicks, selected_project, new_project, study, filename, fig_json):    
+        project_name = new_project if new_project else selected_project  
         # Sanitize: strip leading "✓ " if present
         if isinstance(study, str) and study.startswith("✓ "):
             study = study[2:]
@@ -2521,6 +2523,7 @@ def register_callbacks():
         Output("save-feedback-residual_dpp", "children"),
         Input("confirm-save-residual_dpp", "n_clicks"),
         [
+            State("dropdown-existing-projects", "value"),
             State("input-analysis-project", "value"),
             State("selected-studies-dropdown_dpp", "value"),
             State("plot-name-input-residual_dpp", "value"),
@@ -2528,7 +2531,8 @@ def register_callbacks():
         ],
         prevent_initial_call=True
     )
-    def save_residual_plot(n_clicks, project_name, study, filename, fig_json):
+    def save_residual_plot(n_clicks, selected_project, new_project, study, filename, fig_json):
+        project_name = new_project if new_project else selected_project 
         # Sanitize: strip leading "✓ " if present
         if isinstance(study, str) and study.startswith("✓ "):
             study = study[2:]
@@ -2603,6 +2607,7 @@ def register_callbacks():
         Output("save-feedback-box_dpp", "children"),
         Input("confirm-save-box_dpp", "n_clicks"),
         [
+            State("dropdown-existing-projects", "value"),
             State("input-analysis-project", "value"),
             State("selected-studies-dropdown_dpp", "value"),
             State("plot-name-input-box_dpp",        "value"),
@@ -2610,7 +2615,8 @@ def register_callbacks():
         ],
         prevent_initial_call=True
     )
-    def save_box_plot(n_clicks, project_name, study, filename, fig_json):
+    def save_box_plot(n_clicks, selected_project, new_project, study, filename, fig_json):
+        project_name = new_project if new_project else selected_project 
         # Sanitize: strip leading "✓ " if present
         if isinstance(study, str) and study.startswith("✓ "):
             study = study[2:]

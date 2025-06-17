@@ -38,3 +38,49 @@
 2025-06-13 16:26:45,331 - INFO - Saved processed_MTBLS1866_knn_imputer_log_transform_standard_scaler.csv -> Projects\Dummy-project\Processed-datasets
 2025-06-13 16:26:45,331 - INFO - Updated details for study MTBLS1866 in Projects\Dummy-project
 2025-06-13 16:26:45,339 - INFO - Project details file saved as Projects\Dummy-project\project_details_file.json
+2025-06-17 11:45:23,967 - INFO - Dash app initialized
+2025-06-17 11:45:32,765 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-17 11:45:33,974 - INFO - Dash app initialized
+2025-06-17 11:45:40,673 - INFO - Route accessed: /
+2025-06-17 11:45:43,295 - INFO - Route accessed: /data-pre-processing
+2025-06-17 11:45:48,683 - INFO - Select studies tab - Selected existing project 'Dummy project' at 'Projects\Dummy-project'
+2025-06-17 11:45:52,597 - INFO - Route accessed: /plots
+2025-06-17 11:46:08,232 - INFO - Route accessed: /data-pre-processing
+2025-06-17 11:46:12,070 - INFO - Select studies tab - Selected existing project 'Dummy project' at 'Projects\Dummy-project'
+2025-06-17 11:46:16,031 - INFO - Data exploration tab - Studies selected for processing: ['MTBLS1866']
+2025-06-17 11:47:05,588 - INFO - Data exploration tab - PCA plot 'MTBLS1866 - all groups.svg' has been saved for MTBLS1866
+2025-06-17 11:49:32,820 - INFO - Data exploration tab - Residuals plot 'MTBLS1866 - all groups.svg' has been saved for MTBLS1866
+2025-06-17 11:49:50,068 - INFO - Data exploration tab - Box plot 'MTBLS1866 - all groups.svg' has been saved for MTBLS1866
+2025-06-17 11:50:43,847 - INFO - Data exploration tab - PCA plot 'MTBLS1866 - healthy and covid-19.svg' has been saved for MTBLS1866
+2025-06-17 11:50:50,555 - INFO - Data exploration tab - Residuals plot 'MTBLS1866 - healthy and covid-19.svg' has been saved for MTBLS1866
+2025-06-17 11:50:56,566 - INFO - Data exploration tab - Box plot 'MTBLS1866 - healthy and covid-19.svg' has been saved for MTBLS1866
+2025-06-17 11:51:02,879 - INFO - Route accessed: /plots
+2025-06-17 12:00:57,717 - INFO - Dash app initialized
+2025-06-17 12:01:06,183 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-17 12:01:07,384 - INFO - Dash app initialized
+2025-06-17 12:01:14,154 - INFO - Route accessed: /
+2025-06-17 12:01:16,348 - INFO - Route accessed: /data-pre-processing
+2025-06-17 12:01:20,561 - INFO - Select studies tab - Selected existing project 'Dummy project' at 'Projects\Dummy-project'
+2025-06-17 12:01:24,373 - INFO - Data exploration tab - Studies selected for processing: ['MTBLS1866']
+2025-06-17 12:01:41,431 - ERROR - Data exploration tab - Error saving PCA plot 'MTBLS1866 - all groups.svg'
+Traceback (most recent call last):
+  File "c:\Users\Eloisa\Documents\GitHub\Metabolomic-data-analysis-app\pages\data_pre_processing_page_tabs\data_exploration.py", line 2463, in save_pca_plot
+    project = project_name.replace(" ", "-")
+              ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'replace'
+2025-06-17 12:01:41,466 - INFO - Data exploration tab - PCA plot 'MTBLS1866 - all groups.svg' has been saved for MTBLS1866
+2025-06-17 12:01:45,503 - INFO - Route accessed: /plots
+2025-06-17 13:15:52,987 - INFO - Dash app initialized
+2025-06-17 13:15:59,512 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-17 13:16:00,619 - INFO - Dash app initialized
+2025-06-17 13:16:06,578 - INFO - Route accessed: /
+2025-06-17 13:16:08,550 - INFO - Route accessed: /data-pre-processing
+2025-06-17 13:16:12,259 - INFO - Select studies tab - Selected existing project 'Dummy project' at 'Projects\Dummy-project'
+2025-06-17 13:16:15,083 - INFO - Data exploration tab - Studies selected for processing: ['MTBLS1866']
+2025-06-17 13:16:36,593 - INFO - Data exploration tab - PCA plot 'MTBLS1866 - all groups.svg' has been saved for MTBLS1866
+2025-06-17 13:16:39,275 - INFO - Route accessed: /plots
+2025-06-17 13:16:46,227 - INFO - Dash app initialized
+2025-06-17 13:16:52,713 - INFO - Route accessed: /plots

@@ -1,22 +1,11 @@
 {
   "studies": {
     "MTBLS1866": {
-      "filename": "processed_MTBLS1866_knn_imputer_log_transform_standard_scaler.csv",
+      "filename": "",
       "group_type": "Factor Value[Medical case]",
-      "preprocessing": [
-        "knn_imputer",
-        "log_transform",
-        "standard_scaler"
-      ],
-      "outliers": "SA 8",
-      "group_filter": {
-        "Control": [
-          "HEALTHY"
-        ],
-        "Case": [
-          "COVID-19"
-        ]
-      }
+      "preprocessing": {},
+      "outliers": "",
+      "group_filter": {}
     }
   }
 }
