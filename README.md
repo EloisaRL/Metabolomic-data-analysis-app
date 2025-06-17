@@ -101,6 +101,8 @@ Dash is running on http://127.0.0.1:8050/  (Press CTRL+C to quit)
 
 ### Multi-Study Analysis
 
+![Animated example](/assets/Upset-plots-tab.gif)
+
 ## Example Data (“Dummy Project”)
 
 To start using the single-study and multi-study analysis tabs now, you can use the data in the 'Dummy project' which contains processed data from all studies that currently uploaded. Or you can upload the processed data directly from the 'Dummy project' on to Metaboanalyst for data analysis.
