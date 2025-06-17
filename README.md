@@ -96,10 +96,10 @@ Dash is running on http://127.0.0.1:8050/  (Press CTRL+C to quit)
 
 ### Single-Study Analysis
 
-![Animated example](/assets/Single-study-analysis-page.gif)
 
 
 ### Multi-Study Analysis
+
 
 ## Example Data (“Dummy Project”)
 
