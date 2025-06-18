@@ -185,7 +185,7 @@ This JSON file contains, for each study:
 > - **MetaboLights** uses metadata columns prefixed with `Factor_Value` to indicate sample groups.  
 > - **Metabolomics Workbench** embeds multiple group labels in the `Class` column, separated by `|`.  
 >  
-> In `project_details_file.json`, we parse these into a clean `groupings` object so you can switch between different patient stratifications (e.g., control vs. case, male vs. female, treated vs. untreated).
+> In `project_details_file.json`, we parse these into a clean `group_type` object so you can switch between different patient stratifications (e.g., control vs. case, male vs. female, treated vs. untreated).
 
 ---
 
