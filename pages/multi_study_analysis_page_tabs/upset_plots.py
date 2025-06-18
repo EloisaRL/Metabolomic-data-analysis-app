@@ -21,6 +21,7 @@ refmet.columns = refmet.columns.str.strip()
 refmet2chebi = dict(zip(refmet['refmet_name'], refmet['chebi_id']))
 
 def read_study_details_msa(folder):
+    """Reads study details for a given study, contains info of the study name and dataset source"""
     details_path = os.path.join(folder, "study_details.txt")
     details = {}
     if os.path.exists(details_path):
@@ -35,6 +36,7 @@ def read_study_details_msa(folder):
     return details
 
 def wrap_fig(fig):
+    '''Wraps the figure to be displayed as a Dash component'''
     # If it’s already a Plotly figure (has to_plotly_json), just send it straight to dcc.Graph
     if hasattr(fig, "to_plotly_json"):
         return dcc.Graph(figure=fig)
@@ -96,6 +98,9 @@ def da_testing(self):
         self.connection = [(self.node_name, met) for met in self.DA_metabolites]
         self.full_connection = [(self.node_name, met) for met in self.processed_data.columns[:-1]]
 
+# ============================= #
+# Layout of the Upset plots tab #
+# ============================= #
 
 layout = html.Div([
                     html.H2("Upset Plots of Co-Occurring Metabolites and Differential Metabolites"),
@@ -273,6 +278,7 @@ layout = html.Div([
                 ])
 
 def register_callbacks():
+    # Callback which produces both of the upset plots
     @callback(
         Output("upset_plots-content-msa", "children"),
         Output("differential-analysis-content-msa", "children"),
@@ -651,7 +657,7 @@ def register_callbacks():
     PROJECT_ROOT = os.path.join(os.path.dirname(__file__), "Project")
 
 
-    # Upset‐plot modal toggle (unchanged)
+    # Callback controls the save metabolites upset plot pop up from opening
     @callback(
         Output("save-plot-modal-upset-msa", "is_open"),
         [Input("open-save-modal-upset-msa","n_clicks"),
@@ -663,7 +669,7 @@ def register_callbacks():
             return not is_open
         return is_open
 
-    # Upset‐plot save
+    # Callback which controls the actions for saving the metabolites upset plot
     @callback(
         Output("save-feedback-upset-msa", "children"),
         Input("confirm-save-plot-button-upset-msa", "n_clicks"),
@@ -709,7 +715,7 @@ def register_callbacks():
         logger.info(f"Upset plots tab - Successfully saved co-occuring metabolites upset plot: {out_path}")
 
 
-    # Differential‐plot modal toggle (unchanged)
+    # Callback controls the save differential metabolites upset plot pop up from opening
     @callback(
         Output("save-plot-modal-diff-msa", "is_open"),
         [Input("open-save-modal-diff-msa","n_clicks"),
@@ -721,7 +727,7 @@ def register_callbacks():
             return not is_open
         return is_open
 
-    # Differential‐plot save
+    # Callback which controls the actions for saving the differential metabolites upset plot
     @callback(
         Output("save-feedback-diff-msa", "children"),
         Input("confirm-save-plot-button-diff-msa", "n_clicks"),

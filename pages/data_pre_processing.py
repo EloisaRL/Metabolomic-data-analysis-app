@@ -97,14 +97,8 @@ layout = dbc.Container(
             dcc.Store(id="process-data-status_dpp", data=False),
             dcc.Location(id="data-summary-url_dpp", refresh=False),
             dcc.Store(id="active-input-store_dpp", data=""),
-            dcc.Store(id="file-explorer-selected_dpp", data=""),
             html.Div(id="dummy-save-status_dpp", style={"display":"none"}),
-
-            dcc.Store(id="tabs-prev_tab", data="details"),
-
             dcc.Store(id="processing-complete-store_dpp", data=False),
-            dcc.Store(id="processing-store", data={"queue": [], "done": 0, "messages": []}),
-            dcc.Interval(id="processing-interval", disabled=True, interval=500),
             dcc.Interval(id="hide-progress-interval", interval=2000, disabled=True),
             dcc.Interval(
                 id="summary-check-interval_dpp",
@@ -113,10 +107,8 @@ layout = dbc.Container(
                 max_intervals=1,    # only fire once
                 disabled=True       # start off disabled
             ),
-
             dcc.Store(id="start-ts-store", data={}),
             dcc.Interval(id="folder-interval", interval=500, disabled=True),
-
             dcc.Store(id="project-folder-store_dpp", data=""),  
             html.Div(
                 id="project-name-display",
@@ -161,7 +153,7 @@ layout = dbc.Container(
                     )
                 )
             ),
-            # warning modal: shown when a folder with the same study name already exists
+            # Warning modal: shown when a folder with the same study name already exists
             dbc.Modal(
                 [
                     dbc.ModalHeader("Folder already exists"),
@@ -318,6 +310,7 @@ layout = dbc.Container(
                         children=data_exploration_layout,
                         style={"padding": "1rem"}
                     ),
+                    # Data Summary Tab
                     dbc.Tab(
                         label="Data Summary",
                         tab_id="summary",

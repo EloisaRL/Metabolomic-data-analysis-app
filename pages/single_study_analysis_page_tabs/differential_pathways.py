@@ -19,6 +19,7 @@ refmet.columns = refmet.columns.str.strip()
 name2pubchem = dict(zip(refmet['refmet_name'], refmet['chebi_id']))
 
 def read_study_details_dpp2(folder):
+    """Reads study details for a given study, contains info of the study name and dataset source"""
     details_path = os.path.join(folder, "study_details.txt")
     details = {}
     if os.path.exists(details_path):
@@ -82,6 +83,10 @@ def da_testing(self):
         # generate tuples for nx links
         self.connection = [(self.node_name, met) for met in self.DA_metabolites]
         self.full_connection = [(self.node_name, met) for met in self.processed_data.columns[:-1]]
+
+# ======================================= #
+# Layout of the Differential pathways tab #
+# ======================================= #
 
 layout = html.Div([
 
@@ -580,7 +585,7 @@ def register_callbacks():
             logger.exception(f"Differential pathway tab - Error during pathway analysis: {selected_file}")
             return html.Div(f"Error during pathway analysis"), None, None, None
 
-    # Chart modal
+    # Callback controls the save box plot pop up from opening
     @callback(
         Output("save-plot-modal-pathway-chart", "is_open"),
         [
@@ -594,7 +599,7 @@ def register_callbacks():
             return not is_open
         return is_open
 
-    # Table modal
+    # Callback controls the save table pop up from opening
     @callback(
         Output("save-plot-modal-pathway-table", "is_open"),
         [
@@ -608,7 +613,7 @@ def register_callbacks():
             return not is_open
         return is_open
 
-    # Save **chart** as SVG
+    # Callback which saves **chart** as SVG
     @callback(
         Input("confirm-save-plot-button-pathway-chart","n_clicks"),
         [
@@ -648,7 +653,7 @@ def register_callbacks():
         logger.info(f"Differential pathway tab - Successfully saved chart: {path}")
 
 
-    # Save **table** as CSV
+    # Callback which saves **table** as CSV
     @callback(
         Input("confirm-save-plot-button-pathway-table","n_clicks"),
         [

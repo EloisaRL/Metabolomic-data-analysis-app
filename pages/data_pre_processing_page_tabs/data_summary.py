@@ -31,6 +31,7 @@ default_metadata = pd.DataFrame({
 default_md_filter = {"Group": ["Control", "Treatment"]}
 
 def read_study_details_dpp(folder):
+    """Reads study details for a given study, contains info of the study name and dataset source"""
     details_path = os.path.join(folder, "study_details.txt")
     details = {}
     if os.path.exists(details_path):
@@ -43,14 +44,6 @@ def read_study_details_dpp(folder):
                         key, value = parts
                         details[key.strip()] = value.strip()
     return details
-
-def get_file_from_study_dpp(study):
-    folder = os.path.join(UPLOAD_FOLDER, study)
-    if os.path.exists(folder):
-        files = glob.glob(os.path.join(folder, "*.tsv")) + glob.glob(os.path.join(folder, "*.csv"))
-        if files:
-            return files[0], os.path.basename(files[0])
-    return None, None
 
 def get_flow_steps(flow_name):
     """Return a list of preprocessing steps from data_preprocessing_flows/{flow_name}.txt."""
@@ -71,9 +64,8 @@ def get_flow_steps(flow_name):
     else:
         return []
 
-#########################################################################################################
 def filter_data_groups(data, filter):
-    # Flatten filter values into a single list of allowed groups.
+    """Flatten filter values into a single list of allowed groups."""
     allowed_groups = []
     for key, val in filter.items():
         if isinstance(val, list):
@@ -85,23 +77,22 @@ def filter_data_groups(data, filter):
     return data
 
 def remove_outliers(data, outliers):
-    # Drop sample outliers
+    """Drop sample outliers"""
     if outliers:
         data = data.drop(outliers)
     return data
 
-# =============================
-# Missing Values Imputation Options
-# =============================
+# ================================= #
+# Missing Values Imputation Options #
+# ================================= #
 def missing_values_knn_impute(data):
-    # Uses KNNImputer (same as your current default)
+    """Uses KNNImputer""" 
     #print(data)
     if 'Group' in data.columns:
         group = data['Group']
         data_numeric = data.drop('Group', axis=1)
     else:
         data_numeric = data
-    #print(data_numeric)
     imputer = KNNImputer(n_neighbors=2, weights="uniform").set_output(transform="pandas")
     imputed_numeric = imputer.fit_transform(data_numeric)
     if 'Group' in data.columns:
@@ -109,7 +100,7 @@ def missing_values_knn_impute(data):
     return imputed_numeric
 
 def missing_values_mean_impute(data):
-    # Uses SimpleImputer with mean strategy
+    """Uses SimpleImputer with mean strategy"""
     if 'Group' in data.columns:
         group = data['Group']
         data_numeric = data.drop('Group', axis=1)
@@ -123,7 +114,7 @@ def missing_values_mean_impute(data):
     return imputed_numeric
 
 def missing_values_iterative_impute(data):
-    # Uses IterativeImputer
+    """Uses IterativeImputer"""
     if 'Group' in data.columns:
         group = data['Group']
         data_numeric = data.drop('Group', axis=1)
@@ -136,11 +127,11 @@ def missing_values_iterative_impute(data):
         imputed_numeric['Group'] = group
     return imputed_numeric
 
-# =============================
-# Transformation Options
-# =============================
+# ====================== #
+# Transformation Options #
+# ====================== #
 def log_transform(data):
-    # Existing log transformation: np.log(data+1)
+    """Log transformation: np.log(data+1)"""
     if 'Group' in data.columns:
         group = data['Group']
         data_numeric = data.drop('Group', axis=1)
@@ -152,7 +143,7 @@ def log_transform(data):
     return data_log
 
 def cube_root_transform(data):
-    # New cube root transformation using np.cbrt
+    """Cube root transformation using np.cbrt"""
     if 'Group' in data.columns:
         group = data['Group']
         data_numeric = data.drop('Group', axis=1)
@@ -163,10 +154,11 @@ def cube_root_transform(data):
         data_cube['Group'] = group
     return data_cube
 
-# =============================
-# Standardisation Options
-# =============================
+# ======================= #
+# Standardisation Options #
+# ======================= #
 def standardise_standard_scaler(data):
+    """Uses Standard Scaler"""
     if 'Group' in data.columns:
         group = data['Group']
         data_numeric = data.drop('Group', axis=1)
@@ -179,6 +171,7 @@ def standardise_standard_scaler(data):
     return scaled
 
 def standardise_min_max_scaler(data):
+    """Uses Min Max Scaler"""
     if 'Group' in data.columns:
         group = data['Group']
         data_numeric = data.drop('Group', axis=1)
@@ -192,6 +185,7 @@ def standardise_min_max_scaler(data):
     return scaled
 
 def standardise_robust_scaler(data):
+    """Uses Robust Scaler"""
     if 'Group' in data.columns:
         group = data['Group']
         data_numeric = data.drop('Group', axis=1)
@@ -205,6 +199,7 @@ def standardise_robust_scaler(data):
     return scaled
 
 def standardise_max_abs_scaler(data):
+    """Uses MaxAbsSacler"""
     if 'Group' in data.columns:
         group = data['Group']
         data_numeric = data.drop('Group', axis=1)
@@ -216,6 +211,10 @@ def standardise_max_abs_scaler(data):
     if 'Group' in data.columns:
         scaled['Group'] = group
     return scaled
+
+# ======================================================================================================== #
+# Determining if in the different datasets uploaded there are difference in how they refer to the patients #
+# ======================================================================================================== #
 
 def get_removal_info(example_extra_id, ref_ids):
     """
@@ -243,7 +242,6 @@ def get_removal_info(example_extra_id, ref_ids):
 
     # Check for prefix removal: try removing 0 to len(example_extra_id) characters from the start.
     for k in range(0, len(example_extra_id) + 1):
-        #print('in prefix')
         candidate = example_extra_id[k:]
         if candidate in ref_set:
             best_prefix_removal = k
@@ -251,7 +249,6 @@ def get_removal_info(example_extra_id, ref_ids):
 
     # Check for suffix removal: try removing 0 to len(example_extra_id) characters from the end.
     for k in range(0, len(example_extra_id) + 1):
-        #print('in suffix')
         # When k==0 no removal occurs.
         candidate = example_extra_id[:-k] if k > 0 else example_extra_id
         if candidate in ref_set:
@@ -341,7 +338,13 @@ def get_group_value(val):
     # Otherwise, assume it’s a simple string and return as is.
     return val
 
+# ========================= #
+# Data processing functions #
+# ========================= #
+
 def static_preprocess_workbench(folder, preprocessing_steps=None, outliers=None, filter=None, selected_group=None, database_source=None):
+    """Processes datasets with RefMet names as ids"""
+
     identifier_name = "database_identifier" 
     # Get study details so we can obtain the study name
     details = read_study_details_dpp(folder)
@@ -395,9 +398,13 @@ def static_preprocess_workbench(folder, preprocessing_steps=None, outliers=None,
         data_filt.index = data_filt[identifier_name]
         
         # --- Group Extraction Logic with Filter Support ---
+        # Before dropping the metadata columns, process the 'Class' column.
+        # If there are multiple groups (separated by " | ") and a selected_group is provided,
+        # determine its position from the first row and keep only that element for all rows.
         if "Class" in data_filt.columns:
             first_class = str(data_filt.iloc[0]["Class"])
             groups_first = [grp.strip() for grp in first_class.split("|") if grp.strip()]
+            
             if len(groups_first) > 1:
                 # If filter is provided, determine sel_index from allowed groups.
                 if filter is not None:
@@ -484,7 +491,7 @@ def static_preprocess_workbench(folder, preprocessing_steps=None, outliers=None,
         # Drop columns with more than 50% missing data.
         data_filt = data_filt.dropna(axis=1, thresh=0.5 * data_filt.shape[0])
         missing_pct = data_filt.isnull().sum().sum() / (data_filt.shape[0] * data_filt.shape[1]) * 100
-        print(f"Missingness: {missing_pct:.2f}%")
+        #print(f"Missingness: {missing_pct:.2f}%")
 
         return data_filt
 
@@ -505,7 +512,6 @@ def static_preprocess_workbench(folder, preprocessing_steps=None, outliers=None,
         if preprocessing_steps is not None:
             # Missing values imputation options:
             if any(opt in preprocessing_steps for opt in ['knn_imputer', 'mean_imputer', 'iterative_imputer']):
-                print('Missing values imputation')
                 if 'knn_imputer' in preprocessing_steps:
                     proc_data = missing_values_knn_impute(proc_data)
                 elif 'mean_imputer' in preprocessing_steps:
@@ -518,7 +524,6 @@ def static_preprocess_workbench(folder, preprocessing_steps=None, outliers=None,
             
             # Transformation options:
             if any(opt in preprocessing_steps for opt in ['log_transform', 'cube_root']):
-                #print('Transformation')
                 if 'log_transform' in preprocessing_steps:
                     proc_data = log_transform(proc_data)
                 elif 'cube_root' in preprocessing_steps:
@@ -526,7 +531,6 @@ def static_preprocess_workbench(folder, preprocessing_steps=None, outliers=None,
             
             # Standardisation options:
             if any(opt in preprocessing_steps for opt in ['standard_scaler', 'min_max_scaler', 'robust_scaler', 'max_abs_scaler']):
-                #print('Standardised data')
                 if 'standard_scaler' in preprocessing_steps:
                     proc_data = standardise_standard_scaler(proc_data)
                 elif 'min_max_scaler' in preprocessing_steps:
@@ -556,6 +560,7 @@ def static_preprocess_workbench(folder, preprocessing_steps=None, outliers=None,
     return processed_data
 
 def static_preprocess(folder, metadata, preprocessing_steps=None, outliers=None, filter=None, selected_group=None):
+    """Processes datasets with ChEBI id as ids"""
     def preprocess(df):
         identifier_name = "database_identifier" 
         data = df.copy()
@@ -568,7 +573,7 @@ def static_preprocess(folder, metadata, preprocessing_steps=None, outliers=None,
         data = data[data[identifier_name].notna()]
 
         if data.shape[0] == 0:
-            print('No CHEBIS for assay')
+            #print('No CHEBIS for assay')
             return None
         else:
             data = data[data[identifier_name] != 'unknown']
@@ -619,13 +624,13 @@ def static_preprocess(folder, metadata, preprocessing_steps=None, outliers=None,
                 # after filtering:
                 new_n = data.shape[1]
 
-                print(f"Filtered out {orig_n - new_n} samples; {new_n} remain (out of {orig_n}).")
+                #print(f"Filtered out {orig_n - new_n} samples; {new_n} remain (out of {orig_n}).")
                 md_dict = dict(zip(metadata['Fixed Sample Name'], metadata[selected_group]))
             else:
                 # If there were sample columns found using the original sample names, no removal is done.
                 data = data_filtered
                 md_dict = dict(zip(metadata['Sample Name'], metadata[selected_group]))
-                print("Mapping dictionary using original sample names:", md_dict)
+                #print("Mapping dictionary using original sample names:", md_dict)
 
 
 
@@ -652,11 +657,9 @@ def static_preprocess(folder, metadata, preprocessing_steps=None, outliers=None,
             data = data.dropna(axis=0, how='all', subset=non_group_cols)
 
             data = data.dropna(axis=1, thresh=0.5 * data.shape[0])
-            #data = data.dropna(axis=1, thresh=0.5 * data.shape[0])
+            
             return data
 
-    #details = read_study_details_dpp(folder)
-    #md_group = details.get("Metadata Group", default_md_group)
     files = glob.glob(f"{folder}/*maf.tsv")
     
     if len(files) == 0:
@@ -671,15 +674,9 @@ def static_preprocess(folder, metadata, preprocessing_steps=None, outliers=None,
         if proc_data is None:
             continue
         
-        """ if outliers is not None:
-            proc_data = remove_outliers(proc_data, outliers)
-        if filter is not None:
-            proc_data = filter_data_groups(proc_data, filter) """
-
         # ----------------------------
         # Apply optional preprocessing steps:
         # ----------------------------
-        print('starting preprocessing steps')
         if preprocessing_steps is not None:
             # Missing values imputation options:
             if any(opt in preprocessing_steps for opt in ['knn_imputer', 'mean_imputer', 'iterative_imputer']):
@@ -709,17 +706,13 @@ def static_preprocess(folder, metadata, preprocessing_steps=None, outliers=None,
                     proc_data = standardise_max_abs_scaler(proc_data)
         
         proc_dfs.append(proc_data)
-    print('processed all data files')
+
     if len(proc_dfs) == 0:
         logger.error("Data summary tab - No valid processed data from assay files.")
         return None 
         #raise Exception("No valid processed data from assay files.")
 
     if len(proc_dfs) > 1:
-        """ print('first type of combining')
-        raw_data_combined = pd.concat(proc_dfs, axis=1, join='inner')
-        print('raw data combined')
-        print(raw_data_combined) """
         # 1) try the normal inner‐join
         raw_data_combined = pd.concat(proc_dfs, axis=1, join='inner')
 
@@ -735,11 +728,6 @@ def static_preprocess(folder, metadata, preprocessing_steps=None, outliers=None,
             for other_df in proc_dfs[1:]:
                 rt, amt = get_removal_info_for_combining(example_extra_id,
                                            other_df.index.tolist())
-                print('correcting combined proc')
-                print(example_extra_id)
-                print(other_df.index.tolist())
-                print(rt)
-                print(amt)
                 if rt is not None and amt > 0:
                     removal_type, removal_amount = rt, amt
                     print(f"  → will remove {amt} chars as a {rt}")
@@ -763,20 +751,17 @@ def static_preprocess(folder, metadata, preprocessing_steps=None, outliers=None,
         combined_proc = raw_data_combined.groupby(by=raw_data_combined.columns, axis=1).apply(
             lambda g: g.mean(axis=1) if isinstance(g.iloc[0, 0], numbers.Number) else g.iloc[:, 0]
         )
-        print('combined proc1')
-        print(combined_proc)
         combined_proc = combined_proc.loc[:, ~combined_proc.columns.duplicated()]
-        print('combined proc2')
-        print(combined_proc)
         processed_data = combined_proc
     else:
-        print('second type of combining')
         processed_data = proc_dfs[0].groupby(by=proc_dfs[0].columns, axis=1).apply(
             lambda g: g.mean(axis=1) if isinstance(g.iloc[0, 0], numbers.Number) else g.iloc[:, 0]
         )
-    print('done')
     return processed_data
-################################################################################################################
+
+# ================================== #
+# Layout of the Data summary tab #
+# ================================== #
 
 layout = html.Div([
                     html.H2("Data Summary", style={"fontFamily": "Arial"}),
@@ -1021,7 +1006,7 @@ def register_callbacks():
         # Should never get here, but just in case
         return no_update
 
-    # Callback to process data the data
+    # Callback to process the data 
     @callback(
         [Output("process-data-status_dpp", "children"),
         Output("processing-complete-store_dpp", "data")],
@@ -1061,11 +1046,6 @@ def register_callbacks():
             folder = os.path.join(UPLOAD_FOLDER, study)
             if not os.path.isdir(folder):
                 logger.error(f"Data summary tab - No folder for study: {study}")
-                continue
-
-            full_path, _ = get_file_from_study_dpp(study)
-            if not full_path:
-                logger.error(f"Data summary tab - No data file found for study: {study}")
                 continue
 
             details = read_study_details_dpp(folder)
@@ -1263,6 +1243,7 @@ def register_callbacks():
         logger.info("Data summary tab - All studies have been pre-processed")
         return None, processing_complete 
 
+    # Callback to delay check of if files have being processed
     @callback(
         Output("processed-file-check-interval_dpp", "disabled"),
         Input("processing-complete-store_dpp", "data")
@@ -1271,7 +1252,7 @@ def register_callbacks():
         # If processing is complete, enable the interval (disabled=False)
         return not processing_complete
 
-    # Input("folder-choice-store_dpp", "data"),
+    # Callback to display the processed dataset for the study selected in the dropdown
     @callback(
         Output("processed-data-table_dpp", "children"),
         [
@@ -1314,8 +1295,8 @@ def register_callbacks():
         filename = f"processed_{selected_study}_{flow_name_for_file}.csv"
         filepath = os.path.join(save_folder, filename)
 
-        if not os.path.exists(filepath):
-            return html.Div("Processing data, please wait...")
+        """ if not os.path.exists(filepath):
+            return html.Div("Processing data, please wait...") """
 
         try:
             df = pd.read_csv(filepath)
@@ -1368,6 +1349,7 @@ def register_callbacks():
         )
         return processed_table
     
+    # Callback that controls the progress bar updating
     @callback(
         Output("start-ts-store",             "data"),
         Output("folder-interval",            "disabled"),
@@ -1438,6 +1420,7 @@ def register_callbacks():
         # fallback
         raise PreventUpdate
 
+    # Callback to display the processed data
     @callback(
         Output("processed-data-collapse_dpp", "is_open"),
         Input("process-data-btn_dpp", "n_clicks"),
@@ -1447,6 +1430,7 @@ def register_callbacks():
         # As soon as the button is clicked once, open the collapse
         return bool(n_clicks)
 
+    # Callback to ensure that the correct studies are displayed in the dropdown
     @callback(
         [Output("selected-studies-dropdown-summary_dpp", "options"),
         Output("selected-studies-dropdown-summary_dpp", "value")],
@@ -1458,6 +1442,7 @@ def register_callbacks():
             return options, options[0]["value"]
         return [], None
     
+    # Callback to populate the sidebars with the options chosen for the study in the dropdown
     @callback(
         [
             # study‐details sidebar

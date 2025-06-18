@@ -17,9 +17,14 @@ DATASET_SOURCE_LABELS = {
 }
 
 def get_study_names_dpp():
+    '''Obtaining the list of the study names'''
     if os.path.exists(UPLOAD_FOLDER):
         return [f for f in os.listdir(UPLOAD_FOLDER) if os.path.isdir(os.path.join(UPLOAD_FOLDER, f))]
     return []
+
+# ================================ #
+# Layout of the Select studies tab #
+# ================================ #
 
 layout = [
             html.Div([

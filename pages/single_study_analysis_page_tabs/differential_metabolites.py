@@ -62,7 +62,10 @@ def da_testing(self):
         self.connection = [(self.node_name, met) for met in self.DA_metabolites]
         self.full_connection = [(self.node_name, met) for met in self.processed_data.columns[:-1]]
 
-# Layout fragment
+# ========================================== #
+# Layout of the Differential metabolites tab #
+# ========================================== #
+
 layout = html.Div([
                     # Title
                     html.H2("Differential Metabolite Analysis"),
@@ -217,8 +220,9 @@ layout = html.Div([
 
 # Register this tab’s callbacks
 def register_callbacks():
+    # Callback performs the differential testing on the selected study and produces the box plot and the table
     @callback(
-        # 4 outputs now: chart‐DIV, chart‐store, table‐DIV, table‐store
+        # 4 outputs: chart‐DIV, chart‐store, table‐DIV, table‐store
         Output("differential-chart-content", "children"),
         Output("diff-chart-store",        "data"),
         Output("differential-table-content","children"),
@@ -424,7 +428,7 @@ def register_callbacks():
             {"type":"csv","data":table_b64},
         )
     
-    # Toggle Chart modal (unchanged)
+    # Callback controls the save box plot pop up from opening
     @callback(
         Output("save-plot-modal-chart","is_open"),
         [ Input("open-save-modal-chart","n_clicks"),
@@ -436,7 +440,7 @@ def register_callbacks():
             return not is_open
         return is_open
 
-    # Toggle Table modal (unchanged)
+    # Callback controls the save table pop up from opening
     @callback(
         Output("save-plot-modal-table","is_open"),
         [ Input("open-save-modal-table","n_clicks"),
@@ -449,7 +453,7 @@ def register_callbacks():
         return is_open
 
 
-    # Save **chart** as SVG
+    # Callback which saves **chart** as SVG
     @callback(
         Input("confirm-save-plot-chart","n_clicks"),
         [
@@ -504,10 +508,7 @@ def register_callbacks():
         # ✅ Log success
         logger.info(f"Differential metabolite tab - Successfully saved chart: {out_path}")
 
-
-
-
-    # Save **table** as CSV
+    # Callback which saves **table** as CSV
     @callback(
         Input("confirm-save-plot-table","n_clicks"),
         [

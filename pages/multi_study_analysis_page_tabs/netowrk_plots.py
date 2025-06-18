@@ -31,6 +31,7 @@ refmet.columns = refmet.columns.str.strip()
 refmet2chebi = dict(zip(refmet['refmet_name'], refmet['chebi_id']))
 
 def read_study_details_msa(folder):
+    """Reads study details for a given study, contains info of the study name and dataset source"""
     details_path = os.path.join(folder, "study_details.txt")
     details = {}
     if os.path.exists(details_path):
@@ -137,7 +138,6 @@ def get_pathway_data(obj,
     # 2) Prepare your data & compute coverage
     # ---------------------------------------------------------------------
     df = obj.processed_data.copy()
-    print(df)
     # strip any CHEBI: prefix
     df.columns = df.columns.str.removeprefix("CHEBI:")
 
@@ -166,11 +166,8 @@ def get_pathway_data(obj,
     # 3) Run KPCA
     # ---------------------------------------------------------------------
     X = df.drop(columns=["group_type"])
-    print('start sspa')
     kpca = sspa.sspa_KPCA(rp)
     scores = kpca.fit_transform(X)
-    #print(scores)
-    print('after sspa')
     # if it came back as a numpy array, wrap it in a DataFrame
     if not isinstance(scores, pd.DataFrame):
         scores = pd.DataFrame(
@@ -184,7 +181,6 @@ def get_pathway_data(obj,
 
     # rename to human names
     scores.rename(columns=pn, inplace=True)
-    print('after rename')
     obj.pathway_scores = scores
 
     # 4) Differential testing
@@ -211,31 +207,28 @@ def get_pathway_data(obj,
         obj.DA_pathways = []
         print("…no non-zero‐variance pathways")
         return
-    print('after filter of valid columns')
     # t-test + BH correction
     stat, pvals = stats.ttest_ind(
         X_case[valid], X_ctrl[valid], nan_policy="omit"
     )
     X_case_valid = X_case[valid]
     fdr = multipletests(pvals, method="fdr_bh")[1]
-    print('after stat tests')
     pval_df = pd.DataFrame({
         "P-value":     pvals,
         "Stat":        stat,
         "Direction":   ["Up" if s>0 else "Down" for s in stat],
         "FDR_P-value": fdr
     }, index=X_case_valid.columns).sort_values("FDR_P-value")
-    print('1')
     obj.pval_df = pval_df
     obj.DA_pathways = valid  # these are already the human‐readable names
-    print('2')
     # finally, the list of *human* names passing FDR < 0.05
     da_ids = pval_df.index[pval_df["FDR_P-value"] < 0.05].tolist()
-    print('3')
     obj.DA_pathways = [pn.get(pid, pid) for pid in da_ids]
-    print('Done')
-    print(f"[{getattr(obj,'node_name','')}] found {len(obj.DA_pathways)} DA pathways")
+    #print(f"[{getattr(obj,'node_name','')}] found {len(obj.DA_pathways)} DA pathways")
 
+# =============================== #
+# Layout of the Network plots tab #
+# =============================== #
 
 layout = html.Div([
                     html.H2("Network Graphs of Differential Metabolites and Pathways"),
@@ -508,12 +501,6 @@ layout = html.Div([
                     ),
                     # hidden store for path
                     dcc.Store(id="selected-study-store_msa", storage_type="memory"),
-                    #dcc.Store(id="modal-state-store"),
-                    #html.Div(id="svg-saver-dummy"),
-                    #tml.Div(id="save-svg-output-msa", style={"display": "none"}),
-                    #html.Div(id="svg-post-output-msa", style={"display":"none"}),
-                    #html.Div(id="dummy-output-msa", style={"display": "none"}),
-                    #html.Div(id="save-feedback-msa"),
                     # Wrap the content in a dcc.Loading component.
                     # --- Cytoscape graph inside a Loading spinner ---
                     html.Div([
@@ -570,7 +557,7 @@ layout = html.Div([
                 ])
 
 def register_callbacks():
-    # Background processing description
+    # Callback which controls the background description shown
     @callback(
         Output("network-background-div", "children"),
         Input("network-level-dropdown-msa", "value"),
@@ -678,7 +665,7 @@ def register_callbacks():
     #########################################
     ##### Controls for network settings #####
     #########################################
-
+    # Callback which controls the node style settings based on the whether the network level is differential metabolites or pathways
     @callback(
         Output("network-node-style-dropdown-msa", "options"),
         Output("network-node-style-dropdown-msa", "value"),
@@ -704,6 +691,7 @@ def register_callbacks():
             value = prev if prev in {o["value"] for o in opts} else opts[0]["value"]
         return opts, value
 
+    # Callback: Opens the bipartite modal when 'bipartite' node style is selected, and closes it when dismissed
     @callback(
         Output("bipartite-modal", "is_open"),
         [
@@ -722,6 +710,7 @@ def register_callbacks():
         # otherwise, leave it as is
         return is_open
 
+    # Callback: Extracts study names from selected files and populates the bipartite study dropdown
     @callback(
         Output("bipartite-study-dropdown", "options"),
         Input("project-files-checklist-msa", "value"),
@@ -743,6 +732,7 @@ def register_callbacks():
             })
         return options
 
+    # Callback: Loads group-type options (e.g., conditions or treatments) based on metadata of the selected study
     @callback(
         [ Output("group-types-radio_msa", "options"),
         Output("study-group-details-container", "style") ],
@@ -828,6 +818,7 @@ def register_callbacks():
             {"display": "block", "marginTop": "1.5rem"}
         )
 
+    # Callback: Displays unique labels (e.g., disease subtypes) for the chosen group type in the selected study
     @callback(
         Output("group-classes-list_msa", "children"),
         [
@@ -918,6 +909,7 @@ def register_callbacks():
         # Render as bullet list
         return html.Ul([html.Li(str(lbl)) for lbl in labels])
 
+    # Callback: Saves disease annotation for the previous study and loads it (if available) for the newly selected one
     @callback(
         [
             Output("bipartite-disease-dropdown", "options"),
@@ -984,6 +976,7 @@ def register_callbacks():
         # 8) remember this study as “previous” for next time
         return options, selected_value, input_value, selected_study
 
+    # Callback: Displays the control and case group assignments for the selected study based on project metadata
     @callback(
         Output("study-control-case-text", "children"),
         Input("bipartite-study-dropdown", "value"),
@@ -1023,10 +1016,9 @@ def register_callbacks():
     #######################################################################
     #################### Producing network graph ##########################
     #######################################################################
-
     # Make sure Cytoscape can accept inline images
     cyto.load_extra_layouts()
-
+    # Callback that produces the network graph
     @callback(
         Output("metabolic-network-cytoscape-msa", "elements"),
         Output("metabolic-network-cytoscape-msa", "layout"),
@@ -1748,7 +1740,8 @@ def register_callbacks():
                 })
 
             return elements, {'name': layout_name}, stylesheet
-            
+    
+    # Callback: Updates RefMet mapping and pathway coverage tables based on selected studies and network level
     @callback(
         Output("refmet-conversion-table", "data"),
         Output("pathway-coverage-table", "data"),
@@ -1861,7 +1854,7 @@ def register_callbacks():
 
         return refmet_mapping_records, pathway_coverage_records
 
-    # 4) Callback to open/close the modal
+    # Callback: Opens or closes the save plot modal when the save or confirm button is clicked
     @callback(
         Output("save-plot-modal-msa", "is_open"),
         [
@@ -1879,7 +1872,7 @@ def register_callbacks():
             return not is_open
         return is_open
 
-    # 5) Callback to trigger the client‐side SVG download
+    # Callback: Generates and downloads the network plot as an SVG file with a project-based filename
     @callback(
         Output("metabolic-network-cytoscape-msa", "generateImage"),
         Input("confirm-save-plot-button-msa", "n_clicks"),
@@ -1904,117 +1897,3 @@ def register_callbacks():
             "action":   "download",
             "filename": filename
         } 
-
-    """ @callback(
-        Output("metabolic-network-cytoscape-msa", "generateImage"),
-        Input("confirm-save-plot-button-msa", "n_clicks"),
-        State("project-dropdown-pop-msa",       "value"),
-        State("plot-name-input-msa",            "value"),
-        State("network-level-dropdown-msa",     "value"),
-        prevent_initial_call=True
-    )
-    def trigger_store_png(n_clicks, project_name, plot_name, network_level):
-        # slugify inputs
-        proj = (project_name or "project").strip().replace(" ", "-")
-        lvl  = (network_level or "network").strip().replace(" ", "-")
-        base = (plot_name      or "network").strip().replace(" ", "-")
-        filename = f"{proj}_{lvl}__{base}"
-
-        return {
-            "type":     "png",       # ask for PNG
-            "action":   "store",     # store into imageData
-            "filename": filename,    # your naming convention
-            "options": {
-                "bg":   "#ffffff",   # ensure white background
-                "full": True,        # include entire graph area
-                "scale": 1           # default scale
-            }
-        }
-
-
-    # map network levels to folder names
-    LEVEL_TO_FOLDER = {
-        "diff-metabolite": "Differential-metabolites-network-plots",
-        "pathway":         "Differential-pathway-network-plots",
-    }
-
-    from werkzeug.utils import secure_filename
-    import re
-    PROJECTS_ROOT = os.path.abspath(os.path.expanduser("Projects"))
-
-    @callback(
-    Output("svg-store", "data"),
-    Input("metabolic-network-cytoscape-msa", "imageData"),
-    State("project-dropdown-pop-msa",   "value"),
-    State("network-level-dropdown-msa", "value"),
-    prevent_initial_call=True
-    )
-    def save_svg_to_server(image_data_uri, project_name, network_level):
-        if not image_data_uri:
-            return no_update
-
-        # 1) parse the incoming data URI
-        header, b64 = image_data_uri.split(",", 1)
-        svg_bytes = base64.b64decode(b64)
-
-        # 2) slugify project & level
-        proj = (project_name or "project").strip().replace(" ", "-")
-        lvl  = (network_level or "network").strip().replace(" ", "-")
-
-        # 3) extract the original filename from the header
-        #    Dash-Cytoscape puts it into header: 'data:image/svg+xml;filename=proj_lvl__base.svg;base64'
-        m = re.search(r'filename=([^;]+)', header)
-        filename = secure_filename(m.group(1)) if m else f"{proj}_{lvl}__network.png"
-
-        # 4) pick your folder
-        folder_name = LEVEL_TO_FOLDER.get(lvl, LEVEL_TO_FOLDER["metabolite"])
-        out_dir = os.path.join(
-            PROJECTS_ROOT,
-            proj,
-            "Plots",
-            "Multi-study-analysis",
-            folder_name
-        )
-        os.makedirs(out_dir, exist_ok=True)
-
-        # 5) write it out
-        dest = os.path.join(out_dir, filename)
-        with open(dest, "wb") as f:
-            f.write(svg_bytes)
-
-        # Optionally return something into the Store so you know it ran:
-        return {"status": "saved", "path": dest} """
-    
-
-    """ # Trigger a store‐PNG
-    @callback(
-        Output("metabolic-network-cytoscape-msa", "generateImage"),
-        Input("confirm-save-plot-button-msa","n_clicks"),
-        State("plot-name-input-msa","value"),
-        prevent_initial_call=True
-    )
-    def trigger_store_png(n, name):
-        return {"type":"png","action":"store","filename":(name or "network").strip()}
-
-
-    # Catch & write the blob
-    @callback(
-        Output("save-feedback-msa", "children"),
-        Input("metabolic-network-cytoscape-msa","imageData"),
-        State("plot-name-input-msa","value"),
-        prevent_initial_call=True
-    )
-    def save_network_png(imageData, name):
-        if not imageData:
-            return no_update
-        header,b64 = imageData.split(",",1)
-        data = base64.b64decode(b64)
-        folder = os.path.join(os.getcwd(),"assets","networks")
-        os.makedirs(folder,exist_ok=True)
-        fname = (name or "network").strip()+".png"
-        path = os.path.join(folder,fname)
-        with open(path,"wb") as f:
-            f.write(data)
-        return dbc.Alert(f"Saved network as `{fname}` in `/assets/networks`", color="success")
-
-    """
