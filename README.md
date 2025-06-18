@@ -197,11 +197,18 @@ All plots you generate will be saved under the matching subfolders in `/Dummy_pr
 
 ---
 
-> 🚀 **Quick Start**  
-> After you’ve browsed the folders and seen the example outputs above, you’re all set—just open the app, select **Dummy Project** in the project selection dropdown (in the Single-Study or Multi-Study tab), and start exploring immediately!
+🚀 **Quick Start**  
+After you’ve browsed the folders and seen the example outputs above, you’re all set—just open the app, select **Dummy Project** in the project selection dropdown (in the Single-Study or Multi-Study tab), and start exploring immediately!
 
 
 ## Contributing
 
+We welcome contributions! Here’s how to get started:
+
+**Report issues**  
+   - 🔍 Found a bug? Open an issue with steps to reproduce.  
+   - 💡 Have an idea? Open an issue describing the feature.
 
 ## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
