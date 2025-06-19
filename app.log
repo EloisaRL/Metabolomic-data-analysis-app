@@ -144,3 +144,36 @@ AttributeError: 'NoneType' object has no attribute 'replace'
 2025-06-18 11:51:05,904 - INFO - Data summary tab - Saved processed_MTBLS1866_knn_imputer_log_transform_standard_scaler.csv -> Projects\Dummy-project\Processed-datasets
 2025-06-18 11:51:05,907 - INFO - Data summary tab - Updated details for study MTBLS1866 in Projects\Dummy-project
 2025-06-18 11:51:05,918 - INFO - Data summary tab - All studies have been pre-processed
+2025-06-18 16:52:33,812 - INFO - Dash app initialized
+2025-06-18 16:52:41,212 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-18 16:52:42,573 - INFO - Dash app initialized
+2025-06-18 16:52:49,758 - INFO - Route accessed: /
+2025-06-18 16:53:21,123 - INFO - Route accessed: /data-pre-processing
+2025-06-18 16:53:25,304 - INFO - Select studies tab - Selected existing project 'Dummy project' at 'Projects\Dummy-project'
+2025-06-18 16:53:29,680 - INFO - Data exploration tab - Studies selected for processing: ['MTBLS1866', 'MTBLS2014']
+2025-06-18 16:53:50,119 - INFO - Data exploration tab - Study details have been saved for MTBLS1866
+2025-06-18 16:53:53,772 - INFO - Data exploration tab - Pre-processing options have been saved for MTBLS1866
+2025-06-18 16:54:10,128 - INFO - Data exploration tab - Study details have been saved for MTBLS2014
+2025-06-18 16:54:16,462 - INFO - Data exploration tab - Pre-processing options have been saved for MTBLS2014
+2025-06-18 16:54:18,499 - INFO - Data summary tab - All selected studies have complete details — enabling Data Summary tab
+2025-06-18 16:54:28,507 - INFO - Data summary tab - Saved processed_MTBLS1866_knn_imputer_log_transform_standard_scaler.csv -> Projects\Dummy-project\Processed-datasets
+2025-06-18 16:54:28,590 - INFO - Data summary tab - Saved processed_MTBLS2014_knn_imputer_log_transform_standard_scaler.csv -> Projects\Dummy-project\Processed-datasets
+2025-06-18 16:54:28,592 - INFO - Data summary tab - Updated details for study MTBLS1866 in Projects\Dummy-project
+2025-06-18 16:54:28,592 - INFO - Data summary tab - Updated details for study MTBLS2014 in Projects\Dummy-project
+2025-06-18 16:54:28,598 - INFO - Data summary tab - All studies have been pre-processed
+2025-06-18 16:56:32,881 - INFO - Dash app initialized
+2025-06-18 16:56:50,708 - INFO - Route accessed: /data-pre-processing
+2025-06-18 16:57:54,930 - INFO - Dash app initialized
+2025-06-18 17:19:35,905 - INFO - Dash app initialized
+2025-06-18 17:19:42,016 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-18 17:19:43,086 - INFO - Dash app initialized
+2025-06-18 17:19:48,680 - INFO - Route accessed: /
+2025-06-18 17:19:51,200 - INFO - Route accessed: /multi-study-analysis
+2025-06-19 11:07:30,090 - INFO - Dash app initialized
+2025-06-19 11:07:38,224 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-19 11:07:39,772 - INFO - Dash app initialized
+2025-06-19 11:07:46,984 - INFO - Route accessed: /
+2025-06-19 11:07:52,861 - INFO - Route accessed: /plots

@@ -26,7 +26,7 @@
         "log_transform",
         "standard_scaler"
       ],
-      "outliers": "12JUN2020_AAA_COV_PL_068",
+      "outliers": "",
       "group_filter": {
         "Control": [
           "Healthy"

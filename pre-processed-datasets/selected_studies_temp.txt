@@ -17,6 +17,24 @@
           "COVID-19"
         ]
       }
+    },
+    "MTBLS2014": {
+      "filename": "processed_MTBLS2014_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "Factor Value[Disease]",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "",
+      "group_filter": {
+        "Control": [
+          "Healthy"
+        ],
+        "Case": [
+          "Patient (+) SARS-CoV-2"
+        ]
+      }
     }
   }
 }
