@@ -116,7 +116,15 @@ layout = html.Div([
                                     "Finally, differential testing is performed on those pathway scores. It splits those pathway scores "
                                     "into Case and Control groups and runs a two-tailed t-test (with Benjamini–Hochberg FDR correction) "
                                     "on each pathway score to identify pathways that are significantly differentially abundant between "
-                                    "groups (adjusted p-value below 0.05)."
+                                    "groups (adjusted p-value below 0.05).",
+                                    style={"marginBottom": "0.5rem"}
+                                ),
+
+                                html.P([
+                                    html.B("Note:"),
+                                    " since KPCA computes an arbitrary score for each pathway "
+                                    "no direction (up/down) of change can be inferred from these values."],
+                                    style={"marginBottom": "0.5rem"}
                                 ),
                             ],
                             style={
@@ -435,8 +443,7 @@ def register_callbacks():
             stat, pvals = stats.ttest_ind(X_case_valid, X_ctrl_valid, nan_policy='raise')
             pval_df = pd.DataFrame({
                 'P-value': pvals,
-                'Stat': stat,
-                'Direction': ['Up' if s > 0 else 'Down' for s in stat]
+                'Stat': stat
             }, index=X_case_valid.columns)
             pval_df['FDR_P-value'] = multipletests(pvals, method='fdr_bh')[1]
             sig = pval_df[pval_df['FDR_P-value'] < 0.05].sort_values('FDR_P-value')
