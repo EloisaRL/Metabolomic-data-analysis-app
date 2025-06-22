@@ -16,7 +16,8 @@ The app automatically harmonises metabolite annotations (RefMet names or ChEBI I
   - [Clone the Repository](#clone-the-repository)
   - [Set up the Environment](#set-up-the-environment) 
   - [Install Dependencies](#install-dependencies)  
-  - [Run the App](#run-the-app)  
+  - [Run the App](#run-the-app)
+  - [Data Requirements](#data-requirements)
 - [Usage](#usage)  
   - [Single-Study Analysis](#single-study-analysis)  
   - [Multi-Study Analysis](#multi-study-analysis)  
@@ -86,6 +87,37 @@ You’ll see output similar to:
 Dash is running on http://127.0.0.1:8050/  (Press CTRL+C to quit)
 ```
 **Ctrl+Click** (or **Cmd+Click** on macOS) the link to open the app in your browser.
+
+### Data Requirements
+
+Before uploading a study dataset, make sure your data follow these guidelines:
+
+1. **File Format & Structure**  
+   - Use CSV with a single header row (no blank lines).  
+   - One column for patient ids, one column for patient group (e.g. contains Covid-19, Healthy) and all other columns are for metabolites (either RefMet names or ChEBI ids as column names).
+   - One study can have multiple csv files —each file corresponds to the same patients profiled under different analytical conditions (e.g. ion mode, column chemistry, collision energy).
+   - (If the dataset originates from MetaboLights) Supply a separate sample metadata file (it will begin with 's_....txt') containing the patient group information needed for the app to function.
+
+2. **Organism**  
+   - If you plan to run the differential pathway analysis studies must be from human (Homo sapiens) paitents since only the human reactome file is used in this app currrently.
+
+3. **Sample & Phenotype Recommendations**  
+   - Include enough samples per group to support reliable statistical testing. (Recommended more than 10 per group) 
+   - Have at least two discrete phenotypes or outcome groups—if your outcome is continuous (e.g. BMI), discretise it (e.g. “high” vs. “low”).
+
+4. **Metabolite Coverage**  
+   - Aim for broad coverage of identified metabolites that map successfully to ChEBI IDs. (Recommended more than 20)
+   - If a metabolite has more than 50% missing values across all patients that metabolite will be removed during data preprocessing in the app.
+
+5. **Cross-Study Overlap (multi-study mode)**  
+   - Ensure there is some overlap of differential metabolite identifiers across studies to enable comparative analyses.  
+
+6. **Pathway Analysis Considerations**  
+   - Provide 2 or more metabolites mapping to each reactome pathway to allow for differential pathway testing (if all reactome pathways have only one metabolite mapping to it then differential pathway testing cannot be performed).
+
+> **Tip:** These are general guidelines. Tailor them to your specific experimental design, data quality, and scientific goals.
+> 
+> **Step-by-step help in uploading data:** Please refer to the user guide.
 
 ---
 
