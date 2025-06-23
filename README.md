@@ -1,11 +1,12 @@
 # Metabolomic Data Analysis App
 
+**User guide:** https://doi.org/10.5281/zenodo.15720017
+
 An interactive Dash application for visualising and analysing differential metabolites and differential pathways in a single study or across multiple studies.  
 The app automatically harmonises metabolite annotations (RefMet names or ChEBI IDs), letting you seamlessly explore your own data or public datasets from MetaboLights and Metabolomics Workbench in one place.
 
 
 ![image](https://github.com/user-attachments/assets/7b7ffe0e-f397-4394-9858-11038453f6c3)
-
 
 ---
 
