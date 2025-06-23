@@ -1,13 +1,8 @@
 # Metabolomic Data Analysis App
 
-An interactive Dash application for visualizing and analyzing differential metabolites and pathways across single- and multi-study datasets. By leveraging harmonized metabolite annotations, the app enables you to:
+An interactive Dash application for visualising and analysing differential metabolites and differential pathways in a single study or across multiple studies.  
+The app automatically harmonises metabolite annotations (RefMet names or ChEBI IDs), letting you seamlessly explore your own data or public datasets from MetaboLights and Metabolomics Workbench in one place.
 
-- Explore metabolic data from individual studies
-- Integrate large-scale public repositories (e.g., MetaboLights, MetabolomicsWorkbench) or your own data (using RefMet or ChEBI IDs)
-- Uncover multi-study signatures and trends
-- Maximize reusability and reproducibility of metabolomics data
-
-With a focus on standardization and integration, this tool supports scientific discovery through comprehensive, accessible data visualization and analysis.
 
 ![image](https://github.com/user-attachments/assets/7b7ffe0e-f397-4394-9858-11038453f6c3)
 
@@ -21,7 +16,8 @@ With a focus on standardization and integration, this tool supports scientific d
   - [Clone the Repository](#clone-the-repository)
   - [Set up the Environment](#set-up-the-environment) 
   - [Install Dependencies](#install-dependencies)  
-  - [Run the App](#run-the-app)  
+  - [Run the App](#run-the-app)
+  - [Data Requirements](#data-requirements)
 - [Usage](#usage)  
   - [Single-Study Analysis](#single-study-analysis)  
   - [Multi-Study Analysis](#multi-study-analysis)  
@@ -33,25 +29,25 @@ With a focus on standardization and integration, this tool supports scientific d
 
 ## Features
 
-1. **Interactive Visualizations**  
+1. **Interactive Visualisations**  
    - Dynamic plots of differential metabolites, differential pathways, clustering, and more.  
 
 2. **Single-Study Analysis**  
-   - Upload your own processed data (RefMet/ChEBI IDs).  
-   - Filter, sort, and visualize metabolites and pathways from a single experiment.
+   - Upload your own processed data (RefMet name/ChEBI IDs).  
+   - Visualise differential metabolites and differential pathways from a single study.
 
 3. **Multi-Study Analysis**  
    - Integrate data from multiple sources (e.g., public repositories or your own studies).  
-   - Harmonize metabolite annotations across studies to find common signatures.  
+   - Harmonise metabolite annotations across studies to find common signatures.  
    - Compare study-specific vs. cross-study trends in a unified view.
 
 4. **Public Repository Integration**  
    - Pull annotated metabolomic data directly from MetaboLights or MetabolomicsWorkbench.  
-   - Harmonize annotations using RefMet or ChEBI IDs under the hood.
+   - Harmonises annotations with either ChEBI IDs or RefMet names.
 
 5. **Reproducibility and Reusability**  
-   - Built-in support for standardized formats and nomenclature.  
-   - Easy export of (high resolution) plots, tables, and filtered datasets for downstream analysis or publication.
+   - Built-in support for standardised formats and nomenclature.  
+   - Easy export of (high resolution in svg format) plots, tables, and filtered datasets for downstream analysis or publication.
 
 ---
 
@@ -92,6 +88,39 @@ Dash is running on http://127.0.0.1:8050/  (Press CTRL+C to quit)
 ```
 **Ctrl+Click** (or **Cmd+Click** on macOS) the link to open the app in your browser.
 
+### Data Requirements
+
+Before uploading a study dataset, make sure your data follow these guidelines:
+
+1. **File Format & Structure**  
+   - Use CSV with a single header row (no blank lines).  
+   - One column for patient ids, one column for patient group (e.g. contains Covid-19, Healthy) and all other columns are for metabolites (either RefMet names or ChEBI ids as column names).
+   - One study can have multiple csv files —each file corresponds to the same patients profiled under different analytical conditions (e.g. ion mode, column chemistry, collision energy).
+   - (If the dataset originates from MetaboLights) Supply a separate sample metadata file (it will begin with 's_....txt') containing the patient group information needed for the app to function.
+
+2. **Organism**  
+   - If you plan to run the differential pathway analysis studies must be from human (Homo sapiens) paitents since only the human reactome file is used in this app currrently.
+
+3. **Sample & Phenotype Recommendations**  
+   - Include enough samples per group to support reliable statistical testing. (Recommended more than 10 per group) 
+   - Have at least two discrete phenotypes or outcome groups—if your outcome is continuous (e.g. BMI), discretise it (e.g. “high” vs. “low”).
+
+4. **Metabolite Coverage**  
+   - Aim for broad coverage of identified metabolites that map successfully to ChEBI IDs. (Recommended more than 20)
+   - If a metabolite has more than 50% missing values across all patients that metabolite will be removed during data preprocessing in the app.
+
+5. **Cross-Study Overlap (multi-study mode)**  
+   - Ensure there is some overlap of differential metabolite identifiers across studies to enable comparative analyses.  
+
+6. **Pathway Analysis Considerations**  
+   - Provide 2 or more metabolites mapping to each reactome pathway to allow for differential pathway testing (if all reactome pathways have only one metabolite mapping to it then differential pathway testing cannot be performed).
+
+> **Tip:** These are general guidelines. Tailor them to your specific experimental design, data quality, and scientific goals.
+> 
+> **Step-by-step help in uploading data:** Please refer to the user guide.
+
+---
+
 ## Usage
 
 The app allows users to perform two types of analysis: single-study analysis and multi-study analysis. Both types of analysis perform differential testing to identify either differential metabolites or differential pathways, but they differ in the way these results are visualised.
@@ -120,6 +149,7 @@ Multi-study analysis produces upset plots of the co-occuring metabolites and dif
 #### Network plots tab - differential pathways network graph
 ![Network-plots-tab-msa-page-pathways](https://github.com/user-attachments/assets/253fc0c2-f06b-4272-a49b-fd5b351d762b)
 
+---
 
 ## Example Data (“Dummy Project”)
 
@@ -150,7 +180,6 @@ To help you get started, we’ve included a **Dummy_project** folder containing 
         └── /Differential-pathway-network-plots
 ```
 
----
 
 ### 1. Processed Datasets
 
@@ -164,7 +193,6 @@ To help you get started, we’ve included a **Dummy_project** folder containing 
 - **Usage**:  
   - Processed datasets are in saved in the conventional format as those accepted by MetaboAnalyst (https://www.metaboanalyst.ca/MetaboAnalyst/home.xhtml). However, when you load these CSVs into MetaboAnalyst, those same IDs/names will appear on all plots and tables.
 
----
 
 ### 2. Project Details (`project_details_file.json`)
 
@@ -187,7 +215,6 @@ This JSON file contains, for each study:
 >  
 > In `project_details_file.json`, we parse these into a clean `group_type` object so you can switch between different patient stratifications (e.g., control vs. case, male vs. female, treated vs. untreated).
 
----
 
 ### 3. Plots
 
@@ -195,11 +222,11 @@ All plots you generate will be saved under the matching subfolders in `/Dummy_pr
 
 > **Note:** Each subfolder already contains a few example plots generated by the app, so you can see the typical output format and file naming conventions before you start.
 
----
 
 🚀 **Quick Start**  
 After you’ve browsed the folders and seen the example outputs above, you’re all set—just open the app, select **Dummy Project** in the project selection dropdown (in the Single-Study or Multi-Study tab), and start exploring immediately!
 
+---
 
 ## Contributing
 
@@ -208,6 +235,8 @@ We welcome contributions! Here’s how to get started:
 **Report issues**  
    - 🔍 Found a bug? Open an issue with steps to reproduce.  
    - 💡 Have an idea? Open an issue describing the feature.
+
+---
 
 ## License
 
