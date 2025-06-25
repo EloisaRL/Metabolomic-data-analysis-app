@@ -1,11 +1,12 @@
 # Metabolomic Data Analysis App
 
+**User guide:** https://doi.org/10.5281/zenodo.15720017
+
 An interactive Dash application for visualising and analysing differential metabolites and differential pathways in a single study or across multiple studies.  
 The app automatically harmonises metabolite annotations (RefMet names or ChEBI IDs), letting you seamlessly explore your own data or public datasets from MetaboLights and Metabolomics Workbench in one place.
 
 
 ![image](https://github.com/user-attachments/assets/7b7ffe0e-f397-4394-9858-11038453f6c3)
-
 
 ---
 
@@ -21,7 +22,7 @@ The app automatically harmonises metabolite annotations (RefMet names or ChEBI I
 - [Usage](#usage)  
   - [Single-Study Analysis](#single-study-analysis)  
   - [Multi-Study Analysis](#multi-study-analysis)  
-- [Example Data (“Dummy Project”)](#example-data-dummy-project)  
+- [Example Data (“Demo Project”)](#example-data-demo-project)  
 - [Contributing](#contributing)  
 - [License](#license)  
 
@@ -151,12 +152,12 @@ Multi-study analysis produces upset plots of the co-occuring metabolites and dif
 
 ---
 
-## Example Data (“Dummy Project”)
+## Example Data (“Demo Project”)
 
-To help you get started, we’ve included a **Dummy_project** folder containing preprocessed files originating from MetaboLights and Metabolomics Workbench studies:
+To help you get started, we’ve included a **Demo_project** folder containing preprocessed files originating from MetaboLights and Metabolomics Workbench studies:
 
 ```bash
-/Dummy_project
+/Demo_project
 ├── /Processed-datasets
     ├── processed_MTBLS1866_knn_imputer_log_transform_standard_scaler.csv
     ├── processed_MTBLS2014_knn_imputer_log_transform_standard_scaler.csv
@@ -193,6 +194,32 @@ To help you get started, we’ve included a **Dummy_project** folder containing 
 - **Usage**:  
   - Processed datasets are in saved in the conventional format as those accepted by MetaboAnalyst (https://www.metaboanalyst.ca/MetaboAnalyst/home.xhtml). However, when you load these CSVs into MetaboAnalyst, those same IDs/names will appear on all plots and tables.
 
+**Studies included in this Demo Project**
+| Study ID      | Title                                                                                                                                                                       | DOI                                                                                          |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| **MTBLS1866** | Large-Scale Plasma Analysis Revealed New Mechanisms and Molecules Associated with the Host Response to SARS-CoV-2                                                           | [https://doi.org/10.3390/ijms21228623](https://doi.org/10.3390/ijms21228623)                 |
+| **MTBLS2014** | Integrative Modeling of Quantitative Plasma Lipoprotein, Metabolic, and Amino Acid Data Reveals a Multiorgan Pathological Signature of SARS-CoV-2 Infection                 | 10.1021/acs.jproteome.0c00519                                                                |
+| **MTBLS2224** | Sex-specific metabolic shifts in plasma of COVID-19 patients after cure                                                                                                     | 10.1016/j.csbj.2021.03.039                                                                   |
+| **MTBLS2291** | Metabolome and exposome profiling of the biospecimens from COVID-19 patients in India (Blood plasma assay)                                                                  | [https://doi.org/10.36233/0372-9311-161](https://doi.org/10.36233/0372-9311-161)             |
+| **MTBLS2336** | Metabolomic/lipidomic profiling of COVID-19 and individual response to tocilizumab                                                                                          | [https://doi.org/10.1371/journal.ppat.1009243](https://doi.org/10.1371/journal.ppat.1009243) |
+| **MTBLS2542** | The trans-omics landscape of COVID-19                                                                                                                                       | [https://doi.org/10.1038/s41467-021-24482-1](https://doi.org/10.1038/s41467-021-24482-1)     |
+| **MTBLS3852** | Amino Acid Metabolism is Significantly Altered at the Time of Admission in Hospital for Severe COVID-19 Patients: Findings from Longitudinal Targeted Metabolomics Analysis | [https://doi.org/10.1128/spectrum.00338-21](https://doi.org/10.1128/spectrum.00338-21)       |
+| **MTBLS6739** | Targeted plasma metabolomics combined with machine learning for the diagnosis of acute SARS-CoV-2                                                                           | [https://doi.org/10.3389/fmicb.2022.1059289](https://doi.org/10.3389/fmicb.2022.1059289)     |
+| **ST000041**  | High PUFA diet in humans                                                                                                                                                    | doi:10.21228/M8X59D                                                                          |
+| **ST000284**  | Colorectal Cancer Detection Using Targeted Serum Metabolic Profiling                                                                                                        | doi:10.21228/M8FG61                                                                          |
+| **ST000899**  | Alterations in Lipid, Amino Acid, and Energy Metabolism Distinguish Crohn Disease from Ulcerative Colitis and Control Subjects by Serum Metabolomic Profiling               | doi:10.21228/M8W983                                                                          |
+| **ST000974**  | GC6-74 metabolomic of TB (Part 1: Plasma)                                                                                                                                   | doi:10.21228/M8KQ3J                                                                          |
+| **ST001412**  | Metabolomics study in Plasma of Obese Patients with Neuropathy Identifies Potential Metabolomics Signatures                                                                 | doi:10.21228/M8K688                                                                          |
+| **ST001420**  | Metabolomic analysis of patients with recurrent angina                                                                                                                      | doi:10.21228/M8SQ55                                                                          |
+| **ST001736**  | The COVIDome Explorer Researcher Portal (blood plasma)                                                                                                                      | doi:10.21228/M8739H                                                                          |
+| **ST001933**  | Absolute quantification of plasma cytokines and metabolome reveals the glycylproline regulating antibody-fading in convalescent COVID-19 patients                           | doi:10.21228/M8RH8X                                                                          |
+| **ST002016**  | Metabolomics of COVID patients                                                                                                                                              | doi:10.21228/M88715                                                                          |
+| **ST002100**  | Functional metabolomics-based molecular profiling of acute and chronic hepatitis (Human Serum Metabolomics)                                                                 | doi:10.21228/M8ST3F                                                                          |
+| **ST002301**  | Serum metabolomics profiling identifies new predictive biomarkers for disease severity in COVID-19 patients                                                                 | doi:10.21228/M86998                                                                          |
+| **ST002428**  | Mass Spectrometry-based Proteomic and Metabolomic profiling of serum samples for discovery and validation of Tuberculosis diagnostic biomarker signature                    | doi:10.21228/M8SM54                                                                          |
+| **ST002498**  | Plasma Metabolomics Profiling of 580 Patients from the Weill Cornell Medicine Early Detection Research Network Prostate Cancer Cohort                                       | doi:10.21228/M86H7K                                                                          |
+| **ST002829**  | Nucleotide, phospholipid, and kynurenine metabolites are robustly associated with COVID-19 severity and time of plasma sample collection in a prospective cohort study      | doi:10.21228/M8SM6H                                                                          |
+
 
 ### 2. Project Details (`project_details_file.json`)
 
@@ -218,13 +245,13 @@ This JSON file contains, for each study:
 
 ### 3. Plots
 
-All plots you generate will be saved under the matching subfolders in `/Dummy_project/Plots/` using the filename you provide at export. **Exception**: network plots (both metabolite and pathway networks) are automatically downloaded to your computer’s default Downloads folder. After running your multi-study analysis, please move those network plot files into the appropriate `/Dummy_project/Plots/Multi-study-analysis/…` folders to keep everything organized.
+All plots you generate will be saved under the matching subfolders in `/Demo_project/Plots/` using the filename you provide at export. **Exception**: network plots (both metabolite and pathway networks) are automatically downloaded to your computer’s default Downloads folder. After running your multi-study analysis, please move those network plot files into the appropriate `/Demo_project/Plots/Multi-study-analysis/…` folders to keep everything organized.
 
 > **Note:** Each subfolder already contains a few example plots generated by the app, so you can see the typical output format and file naming conventions before you start.
 
 
 🚀 **Quick Start**  
-After you’ve browsed the folders and seen the example outputs above, you’re all set—just open the app, select **Dummy Project** in the project selection dropdown (in the Single-Study or Multi-Study tab), and start exploring immediately!
+After you’ve browsed the folders and seen the example outputs above, you’re all set—just open the app, select **Demo Project** in the project selection dropdown (in the Single-Study or Multi-Study tab), and start exploring immediately!
 
 ---
 
