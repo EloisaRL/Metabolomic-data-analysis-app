@@ -1,20 +1,20 @@
 {
   "studies": {
-    "MTBLS1866": {
-      "filename": "processed_MTBLS1866_knn_imputer_log_transform_standard_scaler.csv",
-      "group_type": "Factor Value[Medical case]",
+    "MTBLS1": {
+      "filename": "processed_MTBLS1_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "Factor Value[Metabolic syndrome]",
       "preprocessing": [
         "knn_imputer",
         "log_transform",
         "standard_scaler"
       ],
-      "outliers": "SA 8",
+      "outliers": "",
       "group_filter": {
         "Control": [
-          "HEALTHY"
+          "Control Group"
         ],
         "Case": [
-          "COVID-19"
+          "diabetes mellitus"
         ]
       }
     }

@@ -37,10 +37,7 @@ layout = html.Div([
             dbc.ModalBody(
                 dcc.Dropdown(
                     id='project-dropdown-modal',
-                    options=[
-                        {'label': p.replace('-', ' '), 'value': p}
-                        for p in list_subfolders(projects_folder)
-                    ],
+                    options=[],
                     placeholder='Choose project…',
                     clearable=False,
                     style={'width': '100%'}
@@ -123,6 +120,20 @@ layout = html.Div([
         style={'margin': '0 50px'}  # indent main area
     ),
 ])
+
+@app.callback(
+    Output("project-dropdown-modal", "options"),
+    Input("project-modal-plots", "is_open")
+)
+def update_project_list(is_open):
+    if is_open:
+        projects = list_subfolders("Projects")
+        return [
+            {"label": p.replace("-", " "), "value": p}
+            for p in projects
+        ]
+    # if modal is closed, don’t change anything
+    return no_update
 
 # — enable the “Confirm” button once they pick something —
 @app.callback(

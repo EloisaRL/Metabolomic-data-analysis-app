@@ -41,10 +41,7 @@ project_modal = dbc.Modal(
         dbc.ModalBody(
             dcc.Dropdown(
                 id="project-dropdown-pop-msa",
-                options=[
-                    {'label': project.replace("-", " "), 'value': project} 
-                    for project in list_projects()
-                ],
+                options=[],
                 placeholder="Select a project",
                 clearable=False,
                 style={"width": "100%"}
@@ -151,6 +148,20 @@ layout = html.Div([
 
 register_upset_cb()
 register_network_cb()
+
+@callback(
+    Output("project-dropdown-pop-msa", "options"),
+    Input("project-modal-msa", "is_open")
+)
+def update_project_list(is_open):
+    if is_open:
+        projects = list_projects()
+        return [
+            {"label": p.replace("-", " "), "value": p}
+            for p in projects
+        ]
+    # if modal is closed, don’t change anything
+    return no_update
 
 @callback(
     [Output("selected-project-title-msa", "children"),

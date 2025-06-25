@@ -27,10 +27,7 @@ project_modal = dbc.Modal(
         dbc.ModalBody(
             dcc.Dropdown(
                 id="project-dropdown-pop",
-                options=[
-                    {'label': project.replace("-", " "), 'value': project} 
-                    for project in list_projects()
-                ],
+                options=[],
                 placeholder="Select a project",
                 clearable=False,
                 style={"width": "100%"}
@@ -132,6 +129,20 @@ register_diff_cb()
 register_path_cb()
 
 #-------------------------------------------
+@callback(
+    Output("project-dropdown-pop", "options"),
+    Input("project-modal", "is_open")
+)
+def update_project_list(is_open):
+    if is_open:
+        projects = list_projects()
+        return [
+            {"label": p.replace("-", " "), "value": p}
+            for p in projects
+        ]
+    # if modal is closed, don’t change anything
+    return no_update
+
 @callback(
     [Output("selected-project-title", "children"),
      Output("project-modal", "is_open"),

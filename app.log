@@ -307,3 +307,145 @@ AttributeError: 'NoneType' object has no attribute 'replace'
 2025-06-23 10:20:41,930 - INFO - Select studies tab - Saved file 'm_MTBLS1866_LC-MS_positive_reverse-phase_metabolite_profiling_v2_maf.tsv' to study 'MTBLS1866'
 2025-06-23 10:20:41,942 - INFO - Select studies tab - Updated study details at 'pre-processed-datasets\MTBLS1866\study_details.txt' for study 'MTBLS1866'
 2025-06-25 09:05:32,221 - INFO - Dash app initialized
+2025-06-25 09:09:20,722 - INFO - Dash app initialized
+2025-06-25 09:09:28,136 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-25 09:09:29,709 - INFO - Dash app initialized
+2025-06-25 09:09:53,234 - INFO - Route accessed: /
+2025-06-25 09:09:55,699 - INFO - Route accessed: /data-pre-processing
+2025-06-25 09:09:59,713 - INFO - Select studies tab - Selected existing project 'Demo project' at 'Projects\Demo-project'
+2025-06-25 14:28:08,903 - INFO - Dash app initialized
+2025-06-25 14:28:19,570 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-25 14:28:21,211 - INFO - Dash app initialized
+2025-06-25 14:28:37,661 - INFO - Route accessed: /
+2025-06-25 14:28:40,545 - INFO - Route accessed: /data-pre-processing
+2025-06-25 14:28:52,540 - INFO - Select studies tab - Successfully created new project 'Diabetes' at 'Projects\Diabetes'
+2025-06-25 14:28:57,525 - INFO - Data exploration tab - Studies selected for processing: ['MTBLS1866']
+2025-06-25 14:29:11,167 - INFO - Data exploration tab - Study details have been saved for MTBLS1866
+2025-06-25 14:29:12,507 - INFO - Data exploration tab - Pre-processing options have been saved for MTBLS1866
+2025-06-25 14:29:13,154 - INFO - Data summary tab - All selected studies have complete details — enabling Data Summary tab
+2025-06-25 14:29:16,401 - INFO - Data summary tab - Saved processed_MTBLS1866_knn_imputer_log_transform_standard_scaler.csv -> Projects\Diabetes\Processed-datasets
+2025-06-25 14:29:16,401 - INFO - Data summary tab - Added new study MTBLS1866 in Projects\Diabetes
+2025-06-25 14:29:16,404 - INFO - Data summary tab - All studies have been pre-processed
+2025-06-25 14:29:20,441 - INFO - Route accessed: /datasets
+2025-06-25 14:29:24,816 - INFO - Route accessed: /single_study_analysis
+2025-06-25 14:29:28,582 - INFO - Route accessed: /multi-study-analysis
+2025-06-25 14:29:39,589 - INFO - Dash app initialized
+2025-06-25 14:29:45,083 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-25 14:29:46,315 - INFO - Dash app initialized
+2025-06-25 14:29:54,200 - INFO - Route accessed: /
+2025-06-25 14:29:56,493 - INFO - Route accessed: /datasets
+2025-06-25 14:30:00,395 - INFO - Route accessed: /single_study_analysis
+2025-06-25 14:30:15,894 - INFO - Differential metabolite tab - Successfully produced differential metabolites summary chart and table for: processed_MTBLS1866_knn_imputer_log_transform_standard_scaler.csv
+2025-06-25 14:30:15,896 - INFO - Differential pathway tab - Successfully perform pathway analysis on: processed_MTBLS1866_knn_imputer_log_transform_standard_scaler.csv
+2025-06-25 14:30:18,616 - INFO - Route accessed: /multi-study-analysis
+2025-06-25 14:30:23,088 - INFO - Route accessed: /plots
+2025-06-25 14:33:07,880 - INFO - Dash app initialized
+2025-06-25 14:33:13,139 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-25 14:33:14,324 - INFO - Dash app initialized
+2025-06-25 14:33:24,895 - INFO - Route accessed: /
+2025-06-25 14:33:27,409 - INFO - Route accessed: /data-pre-processing
+2025-06-25 14:33:29,938 - INFO - Select studies tab - Selected existing project 'Diabetes' at 'Projects\Diabetes'
+2025-06-25 14:33:47,626 - INFO - Select studies tab - Saved file 's_MTBLS1.txt' to study 'MTBLS1'
+2025-06-25 14:33:47,634 - INFO - Select studies tab - Saved file 'm_MTBLS1_metabolite_profiling_NMR_spectroscopy_v2_maf (1).tsv' to study 'MTBLS1'
+2025-06-25 14:33:47,642 - INFO - Select studies tab - Updated study details at 'pre-processed-datasets\MTBLS1\study_details.txt' for study 'MTBLS1'
+2025-06-25 14:33:52,524 - INFO - Data exploration tab - Studies selected for processing: ['MTBLS1']
+2025-06-25 14:34:01,237 - ERROR - Data exploration tab - No assay files found in the folder.
+2025-06-25 14:34:01,237 - ERROR - Data exploration tab - Error in preprocess, not triggered by refresh button
+Traceback (most recent call last):
+  File "c:\Users\Eloisa\Documents\GitHub\Metabolomic-data-analysis-app\pages\data_pre_processing_page_tabs\data_exploration.py", line 1770, in produce_graphs
+    if df.empty:
+       ^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'empty'
+2025-06-25 14:37:12,156 - INFO - Dash app initialized
+2025-06-25 14:37:19,255 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-25 14:37:20,613 - INFO - Dash app initialized
+2025-06-25 14:37:32,009 - INFO - Route accessed: /
+2025-06-25 14:37:33,446 - INFO - Route accessed: /data-pre-processing
+2025-06-25 14:37:36,884 - INFO - Select studies tab - Selected existing project 'Diabetes' at 'Projects\Diabetes'
+2025-06-25 14:37:54,152 - INFO - Data exploration tab - Studies selected for processing: ['MTBLS1']
+2025-06-25 14:39:02,905 - INFO - Dash app initialized
+2025-06-25 14:39:09,425 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-25 14:39:10,645 - INFO - Dash app initialized
+2025-06-25 14:48:15,348 - INFO - Dash app initialized
+2025-06-25 14:48:23,545 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-25 14:48:24,858 - INFO - Dash app initialized
+2025-06-25 14:48:40,092 - INFO - Route accessed: /
+2025-06-25 14:48:43,734 - INFO - Route accessed: /single_study_analysis
+2025-06-25 14:48:50,739 - INFO - Route accessed: /data-pre-processing
+2025-06-25 14:48:53,499 - INFO - Select studies tab - Selected existing project 'Diabetes' at 'Projects\Diabetes'
+2025-06-25 14:48:55,199 - INFO - Data exploration tab - Studies selected for processing: ['MTBLS1']
+2025-06-25 14:49:07,494 - INFO - Data exploration tab - Study details have been saved for MTBLS1
+2025-06-25 14:49:08,714 - INFO - Data exploration tab - Pre-processing options have been saved for MTBLS1
+2025-06-25 14:49:09,513 - INFO - Data summary tab - All selected studies have complete details — enabling Data Summary tab
+2025-06-25 14:49:11,741 - INFO - Data summary tab - Saved processed_MTBLS1_knn_imputer_log_transform_standard_scaler.csv -> Projects\Diabetes\Processed-datasets
+2025-06-25 14:49:11,747 - INFO - Data summary tab - Added new study MTBLS1 in Projects\Diabetes
+2025-06-25 14:49:11,754 - INFO - Data summary tab - All studies have been pre-processed
+2025-06-25 14:49:16,624 - INFO - Route accessed: /single_study_analysis
+2025-06-25 14:49:29,161 - INFO - Differential pathway tab - Successfully perform pathway analysis on: processed_MTBLS1_knn_imputer_log_transform_standard_scaler.csv
+2025-06-25 14:49:30,921 - INFO - Differential metabolite tab - Successfully produced differential metabolites summary chart and table for: processed_MTBLS1_knn_imputer_log_transform_standard_scaler.csv
+2025-06-25 15:00:03,103 - INFO - Dash app initialized
+2025-06-25 15:00:10,458 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-25 15:00:11,817 - INFO - Dash app initialized
+2025-06-25 15:00:26,620 - INFO - Route accessed: /
+2025-06-25 15:00:28,689 - INFO - Route accessed: /data-pre-processing
+2025-06-25 15:00:32,306 - INFO - Select studies tab - Successfully created new project 'Project 1' at 'Projects\Project-1'
+2025-06-25 15:00:35,248 - INFO - Route accessed: /datasets
+2025-06-25 15:00:38,255 - INFO - Route accessed: /single_study_analysis
+2025-06-25 15:06:18,175 - INFO - Dash app initialized
+2025-06-25 15:06:26,855 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-25 15:06:28,292 - INFO - Dash app initialized
+2025-06-25 15:19:37,358 - INFO - Dash app initialized
+2025-06-25 15:20:07,348 - INFO - Dash app initialized
+2025-06-25 15:20:13,586 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-25 15:20:14,790 - INFO - Dash app initialized
+2025-06-25 15:25:34,282 - INFO - Dash app initialized
+2025-06-25 15:25:42,333 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-25 15:25:43,699 - INFO - Dash app initialized
+2025-06-25 15:27:27,083 - INFO - Dash app initialized
+2025-06-25 15:27:32,061 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-25 15:27:33,390 - INFO - Dash app initialized
+2025-06-25 15:28:33,716 - INFO - Dash app initialized
+2025-06-25 15:28:38,841 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-25 15:28:40,364 - INFO - Dash app initialized
+2025-06-25 15:28:49,853 - INFO - Route accessed: /
+2025-06-25 15:28:51,322 - INFO - Route accessed: /data-pre-processing
+2025-06-25 15:28:55,032 - INFO - Select studies tab - Successfully created new project 'Project 2' at 'Projects\Project-2'
+2025-06-25 15:28:57,317 - INFO - Route accessed: /datasets
+2025-06-25 15:29:55,696 - INFO - Dash app initialized
+2025-06-25 15:30:00,962 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-25 15:30:02,233 - INFO - Dash app initialized
+2025-06-25 15:30:10,811 - INFO - Route accessed: /
+2025-06-25 15:30:12,697 - INFO - Route accessed: /data-pre-processing
+2025-06-25 15:30:15,769 - INFO - Select studies tab - Successfully created new project 'Project 3' at 'Projects\Project-3'
+2025-06-25 15:30:17,089 - INFO - Route accessed: /datasets
+2025-06-25 15:30:28,258 - INFO - Route accessed: /single_study_analysis
+2025-06-25 15:30:35,163 - INFO - Route accessed: /multi-study-analysis
+2025-06-25 15:30:42,773 - INFO - Route accessed: /plots
+2025-06-25 15:31:52,323 - INFO - Dash app initialized
+2025-06-25 15:31:57,365 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-25 15:31:58,534 - INFO - Dash app initialized
+2025-06-25 15:32:06,559 - INFO - Route accessed: /
+2025-06-25 15:32:08,577 - INFO - Route accessed: /data-pre-processing
+2025-06-25 15:32:12,690 - INFO - Select studies tab - Selected existing project 'Diabetes' at 'Projects\Diabetes'
+2025-06-25 15:32:13,891 - INFO - Route accessed: /plots
+2025-06-25 15:32:19,536 - INFO - Route accessed: /data-pre-processing
+2025-06-25 15:32:22,566 - INFO - Select studies tab - Successfully created new project 'Project 4' at 'Projects\Project-4'
+2025-06-25 15:32:25,029 - INFO - Route accessed: /datasets
+2025-06-25 15:32:29,936 - INFO - Route accessed: /single_study_analysis
+2025-06-25 15:32:33,909 - INFO - Route accessed: /multi-study-analysis
+2025-06-25 15:32:38,024 - INFO - Route accessed: /plots

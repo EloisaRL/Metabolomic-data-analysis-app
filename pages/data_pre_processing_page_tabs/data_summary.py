@@ -660,7 +660,7 @@ def static_preprocess(folder, metadata, preprocessing_steps=None, outliers=None,
             
             return data
 
-    files = glob.glob(f"{folder}/*maf.tsv")
+    files = glob.glob(f"{folder}/*.tsv")
     
     if len(files) == 0:
         logger.error("Data summary tab - No assay files found in the folder.")

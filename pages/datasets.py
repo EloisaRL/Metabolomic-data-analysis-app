@@ -1,7 +1,8 @@
 import os
 import pandas as pd
 from datetime import datetime
-from dash import html, dcc, dash_table, callback
+import dash_bootstrap_components as dbc
+from dash import html, dcc, dash_table, callback, no_update, State
 from dash.dependencies import Input, Output
 from app import app
 import json
@@ -20,25 +21,65 @@ def list_subfolders(folder):
     except FileNotFoundError:
         return []
 
-layout = html.Div([
-    html.Div(
-        dcc.Dropdown(
-            id='project-dropdown',
-            options=[{'label': 'Select project', 'value': ''}] +
-                    [{'label': proj, 'value': proj} for proj in list_subfolders(projects_folder)],
-            value='',
-            placeholder='Select project',
-            clearable=False,
-            style={'width': '250px'}
+project_modal = dbc.Modal(
+    [
+        dbc.ModalHeader(dbc.ModalTitle("Choose a Project"), close_button=False),
+        dbc.ModalBody(
+            dcc.Dropdown(
+                id="project-dropdown-pop-dat",
+                options=[],  # filled by callback
+                placeholder="Select project",
+                clearable=False,
+                style={"width": "100%"},
+            )
         ),
-        style={'display': 'flex', 'justifyContent': 'flex-end', 'marginBottom': '20px'}
-    ),
-    html.Div(id="processed-datasets-table", style={"marginRight": "50px"}),
+        dbc.ModalFooter(
+            dbc.Button("Confirm", id="confirm-project-button-dat", n_clicks=0, color="primary")
+        ),
+    ],
+    id="project-modal-dat",
+    is_open=True,      # ← show on page load
+    backdrop="static", # can’t click outside to close
+    keyboard=False,    # disable ESC
+    centered=True,
+)
+
+layout = html.Div([
+    # always-visible modal
+    project_modal,
+
+    # area to render once a project is chosen
+    html.Div(id="processed-datasets-table", style={"margin": "20px"})
 ])
+
+# 1) Populate the dropdown whenever modal is shown
+@callback(
+    Output("project-dropdown-pop-dat", "options"),
+    Input("project-modal-dat", "is_open"),
+)
+def update_project_list(is_open):
+    if is_open:
+        subs = list_subfolders(projects_folder)
+        return [{"label": p.replace("-", " "), "value": p} for p in subs]
+    return no_update
+
+# 2) Close modal on Confirm
+@callback(
+    Output("project-modal-dat", "is_open"),
+    Input("confirm-project-button-dat", "n_clicks"),
+    State("project-dropdown-pop-dat", "value"),
+)
+def confirm_project(n_clicks, selected):
+    if n_clicks and selected:
+        # Build whatever table or content you need; here's a placeholder:
+        
+        return False
+    # keep modal open until they pick something
+    return True
 
 @callback(
     Output("processed-datasets-table", "children"),
-    [Input("project-dropdown", "value"), Input("url", "pathname")]
+    [Input("project-dropdown-pop-dat", "value"), Input("url", "pathname")]
 )
 def show_processed_datasets(selected_project, pathname):
     """
