@@ -262,3 +262,48 @@ AttributeError: 'NoneType' object has no attribute 'replace'
 2025-06-19 16:36:46,071 - INFO - Differential pathway tab - Successfully perform pathway analysis on: processed_MTBLS1866_knn_imputer_log_transform_standard_scaler.csv
 2025-06-19 16:36:47,881 - INFO - Differential metabolite tab - Successfully produced differential metabolites summary chart and table for: processed_MTBLS1866_knn_imputer_log_transform_standard_scaler.csv
 2025-06-19 16:37:08,720 - INFO - Route accessed: /multi-study-analysis
+2025-06-23 10:10:48,081 - INFO - Dash app initialized
+2025-06-23 10:10:56,141 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-23 10:10:57,660 - INFO - Dash app initialized
+2025-06-23 10:11:05,417 - INFO - Route accessed: /
+2025-06-23 10:11:08,443 - INFO - Route accessed: /data-pre-processing
+2025-06-23 10:11:12,018 - INFO - Select studies tab - Selected existing project 'Dummy project' at 'Projects\Dummy-project'
+2025-06-23 10:12:03,591 - WARNING - Select studies tab - Study 'MTBLS1866' already exists. Prompting for overwrite.
+2025-06-23 10:14:01,723 - INFO - Dash app initialized
+2025-06-23 10:14:08,882 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-23 10:14:10,196 - INFO - Dash app initialized
+2025-06-23 10:14:17,367 - INFO - Route accessed: /
+2025-06-23 10:14:55,631 - INFO - Dash app initialized
+2025-06-23 10:15:00,659 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-23 10:15:01,859 - INFO - Dash app initialized
+2025-06-23 10:15:09,258 - INFO - Route accessed: /
+2025-06-23 10:15:34,523 - INFO - Route accessed: /data-pre-processing
+2025-06-23 10:15:38,128 - INFO - Select studies tab - Selected existing project 'Demo project' at 'Projects\Demo-project'
+2025-06-23 10:16:00,064 - INFO - Route accessed: /
+2025-06-23 10:16:17,798 - INFO - Route accessed: /data-pre-processing
+2025-06-23 10:16:21,323 - INFO - Select studies tab - Selected existing project 'Demo project' at 'Projects\Demo-project'
+2025-06-23 10:16:44,214 - INFO - Select studies tab - Saved file 's_MTBLS1866.txt' to study 'MTBLS1866'
+2025-06-23 10:16:44,228 - INFO - Select studies tab - Saved file 'm_MTBLS1866_LC-MS_negative_reverse-phase_metabolite_profiling_v2_maf.tsv' to study 'MTBLS1866'
+2025-06-23 10:16:44,243 - INFO - Select studies tab - Saved file 'm_MTBLS1866_GCxGC-MS_positive__metabolite_profiling_v2_maf.tsv' to study 'MTBLS1866'
+2025-06-23 10:16:44,254 - INFO - Select studies tab - Saved file 'm_MTBLS1866_LC-MS_positive_reverse-phase_metabolite_profiling_v2_maf.tsv' to study 'MTBLS1866'
+2025-06-23 10:16:44,265 - INFO - Select studies tab - Updated study details at 'pre-processed-datasets\MTBLS1866\study_details.txt' for study 'MTBLS1866'
+2025-06-23 10:17:53,726 - INFO - Route accessed: /
+2025-06-23 10:19:05,150 - INFO - Dash app initialized
+2025-06-23 10:19:12,409 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-06-23 10:19:13,584 - INFO - Dash app initialized
+2025-06-23 10:19:21,186 - INFO - Route accessed: /
+2025-06-23 10:19:38,210 - INFO - Route accessed: /data-pre-processing
+2025-06-23 10:19:42,217 - INFO - Select studies tab - Selected existing project 'Demo project' at 'Projects\Demo-project'
+2025-06-23 10:19:53,590 - INFO - Route accessed: /
+2025-06-23 10:20:15,261 - INFO - Route accessed: /data-pre-processing
+2025-06-23 10:20:19,039 - INFO - Select studies tab - Selected existing project 'Demo project' at 'Projects\Demo-project'
+2025-06-23 10:20:41,871 - INFO - Select studies tab - Saved file 's_MTBLS1866.txt' to study 'MTBLS1866'
+2025-06-23 10:20:41,885 - INFO - Select studies tab - Saved file 'm_MTBLS1866_LC-MS_negative_reverse-phase_metabolite_profiling_v2_maf.tsv' to study 'MTBLS1866'
+2025-06-23 10:20:41,900 - INFO - Select studies tab - Saved file 'm_MTBLS1866_GCxGC-MS_positive__metabolite_profiling_v2_maf.tsv' to study 'MTBLS1866'
+2025-06-23 10:20:41,930 - INFO - Select studies tab - Saved file 'm_MTBLS1866_LC-MS_positive_reverse-phase_metabolite_profiling_v2_maf.tsv' to study 'MTBLS1866'
+2025-06-23 10:20:41,942 - INFO - Select studies tab - Updated study details at 'pre-processed-datasets\MTBLS1866\study_details.txt' for study 'MTBLS1866'
+2025-06-25 09:05:32,221 - INFO - Dash app initialized

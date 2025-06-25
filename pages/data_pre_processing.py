@@ -33,7 +33,7 @@ def side_panel_details_dpp():
                         options=[
                             {"label": "MetaboLights", "value": "metabolights"},
                             {"label": "Metabolomics Workbench", "value": "metabolomics_workbench"},
-                            {"label": "Original data - Refmet ids", "value": "original_refmet_ids"},
+                            {"label": "Original data - Refmet Names", "value": "original_refmet_ids"},
                             {"label": "Original data - Chebi ids", "value": "original_Chebi_ids"}
                         ],
                         value="metabolights"

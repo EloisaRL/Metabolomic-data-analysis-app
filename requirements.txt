@@ -14,3 +14,4 @@ networkx==3.2.1
 marsilea==0.5.0
 matplotlib==3.8.2
 requests==2.31.0
+dash-cytoscape==1.0.2
