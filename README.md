@@ -58,7 +58,7 @@ The app automatically harmonises metabolite annotations (RefMet names or ChEBI I
 
 ```bash
 git clone https://github.com/EloisaRL/Metabolomic-data-analysis-app.git
-cd metabolight-data-analysis-app
+cd Metabolomic-data-analysis-app
 ```
 
 ### Set up the Environment
