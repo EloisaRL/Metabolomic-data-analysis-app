@@ -449,3 +449,21 @@ AttributeError: 'NoneType' object has no attribute 'empty'
 2025-06-25 15:32:29,936 - INFO - Route accessed: /single_study_analysis
 2025-06-25 15:32:33,909 - INFO - Route accessed: /multi-study-analysis
 2025-06-25 15:32:38,024 - INFO - Route accessed: /plots
+2025-07-16 09:54:03,114 - INFO - Dash app initialized
+2025-07-16 09:54:21,550 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-07-16 09:54:23,031 - INFO - Dash app initialized
+2025-07-16 09:54:53,917 - INFO - Route accessed: /
+2025-07-16 09:54:56,234 - INFO - Route accessed: /multi-study-analysis
+2025-07-22 15:01:40,295 - INFO - Dash app initialized
+2025-07-22 15:01:47,776 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-07-22 15:01:49,185 - INFO - Dash app initialized
+2025-07-22 15:02:15,776 - INFO - Route accessed: /
+2025-07-22 15:02:17,994 - INFO - Route accessed: /multi-study-analysis
+2025-07-23 18:56:22,850 - INFO - Dash app initialized
+2025-07-23 18:56:31,128 - INFO - Dash is running on http://127.0.0.1:8050/
+
+2025-07-23 18:56:32,337 - INFO - Dash app initialized
+2025-07-23 18:56:55,289 - INFO - Route accessed: /
+2025-07-23 18:57:00,393 - INFO - Route accessed: /multi-study-analysis

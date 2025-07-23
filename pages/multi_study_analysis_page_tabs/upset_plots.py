@@ -4,6 +4,8 @@ import dash_bootstrap_components as dbc
 import os
 import pandas as pd
 from marsilea.upset import UpsetData, Upset
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import io
 import base64
