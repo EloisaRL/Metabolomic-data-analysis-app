@@ -1,22 +1,11 @@
 {
   "studies": {
-    "MTBLS1": {
-      "filename": "processed_MTBLS1_knn_imputer_log_transform_standard_scaler.csv",
-      "group_type": "Factor Value[Metabolic syndrome]",
-      "preprocessing": [
-        "knn_imputer",
-        "log_transform",
-        "standard_scaler"
-      ],
+    "ST002016": {
+      "filename": "",
+      "group_type": "group:-",
+      "preprocessing": {},
       "outliers": "",
-      "group_filter": {
-        "Control": [
-          "Control Group"
-        ],
-        "Case": [
-          "diabetes mellitus"
-        ]
-      }
+      "group_filter": {}
     }
   }
 }

@@ -16,6 +16,7 @@ import ast
 import pandas as pd
 import time
 import logging
+from io import StringIO
 logger = logging.getLogger(__name__)
 
 
@@ -365,7 +366,7 @@ def static_preprocess_workbench(folder, preprocessing_steps=None, outliers=None,
         if (df['Samples']
             .fillna('')           # turn NaN → ""
             .astype(str)          # ensure string dtype
-            .str.contains(r'(_NEG|_POS)$')
+            .str.contains(r'(?:_NEG|_POS)$')
             ).any():
             # create a "base" sample ID without the trailing suffix
             df['base_id'] = df['Samples'].str.replace(r'(_NEG|_POS)$', '', regex=True)
@@ -450,7 +451,7 @@ def static_preprocess_workbench(folder, preprocessing_steps=None, outliers=None,
             mets_url = 'https://www.metabolomicsworkbench.org/rest/study/study_id/repl/metabolites'
             try:
                 mets = requests.get(mets_url.replace('repl', study_name)).text
-                mets_df = pd.read_json(mets).T
+                mets_df = pd.read_json(StringIO(mets)).T
                 mets_dict = dict(zip(mets_df['metabolite_name'], mets_df['refmet_name']))
                 # make sure 'Group' is identity-mapped
                 mets_dict['Group'] = 'Group'
@@ -748,14 +749,20 @@ def static_preprocess(folder, metadata, preprocessing_steps=None, outliers=None,
                 print("  ✗ could not find any trimming that creates an overlap")
 
         # 3) now proceed as before, whether trimmed or not
-        combined_proc = raw_data_combined.groupby(by=raw_data_combined.columns, axis=1).apply(
-            lambda g: g.mean(axis=1) if isinstance(g.iloc[0, 0], numbers.Number) else g.iloc[:, 0]
+        combined_proc = (
+            raw_data_combined.T
+            .groupby(level=0) 
+            .apply(lambda g: g.mean(axis=0) if isinstance(g.iloc[0, 0], numbers.Number) else g.iloc[:, 0])
+            .T
         )
         combined_proc = combined_proc.loc[:, ~combined_proc.columns.duplicated()]
         processed_data = combined_proc
     else:
-        processed_data = proc_dfs[0].groupby(by=proc_dfs[0].columns, axis=1).apply(
-            lambda g: g.mean(axis=1) if isinstance(g.iloc[0, 0], numbers.Number) else g.iloc[:, 0]
+        processed_data = (
+            proc_dfs[0].T
+            .groupby(level=0)
+            .apply(lambda g: g.mean(axis=0) if isinstance(g.iloc[0, 0], numbers.Number) else g.iloc[:, 0])
+            .T
         )
     return processed_data
 

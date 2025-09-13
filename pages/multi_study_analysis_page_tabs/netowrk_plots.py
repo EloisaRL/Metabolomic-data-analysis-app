@@ -1054,6 +1054,7 @@ def register_callbacks():
         trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
         elements = []
         stylesheet = []
+        used_studies = set()
 
         # ─── Handle the bipartite OK click ───────────────────────────────────────────
         #if trigger_id == "bipartite-modal-close" and node_style == "bipartite":
@@ -1433,15 +1434,15 @@ def register_callbacks():
             study_names = [st.node_name for st in studies]
 
             # Precompute palettes
-            pie_pal   = sns.color_palette("Set3", n_colors=len(all_study_names)).as_hex()
-            color_map = dict(zip(all_study_names, pie_pal))
+            #pie_pal   = sns.color_palette("Set3", n_colors=len(all_study_names)).as_hex()
+            #color_map = dict(zip(all_study_names, pie_pal))
 
             # degree = # of edges incident to each node
             deg_dict   = dict(G.degree())
             max_degree = max(deg_dict.values())
 
             # ——— compute which studies ever show up in a pie ———
-            used_studies = set()
+            #used_studies = set()
             for node in G.nodes():
                 if network_level == "diff-metabolite":
                     present = [node in st.DA_metabolites for st in studies]
@@ -1450,6 +1451,9 @@ def register_callbacks():
                 for nm, ok in zip(all_study_names, present):
                     if ok:
                         used_studies.add(nm)
+            
+            pie_pal   = sns.color_palette("Set3", n_colors=len(used_studies)).as_hex()
+            color_map = dict(zip(used_studies, pie_pal))
 
             # study_counts = in how many studies each node appears
             if network_level == "diff-metabolite":
