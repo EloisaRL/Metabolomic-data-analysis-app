@@ -1452,8 +1452,11 @@ def register_callbacks():
                     if ok:
                         used_studies.add(nm)
             
-            pie_pal   = sns.color_palette("Set3", n_colors=len(used_studies)).as_hex()
-            color_map = dict(zip(used_studies, pie_pal))
+            #pie_pal   = sns.color_palette("Set3", n_colors=len(used_studies)).as_hex()
+            #color_map = dict(zip(used_studies, pie_pal))
+            ordered_used = [nm for nm in all_study_names if nm in used_studies]  # stable order
+            palette = sns.color_palette("Set3", n_colors=len(ordered_used)).as_hex()
+            color_map = dict(zip(ordered_used, palette))
 
             # study_counts = in how many studies each node appears
             if network_level == "diff-metabolite":
@@ -1616,22 +1619,16 @@ def register_callbacks():
                 legend_nodes = []
                 y = LEGEND_Y_START
 
-                for name, color in color_map.items():
+                for i, name in enumerate(ordered_used):
                     if name not in used_studies:
                         continue   # skip studies that never got a slice
 
                     legend_nodes.append({
-                        "data":     {"id": f"legend-{name}", "label": name},
+                        "data":     {"id": f"legend-{name}-{i}", "label": name, "study": name},
                         "position": {"x": LEGEND_X, "y": y},
                         "locked":   True,
                         "grabbable": True,
-                        "classes":  "legend-node",
-                        "style": {
-                            "background-color": color,   # from the full map
-                            "shape":            "rectangle",
-                            "width":            BOX_SIZE,
-                            "height":           BOX_SIZE
-                        }
+                        "classes":  "legend-node"
                     })
                     y += LEGEND_Y_GAP
 
@@ -1671,20 +1668,33 @@ def register_callbacks():
                 }
             ]
             if node_style == "pie" or node_style == "t_statistic":
-                # 4) Add a single stylesheet rule
+                # base legend node rule
                 stylesheet += [
                     {
-                    "selector": ".legend-node",
-                    "style": {
-                        "label":         "data(label)",    # show the name
-                        "text-valign":   "center",         # vertically centered on the box
-                        "text-halign":   "right",          # text to the right of the node
-                        "text-margin-x": LABEL_MARGIN,     # small gap
-                        "font-size":     f"{FONT_SIZE}px",
-                        "color":         "#000"
-                    }
+                        "selector": ".legend-node",
+                        "style": {
+                            "label": "data(label)",
+                            "text-valign": "center",
+                            "text-halign": "right",
+                            "text-margin-x": LABEL_MARGIN,
+                            "font-size": f"{FONT_SIZE}px",
+                            "color": "#000",
+                            "shape": "rectangle",
+                            "width": BOX_SIZE,
+                            "height": BOX_SIZE,
+                        },
                     }
                 ]
+
+                # 🔧 add per-study color rules
+                study_rules = [
+                    {
+                        "selector": f'node.legend-node[study = "{name}"]',
+                        "style": {"background-color": color_map[name]},
+                    }
+                    for name in color_map.keys()
+                ]
+                stylesheet += study_rules
 
             if node_style == "pie":
                 stylesheet.append({
