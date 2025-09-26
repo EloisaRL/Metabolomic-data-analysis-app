@@ -107,8 +107,9 @@ def show_processed_datasets(selected_project, pathname):
         )
 
     # Load JSON payload for study metadata
+    project_details_path = os.path.join("Projects", selected_project, "project_details_file.json")
     try:
-        with open(SELECTED_STUDIES_FILE, "r", encoding="utf-8") as f:
+        with open(project_details_path, "r", encoding="utf-8") as f:
             payload = json.load(f).get("studies", {})
     except Exception:
         payload = {}
