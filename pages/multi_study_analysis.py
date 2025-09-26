@@ -1,8 +1,7 @@
 # pages/multi_study_analysis.py
-import os
 import dash_bootstrap_components as dbc
 from dash import html, dcc, Input, Output, callback, State, no_update, callback_context
-import os, base64
+import os, base64, json
 import plotly.io as pio
 
 from .multi_study_analysis_page_tabs.upset_plots import layout    as upset_layout
@@ -100,9 +99,16 @@ layout = html.Div([
                         id="project-files-checklist-msa",
                         options=[],  # Options updated via a callback.
                         # Each label is forced to stay on one line.
-                        labelStyle={'display': 'block', 'whiteSpace': 'nowrap'},
+                        labelStyle={
+                            "display": "block",
+                            "whiteSpace": "nowrap",     # keep on one line
+                            "overflow": "hidden",       # hide anything that overflows
+                            "textOverflow": "ellipsis", # replace overflow with '...'
+                            "maxWidth": "100%"          # ensure it respects container width
+                        },
                         inputStyle={"margin-right": "10px"}
                     ),
+                    html.Div(id="project-files-tooltips-msa"),  # holds tooltips
                     dbc.Button(
                         "Process data",
                         id="process-data-button-msa",
@@ -185,23 +191,74 @@ def update_project_info(n_clicks, selected_project):
 # Callback to update the checklist in the sidebar with the files from processed-datasets.
 @callback(
     Output("project-files-checklist-msa", "options"),
-    Input("project-dropdown-pop-msa", "value")
+    Output("project-files-tooltips-msa", "children"),
+    Input("project-dropdown-pop-msa", "value"),
 )
 def update_files_checklist(selected_project):
-    if selected_project:
-        files = list_processed_files(selected_project)
-        options = []
-        for f in files:
-            display_name = f
-            # Remove leading 'processed_' if present.
-            if display_name.startswith("processed_"):
-                display_name = display_name[len("processed_"):]
-            # Remove trailing '.csv' if present.
-            if display_name.endswith(".csv"):
-                display_name = display_name[:-len(".csv")]
-            options.append({'label': display_name, 'value': f})
-        return options
-    return []
+    if not selected_project:
+        return [], []
+
+    files = list_processed_files(selected_project)
+
+    # Load study metadata
+    project_details_path = os.path.join("Projects", selected_project, "project_details_file.json")
+    try:
+        with open(project_details_path, "r", encoding="utf-8") as f:
+            payload = json.load(f).get("studies", {})
+    except Exception:
+        payload = {}
+
+    options, tooltips = [], []
+
+    for idx, fpath in enumerate(files):
+        basename = os.path.basename(fpath)
+        display_name = os.path.splitext(basename)[0]
+        if display_name.startswith("processed_"):
+            display_name = display_name[len("processed_"):]
+
+        # Extract study name from filename
+        no_ext = os.path.splitext(basename)[0]
+        study_name = no_ext[len("processed_"):].split("_")[0] if no_ext.startswith("processed_") else None
+
+        info = payload.get(study_name, {}) if study_name else {}
+        gf = info.get("group_filter", {}) or {}
+        control_group = gf.get("Control") or []
+        case_group    = gf.get("Case")    or []
+        prep_options  = info.get("preprocessing") or []
+
+        # Safe, simple, unique id based on display_name + index
+        #label_id = f"option-{display_name}-{idx}"
+        label_id = f"option-{study_name}-{idx}"
+
+        # Truncated label with native-title fallback
+        options.append({
+                "label": html.Span(study_name, id=label_id),
+                "value": fpath
+            })
+        # Rich tooltip to the right (no assets needed)
+        tooltip_body = html.Div(
+            [
+                html.Div([html.Strong("Study: "), html.Span(study_name or "N/A")]),
+                html.Div([html.Strong("Control: "), html.Span(", ".join(control_group) if control_group else "None")]),
+                html.Div([html.Strong("Case: "), html.Span(", ".join(case_group) if case_group else "None")]),
+                html.Div([html.Strong("Preprocessing: "), html.Span(", ".join(prep_options) if prep_options else "None")]),
+                html.Hr(style={"margin": "6px 0"}),
+                html.Div([html.Strong("File: "), html.Span(basename)]),
+            ],
+            style={"textAlign": "left", "whiteSpace": "normal"},
+        )
+
+        tooltips.append(
+            dbc.Tooltip(
+                tooltip_body,
+                target=label_id,
+                placement="right",
+                trigger="hover",
+                delay={"show": 100, "hide": 0},
+            )
+        )
+
+    return options, tooltips
 
 @callback(
     [
