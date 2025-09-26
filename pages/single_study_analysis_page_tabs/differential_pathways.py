@@ -266,7 +266,7 @@ def register_callbacks():
         Output("pathway-table-store",   "data"),
         [
             Input("project-dropdown-pop",   "value"),
-            Input("project-files-dropdown", "value"),
+            Input("selected-file-radio-ssa", "value"),
             Input("num-top-pathways",       "value")
         ]
     )
@@ -448,8 +448,24 @@ def register_callbacks():
             pval_df['FDR_P-value'] = multipletests(pvals, method='fdr_bh')[1]
             sig = pval_df[pval_df['FDR_P-value'] < 0.05].sort_values('FDR_P-value')
             if sig.empty:
-                pathway_table = html.Div("No significantly different pathways (FDR < 0.05).")
-                fig_box = None
+                # Build a friendly message and return early — no fig, no table CSV
+                no_sig_msg = html.Div([
+                    html.P("No significantly different pathways (FDR < 0.05) for this study. "
+                        "This often happens when there are very few differentially abundant metabolites "
+                        "(e.g., 0–1) or sample sizes are small."),
+                ])
+
+                logger.info("Differential pathway tab - No significant pathways; skipping figure/table serialization.")
+
+                return (
+                    html.Div(
+                        [mapping_stats_div, no_sig_msg],
+                        style={"display": "flex", "flexDirection": "column", "alignItems": "center"}
+                    ),
+                    None,   # pathway-chart-store
+                    None,
+                    None    # pathway-table-store
+                )
             else:
                 top_paths = sig.index.tolist()[:10]
                 sig_sorted = sig.sort_values("FDR_P-value").round(3)

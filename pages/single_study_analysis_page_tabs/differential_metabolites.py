@@ -229,7 +229,7 @@ def register_callbacks():
         Output("diff-table-store",        "data"),
         [
             Input("project-dropdown-pop",       "value"),
-            Input("project-files-dropdown",     "value"),
+            Input("selected-file-radio-ssa",     "value"),
             Input("num-top-metabolites",        "value"),
         ]
     )

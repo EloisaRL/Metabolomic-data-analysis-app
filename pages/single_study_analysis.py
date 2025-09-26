@@ -1,5 +1,5 @@
 # pages/single_study_analysis.py
-import os
+import os, json
 import dash_bootstrap_components as dbc
 from dash import html, dcc, Input, Output, callback, State, no_update, callback_context
 import plotly.io as pio
@@ -18,6 +18,19 @@ def list_projects():
         # List only directories
         return sorted([f for f in os.listdir(projects_dir) if os.path.isdir(os.path.join(projects_dir, f))])
     except FileNotFoundError:
+        return []
+    
+# Helper function to list files in processed-datasets folder.
+def list_processed_files(selected_project):
+    # Modify the base path as needed for your project structure.
+    folder_path = os.path.join("projects", selected_project, "processed-datasets")
+    try:
+        files = os.listdir(folder_path)
+        # Only include files (exclude subdirectories)
+        files = [f for f in files if os.path.isfile(os.path.join(folder_path, f))]
+        return files
+    except Exception as e:
+        print(f"Error listing files in {folder_path}: {e}")
         return []
 
 # Define the modal popup that asks the user to "Choose a Project"
@@ -61,7 +74,7 @@ layout = html.Div([
         },
         children="",  # set by callback
     ),
-    # A container with flex styling that holds the files dropdown and the project title inline.
+    # A container with flex styling that holds the projects dropdown and the project title inline.
     html.Div(
         [
             # Project name on the left.
@@ -72,17 +85,6 @@ layout = html.Div([
                     "textAlign": "left",
                     "display": "inline-block"
                 }
-            ),
-            # Files dropdown on the right.
-            dcc.Dropdown(
-                id="project-files-dropdown",
-                options=[],  # Will be populated based on the selected project.
-                placeholder="Select a file",
-                clearable=False,
-                style={
-                    "width": "300px",
-                    "marginLeft": "auto"  # Pushes the dropdown to the right.
-                }
             )
         ],
         style={
@@ -91,39 +93,64 @@ layout = html.Div([
             "alignItems": "center"
         }
     ),
+    # Main content: sidebar and tabs in a flex container.
     html.Div(
-        id="selected-study-title",
-        style={
-            "fontSize": "1.25rem",
-            "textAlign": "left",       # Aligns the text to the left
-            "marginTop": "1rem",
-            "overflowX": "auto",       # Enables horizontal scrolling if needed
-            "whiteSpace": "nowrap",    # Prevents the text from wrapping onto multiple lines
-            "padding": "0 1rem"        # Optional: adds some padding for visual comfort
-        }
-    ),
-    
-    dcc.Tabs(
-        id="single-study-analysis-tabs",
-        value="differential",
-        children=[
-            dcc.Tab(
-                label="Differential metabolite analysis",
-                value="differential",
-                children=differential_layout
+        [
+            # Sidebar (left column): shows the processed files as a checklist.
+            html.Div(
+                [
+                    html.H4("Processed Files"),
+                    dcc.RadioItems(
+                        id="selected-file-radio-ssa",
+                        options=[],  # Options updated via a callback.
+                        # Each label is forced to stay on one line.
+                        labelStyle={
+                            "display": "block",
+                            "whiteSpace": "nowrap",     # keep on one line
+                            "overflow": "hidden",       # hide anything that overflows
+                            "textOverflow": "ellipsis", # replace overflow with '...'
+                            "maxWidth": "100%"          # ensure it respects container width
+                        },
+                        inputStyle={"margin-right": "10px"}
+                    ),
+                    html.Div(id="project-files-tooltips-ssa")  # holds tooltips
+                ],
+                style={
+                    "width": "20%",
+                    "padding": "1rem",
+                    "borderRight": "1px solid #ccc",
+                    "overflowX": "auto"  # Enables horizontal scrolling if content is wider than the container.
+                }
             ),
-            dcc.Tab(
-                label="Differential pathway analysis",
-                value="pathway",
-                children=pathway_layout
+            # Main content (right column): Tabs that are visible regardless of sidebar.
+            html.Div(
+                [
+                    dcc.Tabs(
+                        id="single-study-analysis-tabs",
+                        value="differential",
+                        children=[
+                            dcc.Tab(
+                                label="Differential metabolite analysis",
+                                value="differential",
+                                children=differential_layout
+                            ),
+                            dcc.Tab(
+                                label="Differential pathway analysis",
+                                value="pathway",
+                                children=pathway_layout
+                            )
+                        ]
+                    ),
+                    html.Div(id="analysis-content", style={"marginTop": "20px"})
+                ],
+                style={"width": "80%", "padding": "1rem"}
             )
-        ]
-    ),
-    html.Div(id="analysis-content", style={"marginTop": "20px"}),
+        ],
+        style={"display": "flex"}
+    )
     # IMPORTANT: include the modal (and its hidden stores) here!
     
 ])
-
 
 register_diff_cb()
 register_path_cb()
@@ -161,67 +188,77 @@ def update_project_info(n_clicks, selected_project):
     # If nothing is selected or the button isn't clicked, leave everything unchanged.
     return no_update, True, no_update
 
-
+# Callback to update the checklist in the sidebar with the files from processed-datasets.
 @callback(
-    Output("selected-study-title", "children"),
-    Input("project-files-dropdown", "value")
+    Output("selected-file-radio-ssa", "options"),
+    Output("project-files-tooltips-ssa", "children"),
+    Input("project-dropdown-pop", "value"),
 )
-def update_selected_study_title(selected_file):
-    if selected_file:
-        # Remove leading "processed_" if present.
-        display_study = selected_file
-        if display_study.startswith("processed_"):
-            display_study = display_study[len("processed_"):]
-        # Remove trailing ".csv" if present.
-        if display_study.endswith(".csv"):
-            display_study = display_study[:-len(".csv")]
-        return html.Div([
-            html.Strong("Selected Study: "),
-            display_study
-        ])
-    return ""
-
-
-# Callback to update the file list dropdown based on the selected project.
-@callback(
-    Output("project-files-dropdown", "options"),
-    Input("project-dropdown-pop", "value")
-)
-def update_project_files(selected_project):
+def update_files_checklist(selected_project):
     if not selected_project:
-        return []
-    
-    # Construct the path to the processed-datasets folder in the selected project.
-    base_path = os.path.join("Projects", selected_project, "processed-datasets")
-    
-    # If the folder does not exist, return an empty options list.
-    if not os.path.exists(base_path):
-        return []
-    
-    # List only file names from the folder.
-    file_names = sorted([
-        f for f in os.listdir(base_path) 
-        if os.path.isfile(os.path.join(base_path, f))
-    ])
-    
-    # Create options for the dropdown.
-    # Each option's label is rendered as an html.Span with a title attribute.
-    options = [
-        {
-            "label": html.Span(
-                f,
-                title=f,  # Full file name shown when hovering.
-                style={
-                    "display": "inline-block",
-                    "maxWidth": "280px",    # Adjust maximum width as needed.
-                    "overflow": "hidden",
-                    "textOverflow": "ellipsis"
-                }
-            ),
-            "value": f
-        } for f in file_names
-    ]
-    return options
+        return [], []
+
+    files = list_processed_files(selected_project)
+
+    # Load study metadata
+    project_details_path = os.path.join("Projects", selected_project, "project_details_file.json")
+    try:
+        with open(project_details_path, "r", encoding="utf-8") as f:
+            payload = json.load(f).get("studies", {})
+    except Exception:
+        payload = {}
+
+    options, tooltips = [], []
+
+    for idx, fpath in enumerate(files):
+        basename = os.path.basename(fpath)
+        display_name = os.path.splitext(basename)[0]
+        if display_name.startswith("processed_"):
+            display_name = display_name[len("processed_"):]
+
+        # Extract study name from filename
+        no_ext = os.path.splitext(basename)[0]
+        study_name = no_ext[len("processed_"):].split("_")[0] if no_ext.startswith("processed_") else None
+
+        info = payload.get(study_name, {}) if study_name else {}
+        gf = info.get("group_filter", {}) or {}
+        control_group = gf.get("Control") or []
+        case_group    = gf.get("Case")    or []
+        prep_options  = info.get("preprocessing") or []
+
+        # Safe, simple, unique id based on display_name + index
+        #label_id = f"option-{display_name}-{idx}"
+        label_id = f"option-{study_name}-{idx}"
+
+        # Truncated label with native-title fallback
+        options.append({
+                "label": html.Span(study_name, id=label_id),
+                "value": fpath
+            })
+        # Rich tooltip to the right (no assets needed)
+        tooltip_body = html.Div(
+            [
+                html.Div([html.Strong("Study: "), html.Span(study_name or "N/A")]),
+                html.Div([html.Strong("Control: "), html.Span(", ".join(control_group) if control_group else "None")]),
+                html.Div([html.Strong("Case: "), html.Span(", ".join(case_group) if case_group else "None")]),
+                html.Div([html.Strong("Preprocessing: "), html.Span(", ".join(prep_options) if prep_options else "None")]),
+                html.Hr(style={"margin": "6px 0"}),
+                html.Div([html.Strong("File: "), html.Span(basename)]),
+            ],
+            style={"textAlign": "left", "whiteSpace": "normal"},
+        )
+
+        tooltips.append(
+            dbc.Tooltip(
+                tooltip_body,
+                target=label_id,
+                placement="right",
+                trigger="hover",
+                delay={"show": 100, "hide": 0},
+            )
+        )
+
+    return options, tooltips
 
 @callback(
     [
