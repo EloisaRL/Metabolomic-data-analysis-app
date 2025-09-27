@@ -1431,7 +1431,7 @@ def register_callbacks():
                     chebi_to_name[node] = node
 
             # --- Prepare Cytoscape elements ---
-            study_names = [st.node_name for st in studies]
+            #study_names = [st.node_name for st in studies]
 
             # Precompute palettes
             #pie_pal   = sns.color_palette("Set3", n_colors=len(all_study_names)).as_hex()
@@ -1457,6 +1457,8 @@ def register_callbacks():
             ordered_used = [nm for nm in all_study_names if nm in used_studies]  # stable order
             palette = sns.color_palette("Set3", n_colors=len(ordered_used)).as_hex()
             color_map = dict(zip(ordered_used, palette))
+            studies[:] = [st for st in studies if st.node_name in used_studies]
+            study_names = [st.node_name for st in studies]
 
             # study_counts = in how many studies each node appears
             if network_level == "diff-metabolite":

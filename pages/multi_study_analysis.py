@@ -108,14 +108,7 @@ layout = html.Div([
                         },
                         inputStyle={"margin-right": "10px"}
                     ),
-                    html.Div(id="project-files-tooltips-msa"),  # holds tooltips
-                    dbc.Button(
-                        "Process data",
-                        id="process-data-button-msa",
-                        color="primary",   # Blue color (Bootstrap primary)
-                        size="lg",         # Large size
-                        style={"marginTop": "20px", "width": "100%"}
-                    )
+                    html.Div(id="project-files-tooltips-msa")  # holds tooltips
                 ],
                 style={
                     "width": "20%",

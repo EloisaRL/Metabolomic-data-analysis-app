@@ -134,7 +134,27 @@ layout = html.Div([
                             "marginBottom": "1.5rem",
                         },
                     ),
+                    dbc.Row(
+                        [
+                            # blank 4‐col spacer
+                            dbc.Col(width=4),
 
+                            # centered 4‐col for Refresh
+                            dbc.Col(
+                                dbc.Button(
+                                    "Refresh graphs",
+                                    id="refresh-upset-button-msa",
+                                    color="primary",
+                                    n_clicks=0,
+                                    size="sm",
+                                    type="button",
+                                ),
+                                width=4,
+                                className="text-center",  # center contents
+                            ),
+                        ],
+                        style={"marginBottom": "1rem"},
+                    ),
                     # always-visible “min co-occur” input
                     html.Div(
                         [
@@ -287,7 +307,7 @@ def register_callbacks():
         Output("upset-plot-store-msa",              "data"),   
         Output("diff-plot-store-msa",               "data"),
         [
-            Input("process-data-button-msa", "n_clicks"),
+            Input("refresh-upset-button-msa", "n_clicks"),
             Input("min-num-co-occur-metabolites-msa", "value"),
             Input("min-num-co-occur-diff-metabolites-msa", "value"),
             Input("multi-study-analysis-tabs", "value"),
@@ -306,7 +326,7 @@ def register_callbacks():
         hide_buttons = {"display": "none"}
         show_buttons = {"display": "flex"}   # flex so justify-content-end works
 
-        # 1) only run when user clicked “Process” and is on the co-occurring tab
+        # 1) only run when user clicked “Refresh graphs” and is on the co-occurring tab
         if not n_clicks or active_tab != "upset_plots":
             return no_update, no_update, no_update, no_update
 
