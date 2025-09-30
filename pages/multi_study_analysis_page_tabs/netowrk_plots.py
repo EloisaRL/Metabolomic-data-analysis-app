@@ -308,10 +308,48 @@ layout = html.Div([
                                     style={"width": "80px"}
                                 )
                             ], width=2),
+
+                            # Refresh button (hiddern by default)
+                            dbc.Col(
+                                dbc.Button(
+                                    "Refresh Table",
+                                    id="bipartite-disease-reload",
+                                    color="primary",
+                                    outline=True, 
+                                    size="sm",
+                                    # hidden by default; we'll show it when node_style == "bipartite"
+                                    style={"marginTop": "1.5rem", "marginLeft": "auto", "display": "none"},
+                                ),
+                                width="auto",
+                            ),
                         ],
                         align="center",
                         style={"margin": "1rem 0"}
                     ),
+                    html.Div(
+                        style={
+                            "display": "flex",
+                            "alignItems": "center",
+                            "justifyContent": "space-between",
+                            "width": "100%",
+                        },
+                        children=[
+                            # Table container (expands to left side)
+                            html.Div(
+                                id="bipartite-disease-table-container",
+                                style={"flexGrow": 1, "marginRight": "1rem"},
+                            ),
+                            # Save button (on the right)
+                            dbc.Button(
+                                "Save group types",
+                                id="bipartite-save-group-types",
+                                color="primary",
+                                outline=True, 
+                                style={"display": "none"},  # hidden by default
+                            ),
+                        ],
+                    ),
+                    html.Div(id="bipartite-save-status", className="text-muted", style={"fontSize": "0.9rem"}),
                     dbc.Row(
                         [
                             # blank 4‐col spacer
@@ -348,122 +386,7 @@ layout = html.Div([
                         ],
                         style={"marginBottom": "1rem"},
                     ),
-                    dbc.Modal(
-                        [
-                            dbc.ModalHeader("Name your studies"),
-                            dbc.ModalBody(
-                                html.Div([
-                                    # 1) Your existing studies picker
-                                    dcc.Dropdown(
-                                        id="bipartite-study-dropdown",
-                                        options=[],
-                                        multi=False,
-                                        placeholder="Select one or more processed study files"
-                                    ),
-
-                                    # 2) New disease chooser / input on one line
-                                    html.Div(
-                                        [
-                                            # Label
-                                            html.Span(
-                                                "Choose or enter the disease name:",
-                                                style={"marginRight": "0.5rem", "fontWeight": "500"}
-                                            ),
-
-                                            # Existing diseases dropdown (empty for now)
-                                            dcc.Dropdown(
-                                                id="bipartite-disease-dropdown",
-                                                options=[], 
-                                                placeholder="Choose disease",
-                                                style={
-                                                    "display": "inline-block",
-                                                    "verticalAlign": "middle",
-                                                    "width": "200px",
-                                                    "marginRight": "0.5rem"
-                                                }
-                                            ),
-
-                                            # Free-text input next to it
-                                            dcc.Input(
-                                                id="bipartite-disease-input",
-                                                type="text",
-                                                placeholder="Or type here",
-                                                style={
-                                                    "display": "inline-block",
-                                                    "verticalAlign": "middle",
-                                                    "width": "200px"
-                                                }
-                                            ),
-                                        ],
-                                        style={"marginTop": "1rem", "whiteSpace": "nowrap"}
-                                    ),
-                                    # ← new container, hidden by default
-                                    html.Div(
-                                        id="study-group-details-container",
-                                        style={"display": "none", "marginTop": "1.5rem"},
-                                        children=[
-
-                                            # Main heading
-                                            html.H5("Study group details", style={"textAlign": "center"}),
-
-                                            # Two‐column split
-                                            dbc.Row(
-                                                [
-                                                    # ◄ Left: group types as radio buttons
-                                                    dbc.Col(
-                                                        [
-                                                            html.H6("group types", style={"textAlign": "center"}),
-                                                            dcc.RadioItems(
-                                                                id="group-types-radio_msa",
-                                                                options=[],    # filled by callback
-                                                                labelStyle={"display": "block", "padding": "0.25rem"},
-                                                            ),
-                                                        ],
-                                                        width=6,
-                                                        style={
-                                                            "borderRight": "1px solid #ccc",
-                                                            "paddingRight": "1rem"
-                                                        },
-                                                    ),
-
-                                                    # ► Right: group classes (unique labels) go here
-                                                    dbc.Col(
-                                                        [
-                                                            html.H6("group classes", style={"textAlign": "center"}),
-                                                            html.Div(
-                                                                id="group-classes-list_msa",
-                                                                style={
-                                                                    "height": "150px",
-                                                                    "overflowY": "auto",
-                                                                    "padding": "10px",
-                                                                    "border": "1px dashed #ccc"
-                                                                },
-                                                                children="Select a group type to see its labels"
-                                                            ),
-                                                        ],
-                                                        width=6,
-                                                        style={"paddingLeft": "1rem"},
-                                                    ),
-                                                ]
-                                            ),
-                                        ]
-                                    ),
-                                    # ← new line at the very bottom of the ModalBody
-                                    html.Div(
-                                        id="study-control-case-text",
-                                        style={"marginTop": "1rem", "fontStyle": "italic", "textAlign": "center"},
-                                        children=""  # will be filled by callback
-                                    )
-                                ])
-                            ),
-                            dbc.ModalFooter(
-                                dbc.Button("OK", id="bipartite-modal-close", className="ml-auto")
-                            ),
-                        ],
-                        id="bipartite-modal",
-                        is_open=False,             # start closed
-                        size="lg",
-                    ),
+                    
                     dbc.Modal(
                         [
                             dbc.ModalHeader("Name of plot"),
@@ -501,6 +424,8 @@ layout = html.Div([
                     ),
                     # hidden store for path
                     dcc.Store(id="selected-study-store_msa", storage_type="memory"),
+                    # Network graph warning
+                    html.Div(id="network-warning", style={"margin": "0.75rem 0"}),
                     # Wrap the content in a dcc.Loading component.
                     # --- Cytoscape graph inside a Loading spinner ---
                     html.Div([
@@ -556,6 +481,8 @@ layout = html.Div([
                     
                 ])
 
+
+
 def register_callbacks():
     # Callback which controls the background description shown
     @callback(
@@ -601,13 +528,19 @@ def register_callbacks():
                 )
                 lines.append(
                     html.P(
-                        "For all datasets, differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) on the metabolite data to identify differential metabolites (FDR adjusted p-value below 0.05). Then ChEBI ids are converted into Metabolite names using libchebipy.ChebiEntity, prior to creating network plot.",
+                        "For each dataset, differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) "
+                        "to identify metabolites that are significantly different (FDR-adjusted p < 0.05). Identified ChEBI IDs are then "
+                        "converted into metabolite names using libchebipy.ChebiEntity.",
                         style={"marginBottom": "0.5rem"}
                     )
                 )
                 lines.append(
                     html.P(
-                        "The network plot shows the differential metabolites which co-occur in two or more studies (the number of studies which they co-occur are represented by the pie charts)."
+                        "The network plot displays these differential metabolites as nodes. An edge connects two metabolites if they "
+                        "are found to be differential in the same study, with the edge weight reflecting the number of studies where "
+                        "this co-occurrence happens. Node size is proportional to how many different metabolites a given metabolite "
+                        "co-occurs with (its connectivity in the network), highlighting metabolites that act as 'hubs' across studies. "
+                        "The pie charts on the nodes indicate in which studies each metabolite is differential."
                     )
                 )
 
@@ -633,13 +566,22 @@ def register_callbacks():
                 )
                 lines.append(
                     html.P(
-                        "For all datasets, differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) on the metabolite data to identify differential metabolites (FDR adjusted p-value below 0.05). This test also produces a t-statistic representing the standardized difference in mean metabolite abundance between the case and control group for that metabolite. Then ChEBI ids are converted into Metabolite names using libchebipy.ChebiEntity, prior to creating network plot.",
+                        "For each dataset, differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) "
+                        "to identify metabolites that are significantly different (FDR-adjusted p < 0.05). This test also produces a "
+                        "t-statistic, which reflects the standardized difference in mean metabolite abundance between the case and control groups. "
+                        "Identified ChEBI IDs are then converted into metabolite names using libchebipy.ChebiEntity.",
                         style={"marginBottom": "0.5rem"}
                     )
                 )
                 lines.append(
                     html.P(
-                        "The network plot shows the differential metabolites which co-occur in two or more studies (the t-statistic for each study that found that metabolite differential is shown in the bar graph)."
+                        "The network plot displays these differential metabolites as nodes. An edge connects two metabolites if they "
+                        "are found to be differential in the same study, with the edge weight reflecting the number of studies where "
+                        "this co-occurrence occurs. Node size is proportional to how many other metabolites a given metabolite co-occurs "
+                        "with (its connectivity in the network), highlighting metabolites that act as 'hubs' across studies. "
+                        "Within each node, a bar chart shows the t-statistics for that metabolite across the studies in which it was "
+                        "differential, with bar colour indicating the study. This allows comparison of both the direction and magnitude "
+                        "of differential abundance across datasets."
                     )
                 )
 
@@ -655,7 +597,13 @@ def register_callbacks():
                 )
                 lines.append(
                     html.P(
-                        "The network plot shows the differential metabolites which co-occur in two or more studies (the study that the metabolite is differential in is represented by the edges and the more edges the differential metabolite has the lighter the colour of the node)."
+                        "The network plot shows the differential metabolites which co-occur in two or more studies (the study that the metabolite is differential in is represented by the edges and the more edges the differential metabolite has the lighter the colour of the node).",
+                        style={"marginBottom": "0.5rem"}
+                    )
+                )
+                lines.append(
+                    html.P(
+                        "If a selected study does not have a disease type added, it will not be included in the graph."
                     )
                 )
 
@@ -691,326 +639,184 @@ def register_callbacks():
             value = prev if prev in {o["value"] for o in opts} else opts[0]["value"]
         return opts, value
 
-    # Callback: Opens the bipartite modal when 'bipartite' node style is selected, and closes it when dismissed
+    # callback to toggle visibility
     @callback(
-        Output("bipartite-modal", "is_open"),
-        [
-            Input("network-node-style-dropdown-msa", "value"),
-            Input("bipartite-modal-close", "n_clicks"),
-        ],
-        [State("bipartite-modal", "is_open")],
+        Output("bipartite-disease-reload", "style"),
+        Input("network-node-style-dropdown-msa", "value"),
     )
-    def toggle_bipartite_modal(node_style, close_clicks, is_open):
-        # if they switch *to* bipartite, open the modal
-        if node_style == "bipartite" and not is_open:
-            return True
-        # if they hit OK (or Close), close it
-        if close_clicks:
-            return False
-        # otherwise, leave it as is
-        return is_open
+    def toggle_refresh_visibility(node_style):
+        base = {"marginTop": "1.5rem", "marginLeft": "auto"}
+        return base if node_style == "bipartite" else {**base, "display": "none"}
+    
+    # callback to toggle visibility
+    @callback(
+        Output("bipartite-save-group-types", "style"),
+        Input("network-node-style-dropdown-msa", "value"),
+    )
+    def toggle_save_button(node_style):
+        base = {"marginTop": "0.5rem"}
+        return base if node_style == "bipartite" else {**base, "display": "none"}
+    
+    @callback(
+        Output("bipartite-disease-table-container", "children"),
+        Input("network-node-style-dropdown-msa", "value"),
+        Input("bipartite-disease-reload", "n_clicks"),
+        Input("project-dropdown-pop-msa", "value"),
+        Input("bipartite-save-group-types", "n_clicks"),  
+        State("project-files-checklist-msa", "value"),
+    )
+    def render_bipartite_table(node_style, n_clicks_reload, selected_project, n_clicks_save, selected_files):
+        if node_style != "bipartite" or not selected_files or not selected_project:
+            return None
 
-    # Callback: Extracts study names from selected files and populates the bipartite study dropdown
-    @callback(
-        Output("bipartite-study-dropdown", "options"),
-        Input("project-files-checklist-msa", "value"),
-    )
-    def update_bipartite_studies(selected_files):
-        if not selected_files:
-            return []
-        options = []
+        # Load study metadata
+        project_details_path = os.path.join("Projects", selected_project, "project_details_file.json")
+        try:
+            with open(project_details_path, "r", encoding="utf-8") as f:
+                payload = json.load(f).get("studies", {})
+        except Exception:
+            payload = {}
+
+        # ---------- Load previously saved disease associations (if any) ----------
+        project_dir  = os.path.join("Projects", selected_project)
+        mapping_file = os.path.join(project_dir, "disease_associations.json")
+        try:
+            with open(mapping_file, "r", encoding="utf-8") as f:
+                saved_mapping = json.load(f)  # { "<study>": "<disease_type>" }
+            if not isinstance(saved_mapping, dict):
+                saved_mapping = {}
+        except Exception:
+            saved_mapping = {}
+
+        # Build rows + tooltips
+        seen = set()
+        rows = []
+        tooltips = []
+
         for fname in selected_files:
             parts = fname.split("_")
-            # if filename has at least three parts, take the middle one as study name
-            if len(parts) >= 3:
-                study_name = parts[1]
-            else:
-                study_name = fname
-            options.append({
-                "label": study_name,
-                "value": fname,        # keep the full filename as the value
+            study_name = parts[1] if len(parts) >= 3 else fname
+            if study_name in seen:
+                continue
+            seen.add(study_name)
+
+            info = payload.get(study_name, {}) if study_name else {}
+            gf = info.get("group_filter", {}) or {}
+            control = gf.get("Control") or []
+            case    = gf.get("Case")    or [] or {}
+
+
+            # normalise to list -> comma-separated
+            if isinstance(control, str): control = [control]
+            if isinstance(case, str):    case    = [case]
+
+            control_txt = ", ".join([str(x) for x in control]) or "N/A"
+            case_txt    = ", ".join([str(x) for x in case])    or "N/A"
+
+            # 👇 prefill disease_type from saved JSON (empty string if not present)
+            rows.append({
+                "study": study_name,
+                "disease_type": (saved_mapping.get(study_name) or "").strip(),
             })
-        return options
+            tooltips.append({
+                "study": f"𝗖𝗼𝗻𝘁𝗿𝗼𝗹: {control_txt}\n𝗖𝗮𝘀𝗲: {case_txt}",
+                "disease_type": ""
+            })
 
-    # Callback: Loads group-type options (e.g., conditions or treatments) based on metadata of the selected study
-    @callback(
-        [ Output("group-types-radio_msa", "options"),
-        Output("study-group-details-container", "style") ],
-        Input("bipartite-study-dropdown", "value"),
-        State("selected-study-store_msa", "data"),
-        prevent_initial_call=True
-    )
-    def show_group_popup(selected_study, stored_study):
-
-        # No study selected → do nothing
-        if not selected_study:
-            raise PreventUpdate
-
-        # Normalize list → single string
-        if isinstance(selected_study, list):
-            if not selected_study:
-                raise PreventUpdate
-            selected_study = selected_study[0]
-        study_name = selected_study.split("_")[1] if len(selected_study.split("_")) >= 3 else selected_study
-        folder = os.path.join(UPLOAD_FOLDER, study_name)
-        if not os.path.exists(folder):
-            return [], {"display": "none"}
-
-        # Read metadata to decide source
-        details       = read_study_details_msa(folder)
-        dataset_source = details.get("Dataset Source", "").lower()
-        if dataset_source not in ["metabolomics workbench", "metabolights", "original data - refmet ids", "original data - chebi ids"]:
-            return [], {"display": "none"}
-
-        # Build group‐type options
-        group_options = []
-        if dataset_source in (
-            "metabolomics workbench",
-            "original data - refmet ids",
-            "original data - chebi ids",
-        ):
-            csvs = [f for f in os.listdir(folder) if f.endswith(".csv")]
-            if csvs:
-                path = os.path.join(folder, csvs[0])
-                try:
-                    df = pd.read_csv(path)
-                    if "Class" in df.columns and not df.empty:
-                        first = str(df.iloc[0]["Class"])
-                        items = [g.strip() for g in first.split("|") if g.strip()]
-                        group_options = [{"label": g, "value": g} for g in items]
-                except Exception:
-                    pass
-
-        elif dataset_source == "metabolights":
-            # 1) build the pattern
-            pattern = os.path.join(folder, "s_*.txt")
-
-            # 2) expand the pattern into actual files
-            matches = glob.glob(pattern)
-
-            # 3) handle zero or many matches, and pick one
-            if not matches:
-                logger.error(f"Network plots tab - Metadata not found matching {pattern!r}")
-                raise FileNotFoundError(f"No metadata file found matching {pattern!r}")
-            elif len(matches) > 1:
-                # you could choose the newest, the first, or raise an error
-                matches.sort()  # alphabetical; or sort by os.path.getmtime for newest
-            meta_filepath = matches[0]
-            #meta_filepath = os.path.join(folder, "s_*.txt")
-            if os.path.exists(meta_filepath):
-                try:
-                    meta_df = pd.read_csv(meta_filepath, sep="\t", encoding="unicode_escape")
-                    group_options = [
-                        {"label": col, "value": col}
-                        for col in meta_df.columns
-                        if "Factor Value" in col
-                    ]
-                except Exception:
-                    pass
-
-        # If nothing to show, keep it closed
-        if not group_options:
-            return [], {"display": "none"}
-
-        # Otherwise open modal, populate radioItems, and reveal the container
-        return (
-            group_options,
-            {"display": "block", "marginTop": "1.5rem"}
+        table = dash_table.DataTable(
+            id="bipartite-disease-table",
+            columns=[
+                {"name": "Study", "id": "study", "editable": False},
+                {"name": "Disease type", "id": "disease_type", "editable": True},
+            ],
+            data=rows,
+            tooltip_data=tooltips,      # 👈 hover text
+            tooltip_duration=None,      # keep visible while hovering
+            editable=True,
+            # 👇 style the disease_type column so it always looks like a text input
+            style_data_conditional=[
+                {
+                    "if": {"column_id": "disease_type"},
+                    "backgroundColor": "white",
+                    "border": "1px solid #ccc",
+                    "textAlign": "left",
+                    "padding": "4px",
+                },
+                {
+                    "if": {"column_id": "study"},
+                    "cursor": "help",
+                },
+            ],
+            row_deletable=False,
+            cell_selectable=True,
+            style_table={"overflowX": "auto"},
+            style_cell={"padding": "6px"},
+            style_header={"fontWeight": "600"},
+            page_action="none",
+            persistence=True,
+            persisted_props=["data"],
+            persistence_type="session", 
+            # 👇 force tooltip to keep newlines
+            css=[{
+                "selector": ".dash-table-tooltip",
+                "rule": "white-space: pre-line;"
+            }],
         )
 
-    # Callback: Displays unique labels (e.g., disease subtypes) for the chosen group type in the selected study
+        return dbc.Card(
+            dbc.CardBody([
+                html.H6("Assign disease type per study", className="mb-2"),
+                html.Small(
+                    "💡 After typing, press Enter to confirm the value in the cell. Then click the save button before creating the graph.",
+                    className="text-muted d-block mb-2"
+                ),
+                html.Div(table),
+            ]),
+            className="mb-2"
+        )
+    
     @callback(
-        Output("group-classes-list_msa", "children"),
-        [
-            Input("group-types-radio_msa",          "value"),
-            Input("bipartite-study-dropdown", "value"),
-        ],
-        prevent_initial_call=True
+        Output("bipartite-save-status", "children"),
+        Input("bipartite-save-group-types", "n_clicks"),
+        State("bipartite-disease-table", "data"),
+        State("project-dropdown-pop-msa", "value"),
+        prevent_initial_call=True,
     )
-    def populate_group_classes(selected_group, selected_study):
-        # Prompt if nothing chosen
-        if not selected_group:
-            return "Select a group type to see its labels"
-        if not selected_study:
-            return "No study selected."
-
-        # Normalize list
-        if isinstance(selected_study, list):
-            if not selected_study:
-                return "No study selected."
-            selected_study = selected_study[0]
-
-        study_name = selected_study.split("_")[1] if len(selected_study.split("_")) >= 3 else selected_study
-        folder = os.path.join(UPLOAD_FOLDER, study_name)
-        if not os.path.exists(folder):
-            logger.error(f"Network plots tab - Data folder not found for {folder}")
-            return "Data folder not found."
-
-        details       = read_study_details_msa(folder)
-        dataset_source = details.get("Dataset Source", "").lower()
-
-        labels = []
-        if dataset_source in (
-            "metabolomics workbench",
-            "original data - refmet ids",
-            "original data - chebi ids",
-        ):
-            csvs = [f for f in os.listdir(folder) if f.endswith(".csv")]
-            if csvs:
-                path = os.path.join(folder, csvs[0])
-                try:
-                    df = pd.read_csv(path)
-                    # get the order of types from first row
-                    if "Class" in df.columns and not df.empty:
-                        order = [g.strip() for g in str(df.iloc[0]["Class"]).split("|")]
-                        if selected_group in order:
-                            idx = order.index(selected_group)
-                            # collect unique labels for that index
-                            seen = set()
-                            for val in df["Class"]:
-                                parts = [p.strip() for p in str(val).split("|")]
-                                if len(parts) > idx:
-                                    seen.add(parts[idx])
-                            labels = sorted(seen)
-                except Exception:
-                    logger.exception(f"Network plots tab - Error reading CSV file for {selected_study}")
-                    return "Error reading CSV file."
-
-        elif dataset_source == "metabolights":
-            # 1) build the pattern
-            pattern = os.path.join(folder, "s_*.txt")
-
-            # 2) expand the pattern into actual files
-            matches = glob.glob(pattern)
-
-            # 3) handle zero or many matches, and pick one
-            if not matches:
-                logger.error(f"Network plots tab - No metadata file found matching {pattern!r}")
-                raise FileNotFoundError(f"No metadata file found matching {pattern!r}")
-            elif len(matches) > 1:
-                # you could choose the newest, the first, or raise an error
-                matches.sort()  # alphabetical; or sort by os.path.getmtime for newest
-            meta_filepath = matches[0]
-            #meta_filepath = os.path.join(folder, "s_*.txt")
-            if os.path.exists(meta_filepath):
-                try:
-                    meta_df = pd.read_csv(meta_filepath, sep="\t", encoding="unicode_escape")
-                    if selected_group in meta_df.columns:
-                        labels = sorted(meta_df[selected_group].dropna().unique())
-                except Exception:
-                    logger.exception(f"Network plots tab - Error reading metadata file for {selected_study}")
-                    return "Error reading metadata file."
-        else:
-            return "Unsupported dataset source."
-
-        if not labels:
-            return "No labels found for that group type."
-
-        # Render as bullet list
-        return html.Ul([html.Li(str(lbl)) for lbl in labels])
-
-    # Callback: Saves disease annotation for the previous study and loads it (if available) for the newly selected one
-    @callback(
-        [
-            Output("bipartite-disease-dropdown", "options"),
-            Output("bipartite-disease-dropdown", "value"),
-            Output("bipartite-disease-input", "value"),
-            Output("selected-study-store_msa", "data"),
-        ],
-        Input("bipartite-study-dropdown", "value"),
-        [
-            State("selected-study-store_msa",   "data"),
-            State("bipartite-disease-dropdown", "value"),
-            State("bipartite-disease-input",    "value"),
-            State("project-dropdown-pop-msa",   "value"),
-        ],
-        prevent_initial_call=True
-    )
-    def update_disease_for_study(
-        selected_study,
-        previous_study,
-        previous_dropdown_val,
-        previous_input_val,
-        selected_project
-    ):
-        # 1) sanity check
-        if not selected_project:
+    def save_disease_types(n_clicks, table_data, selected_project):
+        if not n_clicks:
             raise PreventUpdate
+        if not selected_project or not table_data:
+            return "Nothing to save."
 
-        # 2) path to the per‐project file
+        # Ensure project dir + file path
         project_dir = os.path.join("Projects", selected_project)
         os.makedirs(project_dir, exist_ok=True)
         mapping_file = os.path.join(project_dir, "disease_associations.json")
 
-        # 3) load existing mapping { study_name: disease_name, … }
+        # Load existing mapping (if any)
         try:
-            with open(mapping_file, "r") as f:
+            with open(mapping_file, "r", encoding="utf-8") as f:
                 mapping = json.load(f)
+            if not isinstance(mapping, dict):
+                mapping = {}
         except Exception:
             mapping = {}
 
-        # 4) save the disease for the *previous* study
-        if previous_study:
-            # prefer whatever is selected in the dropdown; otherwise use typed input
-            prev = previous_dropdown_val or (previous_input_val.strip() if previous_input_val else None)
-            if prev:
-                mapping[previous_study] = prev
-            else:
-                # if they cleared it, remove that key
-                mapping.pop(previous_study, None)
+        # Update mapping from table rows (skip blanks, overwrite existing)
+        saved = 0
+        for row in table_data:
+            study = (row.get("study") or "").strip()
+            disease = (row.get("disease_type") or "").strip()
+            if study and disease:
+                mapping[study] = disease
+                saved += 1
 
-            # write the updated mapping back to disk
-            with open(mapping_file, "w") as f:
-                json.dump(mapping, f, indent=2)
+        # Write back
+        with open(mapping_file, "w", encoding="utf-8") as f:
+            json.dump(mapping, f, ensure_ascii=False, indent=2)
 
-        # 5) build the union of all diseases for the dropdown options
-        all_diseases = sorted({d for d in mapping.values() if d})
-        options = [{"label": d, "value": d} for d in all_diseases]
+        return f"Saved {saved} assignment{'s' if saved != 1 else ''} to {mapping_file}."
 
-        # 6) figure out what (if anything) to pre-select for the *new* study
-        selected_value = mapping.get(selected_study, None)
-
-        # 7) clear the free-text input every time we switch
-        input_value = ""
-
-        # 8) remember this study as “previous” for next time
-        return options, selected_value, input_value, selected_study
-
-    # Callback: Displays the control and case group assignments for the selected study based on project metadata
-    @callback(
-        Output("study-control-case-text", "children"),
-        Input("bipartite-study-dropdown", "value"),
-        State("project-dropdown-pop-msa", "value"),
-        prevent_initial_call=True
-    )
-    def update_control_case_text(selected_study, selected_project):
-        # nothing to do until both are chosen
-        if not selected_study or not selected_project:
-            raise PreventUpdate
-
-        # derive the study key exactly as you do elsewhere
-        parts = selected_study.split("_")
-        study_key = parts[1] if len(parts) >= 3 else selected_study
-
-        # locate and load the project_details_file.json
-        project_dir = os.path.join("Projects", selected_project)
-        details_path = os.path.join(project_dir, "project_details_file.json")
-        try:
-            with open(details_path, "r", encoding="utf-8") as f:
-                proj = json.load(f)
-        except Exception:
-            return ""  # silent failure if file missing or malformed
-
-        # pull out group_filter → Control/Case
-        studies = proj.get("studies", {})
-        cfg = studies.get(study_key, {}).get("group_filter", {})
-        ctrl = cfg.get("Control", [])
-        case = cfg.get("Case", [])
-
-        # format into a single line
-        ctrl_txt = ", ".join(ctrl) if ctrl else "None"
-        case_txt = ", ".join(case) if case else "None"
-        return f"Control: {ctrl_txt} | Case: {case_txt}"
 
 
     #######################################################################
@@ -1020,13 +826,13 @@ def register_callbacks():
     cyto.load_extra_layouts()
     # Callback that produces the network graph
     @callback(
+        Output("network-warning", "children"),  
         Output("metabolic-network-cytoscape-msa", "elements"),
         Output("metabolic-network-cytoscape-msa", "layout"),
         Output("metabolic-network-cytoscape-msa", "stylesheet"),
         [
             # only this button click triggers a refresh
             Input("refresh-network-button-msa", "n_clicks"),
-            Input("bipartite-modal-close", "n_clicks"),
         ],
         [
             # everything else becomes State
@@ -1037,32 +843,27 @@ def register_callbacks():
             State("multi-study-analysis-tabs",       "value"),
             State("project-files-checklist-msa",     "value"),
             State("project-dropdown-pop-msa",        "value"),
-            State("bipartite-study-dropdown",       "value"),
-            State("bipartite-disease-dropdown",     "value"),
-            State("bipartite-disease-input",        "value"),
         ]
     )
-    def update_metabolic_network(refresh_clicks, close_clicks,
+    def update_metabolic_network(refresh_clicks,
                                 min_cooccurring, layout_choice,
                                 node_style, network_level, active_tab,
-                                selected_files, selected_project, 
-                                selected_study, selected_disease, input_disease):
+                                selected_files, selected_project):
         # figure out which Input fired
         ctx = callback_context
         if not ctx.triggered:
-            return no_update, no_update, no_update
+            return no_update, no_update, no_update, no_update
         trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
         elements = []
         stylesheet = []
         used_studies = set()
 
         # ─── Handle the bipartite OK click ───────────────────────────────────────────
-        #if trigger_id == "bipartite-modal-close" and node_style == "bipartite":
-        if close_clicks and node_style == "bipartite":
+        if refresh_clicks and node_style == "bipartite":
             # sanity checks
-            if not (selected_project and selected_files and selected_disease):
+            if not (selected_project and selected_files):
                 #return html.Div("Select a project, study and disease first.")
-                return no_update, no_update, no_update
+                return no_update, no_update, no_update, no_update
             
             # 1. load disease associations
             assoc_path = os.path.join('Projects', selected_project, 'disease_associations.json')
@@ -1075,13 +876,13 @@ def register_callbacks():
                 csv_path = os.path.join("Projects", selected_project, "processed-datasets", fname)
                 if not os.path.exists(csv_path):
                     continue
-                
+                study_name = fname.split("_")[1] if len(fname.split("_")) >= 3 else fname
                 df = pd.read_csv(csv_path).set_index("database_identifier")
                 class Analysis: pass
                 da = Analysis()
                 da.da_testing    = da_testing.__get__(da, Analysis)
                 da.pathway_level = False
-                da.node_name      = fname.split("_")[1] if len(fname.split("_")) >= 3 else fname
+                da.node_name      = study_name
 
                 folder_details = os.path.join("pre-processed-datasets", da.node_name)
                 details = read_study_details_msa(folder_details)
@@ -1118,7 +919,7 @@ def register_callbacks():
                 if not mets:
                     continue
                 
-                disease = associations.get(fname)
+                disease = associations.get(study_name)
 
                 if not disease:
                     continue
@@ -1132,79 +933,97 @@ def register_callbacks():
             # if nothing to plot
             if not studies:
                 logger.error("Network plots tab - No differential metabolites found across selected studies.")
-                return no_update, no_update, no_update
+                #return no_update, no_update, no_update
+                return (
+                    dbc.Alert("No differential metabolites found across selected studies."),
+                    [],  {"name": "preset"}, [], 
+                )
 
-            # --- build metabolite co-occurrence counts ----------
-            pair_counts = Counter()
+            # ---- 1) Count, per metabolite, in how many studies it appears (unique per study) ----
+            met_counts = Counter()
             for st in studies:
-                items = sorted(set(st.DA_metabolites))
-                for u, v in combinations(items, 2):
-                    # order the pair so (A,B) == (B,A)
-                    pair_counts[tuple(sorted((u, v)))] += 1
+                met_counts.update(set(st.DA_metabolites))   # set() so a metabolite counts at most once per study
 
-            # threshold at least 2 (or whatever user passed)
-            threshold = max(min_cooccurring or 2, 2)
-            # keep only those pairs whose count >= threshold
-            cooc_edges = [(u, v, c) for (u, v), c in pair_counts.items() if c >= threshold]
+            # ---- 2) Apply study-occurrence threshold to metabolites (never below 2) ----
+            threshold = max((min_cooccurring or 2), 2)
+            allowed_mets = {m for m, c in met_counts.items() if c >= threshold}
 
-            # metabolites to keep = every node that appears in any surviving pair
-            cooc_mets = set()
-            for u, v, _ in cooc_edges:
-                cooc_mets.add(u)
-                cooc_mets.add(v)
+            if not allowed_mets:
+                label = "differential metabolites"
+                logger.error(f"Bipartite graph – No {label} meet the ≥{threshold} studies threshold.")
+                return (
+                    dbc.Alert(f"Bipartite graph – No {label} meet the ≥{threshold} studies threshold."),
+                    [],  {"name": "preset"}, [], 
+                )
 
-            # 3. Build bipartite graph: bottom = diseases, top = metabolites
+            # ---- 3) Build bipartite graph: bottom = diseases, top = (filtered) metabolites ----
             B = nx.Graph()
-            # bottom nodes are disease names
-            bottom_nodes = [s.disease for s in studies]
-            B.add_nodes_from(bottom_nodes, bipartite=1)
-            # top nodes are all metabolites (flatten the lists)
-            all_mets = [m for s in studies for m in s.DA_metabolites]
 
-            B.add_nodes_from(cooc_mets, bipartite=0)
-            # edges connect each disease to any of its DA_metabolites *if* that metabolite survived
+            # unique disease nodes (in case multiple studies share the same disease label)
+            diseases = sorted({s.disease for s in studies})
+            B.add_nodes_from(diseases, bipartite=1)
+
+            # add only metabolites that passed the study-occurrence filter
+            B.add_nodes_from(sorted(allowed_mets), bipartite=0)
+
+            # connect each disease to the allowed metabolites reported by any of its studies
+            # If you want edge weights = # of studies (disease, metabolite) co-occur in, track and set 'weight'.
+            edge_weights = Counter()
             for st in studies:
-                for met in st.DA_metabolites:
-                    if met in cooc_mets:
-                        B.add_edge(st.disease, met)
+                dis = st.disease
+                for met in set(st.DA_metabolites):  # set() to avoid duplicate edges from the same study
+                    if met in allowed_mets:
+                        edge_weights[(dis, met)] += 1
 
-            # 4. extract the two node‐sets
-            bottom_nodes, top_nodes = bipartite.sets(B)
+            # add edges (with weight attribute if you want to style by thickness/opacity)
+            for (dis, met), w in edge_weights.items():
+                B.add_edge(dis, met, weight=w)
 
-            # 6. compute degrees for styling
+            # ---- 4) Drop isolates (diseases with no passing metabolites; very rare but tidy) ----
+            isolates = list(nx.isolates(B))
+            if isolates:
+                B.remove_nodes_from(isolates)
+
+            # ---- 5) (Optional) compute degrees for styling (node size = connectivity in bipartite graph)
             degree_dict = dict(B.degree())
             max_deg = max(degree_dict.values()) if degree_dict else 1
+            
+            # Recompute partitions after any isolate removals
+            bottom_nodes, top_nodes = bipartite.sets(B)  # bottom = diseases, top = metabolites
 
-            max_deg_top = (
-                max(degree_dict[n] for n in top_nodes)
-                if top_nodes else 1
-            )
+            # Degrees (for top color mapping)
+            degree_dict = dict(B.degree())
 
-            max_deg_bottom = (
-                max(degree_dict[n] for n in bottom_nodes)
-                if bottom_nodes else 1
-            )
+            # Max degree for TOP partition (use at least 1 to avoid mapData(0,0,...))
+            max_deg_top = max((degree_dict.get(n, 0) for n in top_nodes), default=0)
+            if max_deg_top == 0:
+                max_deg_top = 1  # prevents divide-by-zero / invalid mapData domain
 
-            # 7. build Cytoscape elements exactly as before,
-            #    but use bottom_nodes/top_nodes to assign classes
+            # Build Cytoscape elements
             elements = []
+
             for node in B.nodes():
+                deg = degree_dict.get(node, 0)
                 if node in bottom_nodes:
-                    cls   = "bottom"
-                    label = node
+                    cls = "bottom"
+                    label = node      # shown via stylesheet: "label": "data(label)"
                 else:
-                    cls   = "top"
-                    label = ""
+                    cls = "top"
+                    label = ""        # hidden anyway by stylesheet for .top
+
                 elements.append({
                     "data": {
-                        "id":    node,
+                        "id": node,
                         "label": label,
-                        "degree": degree_dict[node]
+                        "degree": deg,   # used by stylesheet color map for .top
                     },
                     "classes": cls
                 })
-            for u, v in B.edges():
-                elements.append({"data": {"source": u, "target": v}})
+
+            # Edges (weight not used by your stylesheet, but harmless to include)
+            for u, v, data in B.edges(data=True):
+                w = int(data.get("weight", 1))
+                elements.append({"data": {"source": u, "target": v, "weight": w}})
 
             # 8. your existing stylesheet + Cytoscape call…
             stylesheet = [
@@ -1240,22 +1059,25 @@ def register_callbacks():
             }
             layout_name = layout_map.get(layout_choice, "cose")
 
-            return elements, {'name': layout_name}, stylesheet
+            return None, elements, {'name': layout_name}, stylesheet
 
         # ─── Otherwise fall back to your existing “Refresh” behavior ─────────────────
         if trigger_id == "refresh-network-button-msa":
             # 1) never run before any Refresh click
             if not refresh_clicks:
-                return no_update, no_update, no_update
+                return no_update, no_update, no_update, no_update
 
             # 2) only run when the network tab is active
             if active_tab != "network-graphs":
-                return no_update, no_update, no_update
+                return no_update, no_update, no_update, no_update
 
             # 3) your existing validation & graph‐building code…
             if not selected_project or not selected_files:
                 #return html.Div("Please select a project and at least one file.")
-                return no_update, no_update, no_update
+                return (
+                    dbc.Alert("Please select a project and at least one file."),
+                    [],  {"name": "preset"}, [], 
+                )
 
             # --- Load & analyze studies at the chosen network level ---
             studies = []
@@ -1366,7 +1188,10 @@ def register_callbacks():
 
             if not studies:
                 #return html.Div("No studies with differentially abundant metabolites.")
-                return no_update, no_update, no_update
+                return (
+                    dbc.Alert("No studies with differentially abundant metabolites."),
+                    [],  {"name": "preset"}, [], 
+                )
 
             print("Number of differential pathways per study:")
             for st in studies:
@@ -1392,31 +1217,61 @@ def register_callbacks():
                         for pw, cov in st.pathway_coverage.items()
                         if pw in valid_pathways
                     }
-
-            # --- Build co-occurrence graph ---
-            pair_counts = Counter()
+            
+            # ---- 1) Gather items per study (unique within a study) ----
+            per_study_items = []
             for st in studies:
                 if network_level == "diff-metabolite":
-                    # metabolites that passed your DA test
-                    items = sorted(set(st.DA_metabolites))
-                else:  # pathway mode
-                    # here I take every pathway with at least one covered metabolite
-                    #items = sorted(pw for pw, cov in st.pathway_coverage.items() if cov > 0)
-                    items = sorted(set(st.DA_pathways))
+                    items = set(st.DA_metabolites)
+                else:
+                    # choose one: DA pathways (shown) or any coverage>0 (commented)
+                    items = set(st.DA_pathways)
+                    # items = {pw for pw, cov in st.pathway_coverage.items() if cov > 0}
+                per_study_items.append(items)
 
-                for u, v in combinations(items, 2):
+            # ---- 2) Count in how many studies each node appears ----
+            node_counts = Counter()
+            for items in per_study_items:
+                node_counts.update(items)
+
+            # ---- 3) Apply node-occurrence threshold (never below 2) ----
+            threshold = max((min_cooccurring or 2), 2)
+            allowed_nodes = {n for n, c in node_counts.items() if c >= threshold}
+            if not allowed_nodes:
+                label = "differential metabolites" if network_level == "diff-metabolite" else "differential pathways"
+                logger.error(f"Network plots tab - No {label} meet the ≥{threshold} studies threshold.")
+                return (
+                    dbc.Alert(f"No {label} meet the ≥{threshold} studies threshold."),
+                    [],  {"name": "preset"}, [], 
+                )
+
+            # ---- 4) Count co-occurrence pairs, but ONLY among allowed nodes ----
+            pair_counts = Counter()
+            for items in per_study_items:
+                kept = sorted(x for x in items if x in allowed_nodes)
+                for u, v in combinations(kept, 2):
                     pair_counts[(u, v)] += 1
 
-            threshold = max(min_cooccurring or 2, 2)
+            # Keep all edges that occurred at least once (or raise if you want another edge cut-off)
             edges = [(u, v, c) for (u, v), c in pair_counts.items() if c >= threshold]
-            if not edges:
-                label = "diff-metabolite" if network_level == "diff-metabolite" else "pathway"
-                logger.error(f"Network plots tab - No {label} pairs co-occurring in ≥ {threshold} studies.")
-                return no_update, no_update, no_update
 
+            if not edges:
+                return (
+                    dbc.Alert(
+                        f"No {('differential metabolite' if network_level=='diff-metabolite' else 'differenital pathway')} pairs "
+                        f"remain after applying ≥{threshold} studies threshold.",
+                        color="warning", dismissable=True, is_open=True
+                    ),
+                    [],  # elements
+                    {"name": "preset"},  # layout
+                    [],  # stylesheet
+                )
+
+            # ---- 5) Build graph; remove isolates that survive thresholding but form no pairs ----
             G = nx.Graph()
-            for u, v, cnt in edges:
-                G.add_edge(u, v, weight=cnt)
+            G.add_nodes_from(allowed_nodes)              # ensure all surviving nodes present
+            for u, v, w in edges:
+                G.add_edge(u, v, weight=w)
 
             # --- Lookup human names (only for metabolites) ---
             chebi_to_name = {}
@@ -1440,17 +1295,25 @@ def register_callbacks():
             # degree = # of edges incident to each node
             deg_dict   = dict(G.degree())
             max_degree = max(deg_dict.values())
+       
+            # nodes that survived the ≥ threshold filtering
+            node_set = set(G.nodes())
 
-            # ——— compute which studies ever show up in a pie ———
-            #used_studies = set()
-            for node in G.nodes():
+            # --- collect used studies (order-preserving, no helpers) ---
+            used_studies = []
+            seen_studies = set()
+            for st in studies:  # preserves the order of `studies`
                 if network_level == "diff-metabolite":
-                    present = [node in st.DA_metabolites for st in studies]
+                    items = set(st.DA_metabolites)
                 else:
-                    present = [node in st.DA_pathways for st in studies]
-                for nm, ok in zip(all_study_names, present):
-                    if ok:
-                        used_studies.add(nm)
+                    items = set(st.DA_pathways)
+                    # If earlier you used coverage>0 instead of DA pathways, switch to:
+                    # items = {pw for pw, cov in st.pathway_coverage.items() if cov > 0}
+
+                if node_set & items:  # non-empty intersection => this study contributes at least one kept node
+                    if st.node_name not in seen_studies:
+                        used_studies.append(st.node_name)
+                        seen_studies.add(st.node_name)
             
             #pie_pal   = sns.color_palette("Set3", n_colors=len(used_studies)).as_hex()
             #color_map = dict(zip(used_studies, pie_pal))
@@ -1755,7 +1618,7 @@ def register_callbacks():
                     }
                 })
 
-            return elements, {'name': layout_name}, stylesheet
+            return None, elements, {'name': layout_name}, stylesheet
     
     # Callback: Updates RefMet mapping and pathway coverage tables based on selected studies and network level
     @callback(
