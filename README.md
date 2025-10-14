@@ -94,10 +94,10 @@ Dash is running on http://127.0.0.1:8050/  (Press CTRL+C to quit)
 Before uploading a study dataset, make sure your data follow these guidelines:
 
 1. **File Format & Structure**  
-   - Use CSV with a single header row (no blank lines).  
-   - One column for patient ids, one column for patient group (e.g. contains Covid-19, Healthy) and all other columns are for metabolites (either RefMet names or ChEBI ids as column names).
-   - One study can have multiple csv files —each file corresponds to the same patients profiled under different analytical conditions (e.g. ion mode, column chemistry, collision energy).
-   - (If the dataset originates from MetaboLights) Supply a separate sample metadata file (it will begin with 's_....txt') containing the patient group information needed for the app to function.
+   - Dataset file type - Use CSV with a single header row (no blank rows).  
+   - Dataset contents - One column for patient ids, one column for patient group (e.g. contains Covid-19, Healthy) and all other columns are for metabolites (either RefMet names or ChEBI ids as column names).
+   - Study folder contents - One study can have multiple dataset csv files this happens because each file corresponds to the same patients profiled under different analytical conditions (e.g. ion mode, column chemistry, collision energy). When you click the upload new study button (in the Data Pre-Processing tab) you must upload all of these files in the pop up before clicking confirm study upload. 
+   - (If the dataset originates from MetaboLights) Supply a separate sample metadata file (it will begin with 's_....txt') containing the patient group information needed for the app to function. When you click the upload new study button (in the Data Pre-Processing tab) you must included this metadata data file in the pop up before clicking confirm study upload, also ensure that you specifiy that the study originates from MetaboLights. 
 
 2. **Organism**  
    - If you plan to run the differential pathway analysis studies must be from human (Homo sapiens) paitents since only the human reactome file is used in this app currrently.
