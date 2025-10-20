@@ -575,7 +575,9 @@ def static_preprocess(folder, metadata, preprocessing_steps=None, outliers=None,
             pass
 
         data = data[data[identifier_name].notna()]
-
+        print('1')
+        print(data.shape[0])
+        print(data.shape[1])
         if data.shape[0] == 0:
             #print('No CHEBIS for assay')
             return None
@@ -637,7 +639,9 @@ def static_preprocess(folder, metadata, preprocessing_steps=None, outliers=None,
                 #print("Mapping dictionary using original sample names:", md_dict)
 
 
-
+            print('2')
+            print(data.shape[0])
+            print(data.shape[1])
             data = data.apply(pd.to_numeric, errors='coerce')
             data = data.T
             
@@ -676,6 +680,8 @@ def static_preprocess(folder, metadata, preprocessing_steps=None, outliers=None,
     for f in files:
         df = pd.read_csv(f, sep='\t')
         proc_data = preprocess(df)
+        print('data')
+        print(proc_data)
         if proc_data is None:
             continue
 
@@ -709,7 +715,8 @@ def static_preprocess(folder, metadata, preprocessing_steps=None, outliers=None,
                     proc_data = standardise_robust_scaler(proc_data)
                 elif 'max_abs_scaler' in preprocessing_steps:
                     proc_data = standardise_max_abs_scaler(proc_data)
-        
+        print('proc data after processing')
+        print(proc_data)
         proc_dfs.append(proc_data)
 
     if len(proc_dfs) == 0:
@@ -720,7 +727,8 @@ def static_preprocess(folder, metadata, preprocessing_steps=None, outliers=None,
     if len(proc_dfs) > 1:
         # 1) try the normal inner‐join
         raw_data_combined = pd.concat(proc_dfs, axis=1, join='inner')
-
+        print('after combined')
+        print(raw_data_combined)
         # 2) if that produced nothing, try to auto‐align by trimming sample IDs
         if raw_data_combined.empty:
             print("No overlap on sample IDs—trying to align via get_removal_info…")
@@ -753,21 +761,64 @@ def static_preprocess(folder, metadata, preprocessing_steps=None, outliers=None,
                 print("  ✗ could not find any trimming that creates an overlap")
 
         # 3) now proceed as before, whether trimmed or not
-        combined_proc = (
+        """ combined_proc = (
             raw_data_combined.T
             .groupby(level=0) 
             .apply(lambda g: g.mean(axis=0) if isinstance(g.iloc[0, 0], numbers.Number) else g.iloc[:, 0])
             .T
+        ) """
+        """ combined_proc = (
+            raw_data_combined.T
+            .groupby(level=0)
+            .apply(lambda g: g.mean(axis=0) if isinstance(g.iloc[0, 0], numbers.Number) else g.iloc[:, 0])
         )
+        # If the result is a Series, convert it
+        if isinstance(combined_proc, pd.Series):
+            combined_proc = combined_proc.to_frame().T
+
         combined_proc = combined_proc.loc[:, ~combined_proc.columns.duplicated()]
-        processed_data = combined_proc
+        processed_data = combined_proc """
+
+        # Numeric columns: average duplicates
+        num_cols = raw_data_combined.select_dtypes(include=np.number).columns
+        avg_num   = raw_data_combined[num_cols].groupby(level=0, axis=1).mean()
+
+        # Non-numeric (e.g., 'Group'): take the first non-null across duplicates
+        non_cols = raw_data_combined.columns.difference(num_cols)
+        non_num  = (
+            raw_data_combined[non_cols]
+            .groupby(level=0, axis=1)
+            .agg(lambda df: df.bfill(axis=1).ffill(axis=1).iloc[:, 0])
+        )
+
+        processed_data = pd.concat([avg_num, non_num], axis=1)
+        print('final data')
+        print(processed_data)
     else:
-        processed_data = (
+        """ processed_data = (
             proc_dfs[0].T
             .groupby(level=0)
             .apply(lambda g: g.mean(axis=0) if isinstance(g.iloc[0, 0], numbers.Number) else g.iloc[:, 0])
             .T
+        ) """
+        df0 = proc_dfs[0]  # just for clarity
+
+        # --- Split numeric vs non-numeric columns ---
+        num_cols = df0.select_dtypes(include=np.number).columns
+        non_cols = df0.columns.difference(num_cols)
+
+        # --- 1) For numeric columns: average duplicates ---
+        avg_num = df0[num_cols].groupby(level=0, axis=1).mean()
+
+        # --- 2) For non-numeric columns (like "Group"): take the first non-null value ---
+        non_num = (
+            df0[non_cols]
+            .groupby(level=0, axis=1)
+            .agg(lambda df: df.bfill(axis=1).ffill(axis=1).iloc[:, 0])
         )
+
+        # --- 3) Combine back together ---
+        processed_data = pd.concat([avg_num, non_num], axis=1)
     return processed_data
 
 # ===================================== #
@@ -1751,6 +1802,8 @@ def register_callbacks():
 
             try:
                 df = do_preprocess()
+                print('data on page')
+                print(df)
                 if df.empty:
                     return {}, {}, {}
                 fig_pca, fig_residual = pca_plot(df)
@@ -1774,6 +1827,8 @@ def register_callbacks():
 
         try:
             df = do_preprocess()
+            print('data on page')
+            print(df)
             if df.empty:
                 return {}, {}, {}
             fig_pca, fig_residual = pca_plot(df)

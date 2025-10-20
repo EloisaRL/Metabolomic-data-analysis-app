@@ -749,21 +749,55 @@ def static_preprocess(folder, metadata, preprocessing_steps=None, outliers=None,
                 print("  ✗ could not find any trimming that creates an overlap")
 
         # 3) now proceed as before, whether trimmed or not
-        combined_proc = (
+        """ combined_proc = (
             raw_data_combined.T
             .groupby(level=0) 
             .apply(lambda g: g.mean(axis=0) if isinstance(g.iloc[0, 0], numbers.Number) else g.iloc[:, 0])
             .T
         )
         combined_proc = combined_proc.loc[:, ~combined_proc.columns.duplicated()]
-        processed_data = combined_proc
+        processed_data = combined_proc """
+
+        # Numeric columns: average duplicates
+        num_cols = raw_data_combined.select_dtypes(include=np.number).columns
+        avg_num   = raw_data_combined[num_cols].groupby(level=0, axis=1).mean()
+
+        # Non-numeric (e.g., 'Group'): take the first non-null across duplicates
+        non_cols = raw_data_combined.columns.difference(num_cols)
+        non_num  = (
+            raw_data_combined[non_cols]
+            .groupby(level=0, axis=1)
+            .agg(lambda df: df.bfill(axis=1).ffill(axis=1).iloc[:, 0])
+        )
+
+        processed_data = pd.concat([avg_num, non_num], axis=1)
     else:
-        processed_data = (
+        """ processed_data = (
             proc_dfs[0].T
             .groupby(level=0)
             .apply(lambda g: g.mean(axis=0) if isinstance(g.iloc[0, 0], numbers.Number) else g.iloc[:, 0])
             .T
+        ) """
+
+        df0 = proc_dfs[0]  # just for clarity
+
+        # --- Split numeric vs non-numeric columns ---
+        num_cols = df0.select_dtypes(include=np.number).columns
+        non_cols = df0.columns.difference(num_cols)
+
+        # --- 1) For numeric columns: average duplicates ---
+        avg_num = df0[num_cols].groupby(level=0, axis=1).mean()
+
+        # --- 2) For non-numeric columns (like "Group"): take the first non-null value ---
+        non_num = (
+            df0[non_cols]
+            .groupby(level=0, axis=1)
+            .agg(lambda df: df.bfill(axis=1).ffill(axis=1).iloc[:, 0])
         )
+
+        # --- 3) Combine back together ---
+        processed_data = pd.concat([avg_num, non_num], axis=1)
+        
     return processed_data
 
 # ================================== #

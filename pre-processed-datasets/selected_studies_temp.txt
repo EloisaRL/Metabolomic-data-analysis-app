@@ -1,11 +1,22 @@
 {
   "studies": {
-    "ST002016": {
-      "filename": "",
-      "group_type": "group:-",
-      "preprocessing": {},
-      "outliers": "",
-      "group_filter": {}
+    "ST001420": {
+      "filename": "processed_ST001420_knn_imputer_log_transform_standard_scaler.csv",
+      "group_type": "Disease:Angina",
+      "preprocessing": [
+        "knn_imputer",
+        "log_transform",
+        "standard_scaler"
+      ],
+      "outliers": "S17, S556",
+      "group_filter": {
+        "Control": [
+          "Disease:Angina-free"
+        ],
+        "Case": [
+          "Disease:Angina"
+        ]
+      }
     }
   }
 }

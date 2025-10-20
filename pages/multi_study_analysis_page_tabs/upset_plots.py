@@ -1,7 +1,7 @@
 # pages/multi_study_analysis_page_tabs/upset_plots.py
 from dash import html, dcc, callback, Input, Output, State, no_update, dash_table
 import dash_bootstrap_components as dbc
-import os
+import os, re, gzip, csv
 import pandas as pd
 from marsilea.upset import UpsetData, Upset
 import matplotlib
@@ -14,8 +14,10 @@ from statsmodels.stats.multitest import multipletests
 import plotly.io as pio
 import libchebipy
 import logging
+from pathlib import Path
 logger = logging.getLogger(__name__)
 
+NAMES_PATH = Path("names.tsv.gz")
 UPLOAD_FOLDER = "pre-processed-datasets"
 
 refmet = pd.read_csv("refmet.csv", dtype=object)
@@ -401,6 +403,68 @@ def register_callbacks():
             # Define columns to exclude from renaming
             exceptions = {'database_identifier', 'group_type'}
 
+            # Replace each ChEBI ID in the index with its metabolite name:
+            def chebi_names_for_ids(path, wanted_labels):
+                # collect numeric CHEBI ids we actually need
+                wanted = set()
+                lab2cid = {}
+                for lbl in wanted_labels:
+                    m = re.search(r"(\d+)", str(lbl))
+                    if m:
+                        cid = m.group(1)
+                        lab2cid[lbl] = cid
+                        wanted.add(cid)
+                if not wanted:
+                    return {}
+
+                RANK = {"NAME":0, "IUPAC NAME":1, "UNIPROT NAME":2, "SYNONYM":3}
+                best = {}  # cid -> (rank, ascii_missing, chosen)
+
+                p = Path(path)
+                with gzip.open(p, "rt", encoding="utf-8", errors="replace", newline="") as fh:
+                    reader = csv.DictReader(fh, delimiter="\t")
+                    # expected keys: id, compound_id, name, type, status_id, adapted, language_code, ascii_name
+                    for row in reader:
+                        if not row:  # blank/malformed line
+                            continue
+                        cpd = (row.get("compound_id") or "").strip()
+                        if cpd not in wanted:
+                            continue
+
+                        lang = (row.get("language_code") or "").strip()
+                        if lang and lang != "en":   # keep EN; treat empty as EN
+                            continue
+
+                        typ  = (row.get("type") or "").strip().upper()
+                        rank = RANK.get(typ, 9)
+
+                        aname = (row.get("ascii_name") or "").strip()
+                        ascii_missing = (aname == "")
+                        chosen = aname if aname else cpd  # prefer ascii_name; else CHEBI id
+
+                        cand = (rank, ascii_missing, chosen)
+                        if (cpd not in best) or (cand < best[cpd]):
+                            best[cpd] = cand
+
+                # default any missing to their CHEBI id
+                return {cid: (best[cid][2] if cid in best else f"CHEBI:{cid}") for cid in wanted}
+            
+            # --- test if libchebipy works properly ---
+            try:
+                test_entity = libchebipy.ChebiEntity("CHEBI:15377")
+                _ = test_entity.get_name()
+                chebi_ok = True
+                logger.info("Upsets tab - Using libchebipy.ChebiEntity package for ChEBI to metabolite name conversion")
+                #print('using libchebipy.ChebiEntity')
+            except Exception:
+                chebi_ok = False
+                logger.info("Upsets tab - Using downloaded file 'names.tsv.gz' mapping for ChEBI to metabolite name conversion")
+                #print('using downloaded file-based mapping')
+
+                # --- build map only for columns you have (before DA) ---
+                meta_cols = [c for c in df_renamed.columns if c not in exceptions]
+                cid_map   = chebi_names_for_ids(NAMES_PATH, meta_cols)  
+
             # Build a mapping of old column names to new names
             new_column_names = {}
 
@@ -410,8 +474,14 @@ def register_callbacks():
                 else:
                     chebi_id = str(col).replace("CHEBI:", "")
                     try:
-                        entity = libchebipy.ChebiEntity(chebi_id)
-                        new_column_names[col] = entity.get_name()
+                        if chebi_ok:
+                            new_column_names[col] = libchebipy.ChebiEntity(chebi_id).get_name()
+                        else:
+                            # fallback: use preloaded cid_map, defaulting to "CHEBI:xxxx" if missing
+                            new_column_names[col] = cid_map.get(chebi_id.replace("CHEBI:", ""), f"CHEBI:{chebi_id}")
+
+                        #entity = libchebipy.ChebiEntity(chebi_id)
+                        #new_column_names[col] = entity.get_name()
                     except Exception:
                         new_column_names[col] = col  # Fallback if not a valid ChEBI ID
 
@@ -526,11 +596,18 @@ def register_callbacks():
                     new_column_names[col] = col
                 else:
                     chebi_id = str(col).replace("CHEBI:", "")
-                    try:
-                        entity = libchebipy.ChebiEntity(chebi_id)
-                        new_column_names[col] = entity.get_name()
+                    new_column_names[col] = chebi_id
+                    """ try:
+                        if chebi_ok:
+                            new_column_names[col] = libchebipy.ChebiEntity(chebi_id).get_name()
+                        else:
+                            # fallback: use preloaded cid_map, defaulting to "CHEBI:xxxx" if missing
+                            new_column_names[col] = cid_map.get(chebi_id.replace("CHEBI:", ""), f"CHEBI:{chebi_id}")
+
+                        #entity = libchebipy.ChebiEntity(chebi_id)
+                        #new_column_names[col] = entity.get_name()
                     except Exception:
-                        new_column_names[col] = col  # Fallback if not a valid ChEBI ID
+                        new_column_names[col] = col  # Fallback if not a valid ChEBI ID """
 
             # Apply the renaming
             df_renamed.columns = [new_column_names[col] for col in df_renamed.columns]

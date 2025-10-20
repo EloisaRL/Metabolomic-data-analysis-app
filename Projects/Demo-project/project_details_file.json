@@ -26,7 +26,7 @@
         "log_transform",
         "standard_scaler"
       ],
-      "outliers": "",
+      "outliers": "12JUN2020_AAA_COV_PL_068",
       "group_filter": {
         "Control": [
           "Healthy"
@@ -80,7 +80,7 @@
         "log_transform",
         "standard_scaler"
       ],
-      "outliers": "",
+      "outliers": "CovidNeg_P251_P_3,  CovidNeg_P251_P_4,  CovidNeg_P252_P_3,  CovidNeg_P252_P_4,  CovidNeg_P253_P_3,  CovidNeg_P253_P_4,  CovidNeg_P254_P_3,  CovidNeg_P254_P_4,  CovidNeg_P257_P_3,  CovidNeg_P257_P_4,  CovidNeg_P258_P_3,  CovidNeg_P258_P_4,  CovidNeg_P259_P_3,  CovidNeg_P259_P_4,  CovidNeg_P260_P_3,  CovidNeg_P260_P_4,  CovidNeg_P261_P_3,  CovidNeg_P261_P_4,  CovidNeg_P262_P_3,  CovidNeg_P262_P_4,  CovidNeg_P263_P_3,  CovidNeg_P263_P_4,  CovidNeg_P264_P_3,  CovidNeg_P264_P_4,  CovidNeg_P265_P_3,  CovidNeg_P265_P_4,  CovidNeg_P266_P_3,  CovidNeg_P266_P_4,  CovidNeg_P267_P_3,  CovidNeg_P267_P_4,  CovidNeg_P268_P_3,  CovidNeg_P268_P_4,  CovidNeg_P269_P_3,  CovidNeg_P269_P_4,  CovidNeg_P270_P_3,  CovidNeg_P270_P_4,  CovidNeg_P271_P_3,  CovidNeg_P271_P_4,  CovidSevere_P273_P_3,  CovidSevere_P273_P_4,  CovidSevere_P272_P_3,  CovidSevere_P272_P_4,  CovidSevere_P283_P_3,  CovidSevere_P283_P_4,  CovidSevere_P284_P_3,  CovidSevere_P284_P_4,  CovidSevere_P285_P_3,  CovidSevere_P285_P_4",
       "group_filter": {
         "Control": [
           "Negative COVID-19"
@@ -152,7 +152,7 @@
         "log_transform",
         "standard_scaler"
       ],
-      "outliers": "",
+      "outliers": "plasma_ssa_122, plasma_ssa_015",
       "group_filter": {
         "Control": [
           "Negative"
@@ -242,13 +242,13 @@
         "log_transform",
         "standard_scaler"
       ],
-      "outliers": "",
+      "outliers": "S17, S556",
       "group_filter": {
         "Control": [
-          "Disease:Angina"
+          "Disease:Angina-free"
         ],
         "Case": [
-          "Disease:Angina-free"
+          "Disease:Angina"
         ]
       }
     },

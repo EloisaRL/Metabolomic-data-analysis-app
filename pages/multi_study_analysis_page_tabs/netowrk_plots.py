@@ -1040,7 +1040,9 @@ def register_callbacks():
             max_deg = max(degree_dict.values()) if degree_dict else 1
             
             # Recompute partitions after any isolate removals
-            bottom_nodes, top_nodes = bipartite.sets(B)  # bottom = diseases, top = metabolites
+            #bottom_nodes, top_nodes = bipartite.sets(B)  # bottom = diseases, top = metabolites
+            bottom_nodes = {n for n, d in B.nodes(data=True) if d.get("bipartite") == 1}  # diseases
+            top_nodes    = {n for n, d in B.nodes(data=True) if d.get("bipartite") == 0}  # metabolites
 
             # Degrees (for top color mapping)
             degree_dict = dict(B.degree())
@@ -1200,7 +1202,11 @@ def register_callbacks():
                         continue
                     
                     # keep only if any differential pathways
-                    if hasattr(da, "DA_pathways") and len(da.DA_pathways) > 0:
+                    """ if hasattr(da, "DA_pathways") and len(da.DA_pathways) > 0:
+                        studies.append(da) """
+                    paths = getattr(da, "DA_pathways", [])
+                    if paths:   # truthy only if non-empty
+                        print(da.node_name)
                         studies.append(da)
                         
                 else:
@@ -1430,7 +1436,8 @@ def register_callbacks():
                     if st.node_name not in seen_studies:
                         used_studies.append(st.node_name)
                         seen_studies.add(st.node_name)
-            
+            print('used studies')
+            print(used_studies)
             #pie_pal   = sns.color_palette("Set3", n_colors=len(used_studies)).as_hex()
             #color_map = dict(zip(used_studies, pie_pal))
             ordered_used = [nm for nm in all_study_names if nm in used_studies]  # stable order
@@ -1483,7 +1490,8 @@ def register_callbacks():
                         present = [node in st.DA_pathways for st in studies]
 
                     #present = [node in st.DA_metabolites for st in studies]
-                    labels  = [nm for nm, ok in zip(all_study_names, present) if ok]
+                    #labels  = [nm for nm, ok in zip(all_study_names, present) if ok]
+                    labels  = [nm for nm, ok in zip(study_names, present) if ok]
                     sizes   = [1] * len(labels)
                     fig, ax = plt.subplots(figsize=(1,1), dpi=300)
                     fig.patch.set_facecolor('none')
