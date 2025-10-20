@@ -1,7 +1,7 @@
 # pages/single_study_analysis_page_tabs/differential_metabolites.py
 from dash import html, dcc, callback, Input, Output, dash_table, State, no_update
 import dash_bootstrap_components as dbc
-import os
+import os, re, gzip, csv
 import pandas as pd
 import plotly.express as px
 import plotly.io as pio
@@ -11,7 +11,11 @@ from statsmodels.stats.multitest import multipletests
 import json
 import libchebipy
 import logging
+from pathlib import Path
 logger = logging.getLogger(__name__)
+
+NAMES_PATH = Path("names.tsv.gz")
+
 
 def da_testing(self):
         '''
@@ -82,6 +86,15 @@ layout = html.Div([
                                 "FDR correction to the p-values, and finally reports those metabolites with an "
                                 "adjusted p-value below 0.05 as differentially abundant."
                             ),
+                            html.P([
+                                    html.B("Note:"),
+                                    " If the libchebipy.ChebiEntity package is not avaliable then the downloaded "
+                                    "ChEBI to metabolite conversion file (from the EBI website) is used.  "
+                                    "To know which method is being used for the conversion of ChEBI ids into metabolite names "
+                                    "consult the app.log file. If the downloaded file is being used "
+                                    "processing time is longer and may increase to 5 minutes."],
+                                    style={"marginBottom": "0.5rem"}
+                                ),
                         ],
                         style={
                             "backgroundColor": "#f0f0f0",
@@ -250,14 +263,95 @@ def register_callbacks():
         df = pd.read_csv(filepath).set_index("database_identifier")
 
         # Replace each ChEBI ID in the index with its metabolite name:
-        def _safe_chebi_name(chebi_id):
-            try:
-                name = libchebipy.ChebiEntity(chebi_id).get_name()
-                return name
-            except Exception as e:
-                return chebi_id
+        def chebi_names_for_ids(path, wanted_labels):
+            # collect numeric CHEBI ids we actually need
+            wanted = set()
+            lab2cid = {}
+            for lbl in wanted_labels:
+                m = re.search(r"(\d+)", str(lbl))
+                if m:
+                    cid = m.group(1)
+                    lab2cid[lbl] = cid
+                    wanted.add(cid)
+            if not wanted:
+                return {}
 
-        df.columns = df.columns.map(_safe_chebi_name)
+            RANK = {"NAME":0, "IUPAC NAME":1, "UNIPROT NAME":2, "SYNONYM":3}
+            best = {}  # cid -> (rank, ascii_missing, chosen)
+
+            p = Path(path)
+            with gzip.open(p, "rt", encoding="utf-8", errors="replace", newline="") as fh:
+                reader = csv.DictReader(fh, delimiter="\t")
+                # expected keys: id, compound_id, name, type, status_id, adapted, language_code, ascii_name
+                for row in reader:
+                    if not row:  # blank/malformed line
+                        continue
+                    cpd = (row.get("compound_id") or "").strip()
+                    if cpd not in wanted:
+                        continue
+
+                    lang = (row.get("language_code") or "").strip()
+                    if lang and lang != "en":   # keep EN; treat empty as EN
+                        continue
+
+                    typ  = (row.get("type") or "").strip().upper()
+                    rank = RANK.get(typ, 9)
+
+                    aname = (row.get("ascii_name") or "").strip()
+                    ascii_missing = (aname == "")
+                    chosen = aname if aname else cpd  # prefer ascii_name; else CHEBI id
+
+                    cand = (rank, ascii_missing, chosen)
+                    if (cpd not in best) or (cand < best[cpd]):
+                        best[cpd] = cand
+
+            # default any missing to their CHEBI id
+            return {cid: (best[cid][2] if cid in best else f"CHEBI:{cid}") for cid in wanted}
+
+        # --- build map only for columns you have (before DA) ---
+        meta_cols = [c for c in df.columns if c != "group_type"]
+        cid_map   = chebi_names_for_ids(NAMES_PATH, meta_cols)
+
+        def to_display(lbl):
+            if lbl == "group_type":
+                return lbl
+            m = re.search(r"(\d+)", str(lbl))
+            if not m:
+                return lbl
+            cid = m.group(1)
+            # replace 'CHEBI:' prefix if no match found
+            return cid_map.get(cid, f"CHEBI:{cid}")
+
+        # --- test if libchebipy works properly ---
+        try:
+            test_entity = libchebipy.ChebiEntity("CHEBI:15377")
+            _ = test_entity.get_name()
+            chebi_ok = True
+        except Exception:
+            chebi_ok = False
+
+        # --- choose name conversion method accordingly ---
+        if chebi_ok:
+            logger.info("Differential metabolite tab - Using libchebipy.ChebiEntity package for ChEBI to metabolite name conversion")
+            #print('using libchebipy.ChebiEntity')
+
+            # Safe libchebipy-based name lookup
+            def _safe_chebi_name(chebi_id):
+                try:
+                    name = libchebipy.ChebiEntity(chebi_id).get_name()
+                    return name
+                except Exception:
+                    return chebi_id
+
+            df.columns = df.columns.map(_safe_chebi_name)
+        else:
+            logger.info("Differential metabolite tab - Using downloaded file 'names.tsv.gz' mapping for ChEBI to metabolite name conversion")
+            #print('using downloaded file-based mapping')
+
+            # Fallback to lookup via file-based mapping
+            df = df.rename(columns=to_display)
+        #df = df.rename(columns=to_display)
+        #df.columns = df.columns.map(_safe_chebi_name)
 
         # run your da_testing as before...
         class DA: pass

@@ -3,7 +3,7 @@ from dash import html, dcc, callback, Input, Output, callback_context, State, no
 import dash_bootstrap_components as dbc
 import dash_cytoscape as cyto
 from dash.exceptions import PreventUpdate
-import os
+import os, re, gzip, csv
 import pandas as pd
 import json
 from scipy import stats
@@ -21,8 +21,10 @@ import base64
 import matplotlib.pyplot as plt
 import glob
 import logging
+from pathlib import Path
 logger = logging.getLogger(__name__)
 
+NAMES_PATH = Path("names.tsv.gz")
 
 UPLOAD_FOLDER = "pre-processed-datasets"
 
@@ -519,7 +521,16 @@ def register_callbacks():
                     "The network plot shows the differential pathways which co-occur in two or more studies (the number of studies which they co-occur are represented by the pie charts)."
                 )
             )
-
+            lines.append(
+                html.P([
+                        html.B("Note:"),
+                        " producing the graph may take up to 5 minutes please wait, waiting time will depend on the number of studies chosen and the method used for "
+                        "ChEBI to metabolite name conversion. If the libchebipy.ChebiEntity package is not avaliable then the downloaded "
+                        "ChEBI to metabolite conversion file (from the EBI website) is used which will increase processing time. To find out "
+                        "which method is being used consult the app.log file."],
+                        style={"marginBottom": "0.5rem"}
+                    )
+            )
         else:
             # diff-metabolite level
             if node_style == "pie":
@@ -543,6 +554,16 @@ def register_callbacks():
                         "The pie charts on the nodes indicate in which studies each metabolite is differential."
                     )
                 )
+                lines.append(
+                    html.P([
+                            html.B("Note:"),
+                            " producing the graph may take up to 5 minutes please wait, waiting time will depend on the number of studies chosen and the method used for "
+                            "ChEBI to metabolite name conversion. If the libchebipy.ChebiEntity package is not avaliable then the downloaded "
+                            "ChEBI to metabolite conversion file (from the EBI website) is used which will increase processing time. To find out "
+                            "which method is being used consult the app.log file."],
+                            style={"marginBottom": "0.5rem"}
+                        )
+                )
 
             elif node_style == "circle":
                 lines.append(
@@ -558,6 +579,16 @@ def register_callbacks():
                     html.P(
                         "The network plot shows the differential metabolites which co-occur in two or more studies (the number of studies which they co-occur are represented by the size of the nodes)."
                     )
+                )
+                lines.append(
+                    html.P([
+                            html.B("Note:"),
+                            " producing the graph may take up to 5 minutes please wait, waiting time will depend on the number of studies chosen and the method used for "
+                            "ChEBI to metabolite name conversion. If the libchebipy.ChebiEntity package is not avaliable then the downloaded "
+                            "ChEBI to metabolite conversion file (from the EBI website) is used which will increase processing time. To find out "
+                            "which method is being used consult the app.log file."],
+                            style={"marginBottom": "0.5rem"}
+                        )
                 )
 
             elif node_style == "t_statistic":
@@ -584,6 +615,16 @@ def register_callbacks():
                         "of differential abundance across datasets."
                     )
                 )
+                lines.append(
+                    html.P([
+                            html.B("Note:"),
+                            " producing the graph may take up to 5 minutes please wait, waiting time will depend on the number of studies chosen and the method used for "
+                            "ChEBI to metabolite name conversion. If the libchebipy.ChebiEntity package is not avaliable then the downloaded "
+                            "ChEBI to metabolite conversion file (from the EBI website) is used which will increase processing time. To find out "
+                            "which method is being used consult the app.log file."],
+                            style={"marginBottom": "0.5rem"}
+                        )
+                )
 
             else:  # bipartite
                 lines.append(
@@ -605,6 +646,16 @@ def register_callbacks():
                     html.P(
                         "If a selected study does not have a disease type added, it will not be included in the graph."
                     )
+                )
+                lines.append(
+                    html.P([
+                            html.B("Note:"),
+                            " producing the graph may take up to 5 minutes please wait, waiting time will depend on the number of studies chosen and the method used for "
+                            "ChEBI to metabolite name conversion. If the libchebipy.ChebiEntity package is not avaliable then the downloaded "
+                            "ChEBI to metabolite conversion file (from the EBI website) is used which will increase processing time. To find out "
+                            "which method is being used consult the app.log file."],
+                            style={"marginBottom": "0.5rem"}
+                        )
                 )
 
         return lines
@@ -1273,12 +1324,77 @@ def register_callbacks():
             for u, v, w in edges:
                 G.add_edge(u, v, weight=w)
 
+            # Replace each ChEBI ID in the index with its metabolite name:
+            def chebi_names_for_ids(path, wanted_labels):
+                # collect numeric CHEBI ids we actually need
+                wanted = set()
+                lab2cid = {}
+                for lbl in wanted_labels:
+                    m = re.search(r"(\d+)", str(lbl))
+                    if m:
+                        cid = m.group(1)
+                        lab2cid[lbl] = cid
+                        wanted.add(cid)
+                if not wanted:
+                    return {}
+
+                RANK = {"NAME":0, "IUPAC NAME":1, "UNIPROT NAME":2, "SYNONYM":3}
+                best = {}  # cid -> (rank, ascii_missing, chosen)
+
+                p = Path(path)
+                with gzip.open(p, "rt", encoding="utf-8", errors="replace", newline="") as fh:
+                    reader = csv.DictReader(fh, delimiter="\t")
+                    # expected keys: id, compound_id, name, type, status_id, adapted, language_code, ascii_name
+                    for row in reader:
+                        if not row:  # blank/malformed line
+                            continue
+                        cpd = (row.get("compound_id") or "").strip()
+                        if cpd not in wanted:
+                            continue
+
+                        lang = (row.get("language_code") or "").strip()
+                        if lang and lang != "en":   # keep EN; treat empty as EN
+                            continue
+
+                        typ  = (row.get("type") or "").strip().upper()
+                        rank = RANK.get(typ, 9)
+
+                        aname = (row.get("ascii_name") or "").strip()
+                        ascii_missing = (aname == "")
+                        chosen = aname if aname else cpd  # prefer ascii_name; else CHEBI id
+
+                        cand = (rank, ascii_missing, chosen)
+                        if (cpd not in best) or (cand < best[cpd]):
+                            best[cpd] = cand
+
+                # default any missing to their CHEBI id
+                return {cid: (best[cid][2] if cid in best else f"CHEBI:{cid}") for cid in wanted}
+            
+            # --- test if libchebipy works properly ---
+            try:
+                test_entity = libchebipy.ChebiEntity("CHEBI:15377")
+                _ = test_entity.get_name()
+                chebi_ok = True
+                logger.info("Networks tab - Using libchebipy.ChebiEntity package for ChEBI to metabolite name conversion")
+                #print('using libchebipy.ChebiEntity')
+            except Exception:
+                chebi_ok = False
+                logger.info("Network tab - Using downloaded file 'names.tsv.gz' mapping for ChEBI to metabolite name conversion")
+                #print('using downloaded file-based mapping')
+
+                # --- build map only for columns you have (before DA) ---
+                cid_map   = chebi_names_for_ids(NAMES_PATH, list(G.nodes()))
+
             # --- Lookup human names (only for metabolites) ---
             chebi_to_name = {}
             for node in G.nodes():
                 if network_level == "diff-metabolite":
                     try:
-                        chebi_to_name[node] = libchebipy.ChebiEntity(node).get_name()
+                        if chebi_ok:
+                            chebi_to_name[node] = libchebipy.ChebiEntity(node).get_name()
+                        else:
+                            # fallback: use preloaded cid_map, defaulting to "CHEBI:xxxx" if missing
+                            chebi_to_name[node] = cid_map.get(node.replace("CHEBI:", ""), f"CHEBI:{node}")
                     except Exception:
                         chebi_to_name[node] = node
                 else:
