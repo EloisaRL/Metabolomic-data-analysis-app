@@ -96,7 +96,7 @@ Before uploading a study dataset, make sure your data follow these guidelines:
 1. **File Format & Structure**  
    - Dataset file type - Use CSV with a single header row (no blank rows).  
    - Dataset contents - One column for patient ids, one column for patient group (e.g. contains Covid-19, Healthy) and all other columns are for metabolites (either RefMet names or ChEBI ids as column names).
-   - Study folder contents - One study can have multiple dataset csv files this happens because each file corresponds to the same patients profiled under different analytical conditions (e.g. ion mode, column chemistry, collision energy). When you click the upload new study button (in the Data Pre-Processing tab) you must upload all of these files in the pop up before clicking confirm study upload. 
+   - Study folder contents - One study can have multiple dataset csv files this happens because each file corresponds to the same patient samples profiled under different analytical conditions (e.g. ion mode, column chemistry, collision energy). When you click the upload new study button (in the Data Pre-Processing tab) you must upload all of these files in the pop up before clicking confirm study upload. 
    - (If the dataset originates from MetaboLights) Supply a separate sample metadata file (it will begin with 's_....txt') containing the patient group information needed for the app to function. When you click the upload new study button (in the Data Pre-Processing tab) you must included this metadata data file in the pop up before clicking confirm study upload, also ensure that you specifiy that the study originates from MetaboLights. 
 
 2. **Organism**  
@@ -128,13 +128,14 @@ The app allows users to perform two types of analysis: single-study analysis and
 
 ### Single-Study Analysis
 
-Single-study analysis produces a box plot of the top 10 metabolites/pathways (the number of metabolites/pathways visualised can be determined by the user) and a csv table with the all the differential metabolites/pathways for the selected study.
+Single-study analysis produces a box plot of the top 10 differntial metabolites/pathways and a csv table with the all the differential metabolites/pathways for the selected study.
 
 #### Differential metabolites tab
-![Differential-metabolites-tab-ssa-page](https://github.com/user-attachments/assets/8b208f0e-ec04-4007-b4c9-2c640aa35198)
+<img width="1918" height="867" alt="Differential_metabolites_SSA" src="https://github.com/user-attachments/assets/2307cb01-b38e-485c-b03c-9d33ec2b973b" />
+
 
 #### Differential pathways tab
-![Differential-pathways-tab-ssa-page](https://github.com/user-attachments/assets/493cc472-b44d-409e-8221-e4dd288f1e1a)
+<img width="1918" height="866" alt="Differential_pathways_SSA" src="https://github.com/user-attachments/assets/de55795a-0d85-48d7-9bde-b09330ccfbb4" />
 
 
 ### Multi-Study Analysis
@@ -142,13 +143,26 @@ Single-study analysis produces a box plot of the top 10 metabolites/pathways (th
 Multi-study analysis produces upset plots of the co-occuring metabolites and differential metabolites (metabolites are matched based on the metabolite name, **not** the ChEBI id) for the selected studies. Also, cytoscape-based network graphs are produced as either differential metabolites (metabolites are matched based on the metabolite name) or differential pathways as the nodes, for the selected studies. 
 
 #### Upset plots tab
-![Upset-plots-tab-msa-page](https://github.com/user-attachments/assets/4900b142-2d4e-44db-b2da-a0e4aa385b00)
+<img width="1918" height="866" alt="Upset_plots" src="https://github.com/user-attachments/assets/9c688757-2757-4f26-baeb-4c713565881e" />
 
-#### Network plots tab - differential metabolites network graph
-![Network-plots-tab-msa-page](https://github.com/user-attachments/assets/3caadc60-d008-4df3-868b-d21429a96b4e)
+
+#### Network plots tab - differential metabolites network graph (pie chart nodes)
+<img width="1918" height="866" alt="Network_diff_met_pie_charts" src="https://github.com/user-attachments/assets/3764309d-3c8b-484d-b0af-949dea2d2448" />
+
+#### Network plots tab - differential metabolites network graph (t-statistic nodes)
+<img width="1918" height="866" alt="Network_diff_met_t_stat" src="https://github.com/user-attachments/assets/c6521338-3d2c-4bad-b419-cce78d4cd93c" />
+
+#### Network plots tab - differential metabolites network graph (bipartite)
+<img width="1917" height="867" alt="Network_diff_met_bipartite" src="https://github.com/user-attachments/assets/8ca6ce59-1093-4d5d-8cbe-542f1ebff1df" />
+
 
 #### Network plots tab - differential pathways network graph
-![Network-plots-tab-msa-page-pathways](https://github.com/user-attachments/assets/253fc0c2-f06b-4272-a49b-fd5b351d762b)
+Differential pathways shown must be found differential in 2 or more studies:
+<img width="1918" height="867" alt="Network_pathway_min_2" src="https://github.com/user-attachments/assets/eda59b42-9525-4335-acd3-d4cd9013ed42" />
+
+Differential pathways shown must be found differential in 3 or more studies:
+<img width="1918" height="868" alt="Network_pathway_min_3" src="https://github.com/user-attachments/assets/4f8d107e-ac0d-4517-94f5-37ed8cf041ff" />
+
 
 ---
 
