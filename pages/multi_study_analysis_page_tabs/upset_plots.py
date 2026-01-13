@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 import sqlite3
 import requests
 
-CACHE_DIR = Path("assets/cache")
+CACHE_DIR = Path("cache")
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 DB_PATH = CACHE_DIR / "chebi_name_map.db"
 
