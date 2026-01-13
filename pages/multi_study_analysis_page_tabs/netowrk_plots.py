@@ -1,4 +1,7 @@
 # pages/multi_study_analysis_page_tabs/network_plots.py
+from .shared_functions.data_processing import da_testing
+from .shared_functions.helper import (read_study_details_msa,
+                                      _safe_chebi_name)
 from dash import html, dcc, callback, Input, Output, callback_context, State, no_update, dash_table
 import dash_bootstrap_components as dbc
 import dash_cytoscape as cyto
@@ -15,7 +18,6 @@ import networkx as nx
 import seaborn as sns
 import sspa
 import numpy as np
-import libchebipy
 import io
 import base64
 import matplotlib.pyplot as plt
@@ -24,78 +26,19 @@ import logging
 from pathlib import Path
 logger = logging.getLogger(__name__)
 
-NAMES_PATH = Path("names.tsv.gz")
+import sqlite3
+import requests
+
+CACHE_DIR = Path("assets/cache")
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
+DB_PATH = CACHE_DIR / "chebi_name_map.db"
+
 
 UPLOAD_FOLDER = "pre-processed-datasets"
 
 refmet = pd.read_csv("refmet.csv", dtype=object)
 refmet.columns = refmet.columns.str.strip() 
 refmet2chebi = dict(zip(refmet['refmet_name'], refmet['chebi_id']))
-
-def read_study_details_msa(folder):
-    """Reads study details for a given study, contains info of the study name and dataset source"""
-    details_path = os.path.join(folder, "study_details.txt")
-    details = {}
-    if os.path.exists(details_path):
-        with open(details_path, "r") as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    parts = line.split(":", 1)
-                    if len(parts) == 2:
-                        key, value = parts
-                        details[key.strip()] = value.strip()
-    return details
-
-def da_testing(self):
-        '''
-        Performs differential analysis testing, adds pval_df attribute containing results.
-        '''
-        if self.pathway_level == True:
-            dat = self.pathway_data
-        else:
-            dat = self.processed_data
-        print('starting da test')
-
-        # Directly filter using the 'group_type' column
-        X_case = dat.loc[dat['group_type'] == 'Case'].select_dtypes(include='number')
-        X_ctrl = dat.loc[dat['group_type'] == 'Control'].select_dtypes(include='number')
-
-        
-        # Convert to DataFrame if filtering returned a Series
-        if isinstance(X_case, pd.Series):
-            X_case = X_case.to_frame().T
-        if isinstance(X_ctrl, pd.Series):
-            X_ctrl = X_ctrl.to_frame().T
-        
-        # Restrict to common numeric columns
-        common_cols = X_case.columns.intersection(X_ctrl.columns)
-        X_case = X_case[common_cols]
-        X_ctrl = X_ctrl[common_cols]
-
-        stat, pvals = stats.ttest_ind(X_case, X_ctrl,
-                                    alternative='two-sided',
-                                    nan_policy='raise')
-        pval_df = pd.DataFrame({
-            'P-value': pvals,
-            'Stat': stat,
-            'Direction': ['Up' if s > 0 else 'Down' for s in stat]
-        }, index=X_case.columns)
-        
-        pval_df['Stat'] = stat
-        pval_df['Direction'] = ['Up' if x > 0 else 'Down' for x in stat]
-        self.pval_df = pval_df
-
-        # fdr correction 
-        pval_df['FDR_P-value'] = multipletests(pvals, method='fdr_bh')[1]
-
-        # return significant metabolites
-        self.DA_metabolites = pval_df[pval_df['FDR_P-value'] < 0.05].index.tolist()
-        print(f"Number of differentially abundant metabolites: {len(self.DA_metabolites)}") 
-
-        # generate tuples for nx links
-        self.connection = [(self.node_name, met) for met in self.DA_metabolites]
-        self.full_connection = [(self.node_name, met) for met in self.processed_data.columns[:-1]]
 
 # Load GMT once
 REACTOME_PATHS = sspa.process_gmt(
@@ -521,16 +464,6 @@ def register_callbacks():
                     "The network plot shows the differential pathways which co-occur in two or more studies (the number of studies which they co-occur are represented by the pie charts)."
                 )
             )
-            lines.append(
-                html.P([
-                        html.B("Note:"),
-                        " producing the graph may take up to 5 minutes please wait, waiting time will depend on the number of studies chosen and the method used for "
-                        "ChEBI to metabolite name conversion. If the libchebipy.ChebiEntity package is not avaliable then the downloaded "
-                        "ChEBI to metabolite conversion file (from the EBI website) is used which will increase processing time. To find out "
-                        "which method is being used consult the app.log file."],
-                        style={"marginBottom": "0.5rem"}
-                    )
-            )
         else:
             # diff-metabolite level
             if node_style == "pie":
@@ -541,7 +474,7 @@ def register_callbacks():
                     html.P(
                         "For each dataset, differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) "
                         "to identify metabolites that are significantly different (FDR-adjusted p < 0.05). Identified ChEBI IDs are then "
-                        "converted into metabolite names using libchebipy.ChebiEntity.",
+                        "converted into metabolite names using the ChEBI 2.0 API.",
                         style={"marginBottom": "0.5rem"}
                     )
                 )
@@ -555,14 +488,33 @@ def register_callbacks():
                     )
                 )
                 lines.append(
-                    html.P([
-                            html.B("Note:"),
-                            " producing the graph may take up to 5 minutes please wait, waiting time will depend on the number of studies chosen and the method used for "
-                            "ChEBI to metabolite name conversion. If the libchebipy.ChebiEntity package is not avaliable then the downloaded "
-                            "ChEBI to metabolite conversion file (from the EBI website) is used which will increase processing time. To find out "
-                            "which method is being used consult the app.log file."],
-                            style={"marginBottom": "0.5rem"}
-                        )
+                    html.Div(
+                                [
+                                    html.B("Important note"),
+                                    html.P(
+                                        [
+                                            "For all studies ChEBI ids are converted in metabolite names using the "
+                                            "ChEBI 2.0 API. This step takes approximately ",
+                                            html.B("15–20 seconds"),
+                                            " to convert 10 metabolites. "
+                                            "Once completed, names are cached locally so future analyses run faster."
+                                        ],
+                                        style={"marginTop": "0.5rem"}
+                                    ),
+                                    html.P(
+                                        "Please keep the app open until the results are displayed. Closing or refreshing "
+                                        "the app will interrupt name retrieval and prevent caching. "
+                                        "Advanced users can consult the app log file to see when the ids are being converted.",
+                                        style={"marginBottom": 0}
+                                    ),
+                                ],
+                                style={
+                                    "backgroundColor": "#ffffff",
+                                    "borderLeft": "4px solid #0074D9",
+                                    "padding": "0.75rem 1rem",
+                                    "borderRadius": "3px",
+                                },
+                            )
                 )
 
             elif node_style == "circle":
@@ -571,7 +523,7 @@ def register_callbacks():
                 )
                 lines.append(
                     html.P(
-                        "For all datasets, differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) on the metabolite data to identify differential metabolites (FDR adjusted p-value below 0.05). Then ChEBI ids are converted into Metabolite names using libchebipy.ChebiEntity, prior to creating network plot.",
+                        "For all datasets, differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) on the metabolite data to identify differential metabolites (FDR adjusted p-value below 0.05). Then ChEBI ids are converted into Metabolite names using the ChEBI 2.0 API, prior to creating network plot.",
                         style={"marginBottom": "0.5rem"}
                     )
                 )
@@ -581,14 +533,33 @@ def register_callbacks():
                     )
                 )
                 lines.append(
-                    html.P([
-                            html.B("Note:"),
-                            " producing the graph may take up to 5 minutes please wait, waiting time will depend on the number of studies chosen and the method used for "
-                            "ChEBI to metabolite name conversion. If the libchebipy.ChebiEntity package is not avaliable then the downloaded "
-                            "ChEBI to metabolite conversion file (from the EBI website) is used which will increase processing time. To find out "
-                            "which method is being used consult the app.log file."],
-                            style={"marginBottom": "0.5rem"}
-                        )
+                    html.Div(
+                                [
+                                    html.B("Important note"),
+                                    html.P(
+                                        [
+                                            "For all studies ChEBI ids are converted in metabolite names using the "
+                                            "ChEBI 2.0 API. This step takes approximately ",
+                                            html.B("15–20 seconds"),
+                                            " to convert 10 metabolites. "
+                                            "Once completed, names are cached locally so future analyses run faster."
+                                        ],
+                                        style={"marginTop": "0.5rem"}
+                                    ),
+                                    html.P(
+                                        "Please keep the app open until the results are displayed. Closing or refreshing "
+                                        "the app will interrupt name retrieval and prevent caching. "
+                                        "Advanced users can consult the app log file to see when the ids are being converted.",
+                                        style={"marginBottom": 0}
+                                    ),
+                                ],
+                                style={
+                                    "backgroundColor": "#ffffff",
+                                    "borderLeft": "4px solid #0074D9",
+                                    "padding": "0.75rem 1rem",
+                                    "borderRadius": "3px",
+                                },
+                            )
                 )
 
             elif node_style == "t_statistic":
@@ -600,7 +571,7 @@ def register_callbacks():
                         "For each dataset, differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) "
                         "to identify metabolites that are significantly different (FDR-adjusted p < 0.05). This test also produces a "
                         "t-statistic, which reflects the standardized difference in mean metabolite abundance between the case and control groups. "
-                        "Identified ChEBI IDs are then converted into metabolite names using libchebipy.ChebiEntity.",
+                        "Identified ChEBI IDs are then converted into metabolite names using the ChEBI 2.0 API.",
                         style={"marginBottom": "0.5rem"}
                     )
                 )
@@ -616,14 +587,33 @@ def register_callbacks():
                     )
                 )
                 lines.append(
-                    html.P([
-                            html.B("Note:"),
-                            " producing the graph may take up to 5 minutes please wait, waiting time will depend on the number of studies chosen and the method used for "
-                            "ChEBI to metabolite name conversion. If the libchebipy.ChebiEntity package is not avaliable then the downloaded "
-                            "ChEBI to metabolite conversion file (from the EBI website) is used which will increase processing time. To find out "
-                            "which method is being used consult the app.log file."],
-                            style={"marginBottom": "0.5rem"}
-                        )
+                    html.Div(
+                                [
+                                    html.B("Important note"),
+                                    html.P(
+                                        [
+                                            "For all studies ChEBI ids are converted in metabolite names using the "
+                                            "ChEBI 2.0 API. This step takes approximately ",
+                                            html.B("15–20 seconds"),
+                                            " to convert 10 metabolites. "
+                                            "Once completed, names are cached locally so future analyses run faster."
+                                        ],
+                                        style={"marginTop": "0.5rem"}
+                                    ),
+                                    html.P(
+                                        "Please keep the app open until the results are displayed. Closing or refreshing "
+                                        "the app will interrupt name retrieval and prevent caching. "
+                                        "Advanced users can consult the app log file to see when the ids are being converted.",
+                                        style={"marginBottom": 0}
+                                    ),
+                                ],
+                                style={
+                                    "backgroundColor": "#ffffff",
+                                    "borderLeft": "4px solid #0074D9",
+                                    "padding": "0.75rem 1rem",
+                                    "borderRadius": "3px",
+                                },
+                            )
                 )
 
             else:  # bipartite
@@ -632,7 +622,7 @@ def register_callbacks():
                 )
                 lines.append(
                     html.P(
-                        "For all datasets, differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) on the metabolite data to identify differential metabolites (FDR adjusted p-value below 0.05). This test also produces a t-statistic representing the standardized difference in mean metabolite abundance between the case and control group for that metabolite. Then ChEBI ids are converted into Metabolite names using libchebipy.ChebiEntity, prior to creating network plot.",
+                        "For all datasets, differential testing is performed (two-tailed t-test with Benjamini–Hochberg FDR correction) on the metabolite data to identify differential metabolites (FDR adjusted p-value below 0.05). This test also produces a t-statistic representing the standardized difference in mean metabolite abundance between the case and control group for that metabolite. Then ChEBI ids are converted into Metabolite names using the ChEBI 2.0 API, prior to creating network plot.",
                         style={"marginBottom": "0.5rem"}
                     )
                 )
@@ -648,14 +638,33 @@ def register_callbacks():
                     )
                 )
                 lines.append(
-                    html.P([
-                            html.B("Note:"),
-                            " producing the graph may take up to 5 minutes please wait, waiting time will depend on the number of studies chosen and the method used for "
-                            "ChEBI to metabolite name conversion. If the libchebipy.ChebiEntity package is not avaliable then the downloaded "
-                            "ChEBI to metabolite conversion file (from the EBI website) is used which will increase processing time. To find out "
-                            "which method is being used consult the app.log file."],
-                            style={"marginBottom": "0.5rem"}
-                        )
+                    html.Div(
+                                [
+                                    html.B("Important note"),
+                                    html.P(
+                                        [
+                                            "For all studies ChEBI ids are converted in metabolite names using the "
+                                            "ChEBI 2.0 API. This step takes approximately ",
+                                            html.B("15–20 seconds"),
+                                            " to convert 10 metabolites. "
+                                            "Once completed, names are cached locally so future analyses run faster."
+                                        ],
+                                        style={"marginTop": "0.5rem"}
+                                    ),
+                                    html.P(
+                                        "Please keep the app open until the results are displayed. Closing or refreshing "
+                                        "the app will interrupt name retrieval and prevent caching. "
+                                        "Advanced users can consult the app log file to see when the ids are being converted.",
+                                        style={"marginBottom": 0}
+                                    ),
+                                ],
+                                style={
+                                    "backgroundColor": "#ffffff",
+                                    "borderLeft": "4px solid #0074D9",
+                                    "padding": "0.75rem 1rem",
+                                    "borderRadius": "3px",
+                                },
+                            )
                 )
 
         return lines
@@ -1330,82 +1339,21 @@ def register_callbacks():
             for u, v, w in edges:
                 G.add_edge(u, v, weight=w)
 
-            # Replace each ChEBI ID in the index with its metabolite name:
-            def chebi_names_for_ids(path, wanted_labels):
-                # collect numeric CHEBI ids we actually need
-                wanted = set()
-                lab2cid = {}
-                for lbl in wanted_labels:
-                    m = re.search(r"(\d+)", str(lbl))
-                    if m:
-                        cid = m.group(1)
-                        lab2cid[lbl] = cid
-                        wanted.add(cid)
-                if not wanted:
-                    return {}
-
-                RANK = {"NAME":0, "IUPAC NAME":1, "UNIPROT NAME":2, "SYNONYM":3}
-                best = {}  # cid -> (rank, ascii_missing, chosen)
-
-                p = Path(path)
-                with gzip.open(p, "rt", encoding="utf-8", errors="replace", newline="") as fh:
-                    reader = csv.DictReader(fh, delimiter="\t")
-                    # expected keys: id, compound_id, name, type, status_id, adapted, language_code, ascii_name
-                    for row in reader:
-                        if not row:  # blank/malformed line
-                            continue
-                        cpd = (row.get("compound_id") or "").strip()
-                        if cpd not in wanted:
-                            continue
-
-                        lang = (row.get("language_code") or "").strip()
-                        if lang and lang != "en":   # keep EN; treat empty as EN
-                            continue
-
-                        typ  = (row.get("type") or "").strip().upper()
-                        rank = RANK.get(typ, 9)
-
-                        aname = (row.get("ascii_name") or "").strip()
-                        ascii_missing = (aname == "")
-                        chosen = aname if aname else cpd  # prefer ascii_name; else CHEBI id
-
-                        cand = (rank, ascii_missing, chosen)
-                        if (cpd not in best) or (cand < best[cpd]):
-                            best[cpd] = cand
-
-                # default any missing to their CHEBI id
-                return {cid: (best[cid][2] if cid in best else f"CHEBI:{cid}") for cid in wanted}
-            
-            # --- test if libchebipy works properly ---
-            try:
-                test_entity = libchebipy.ChebiEntity("CHEBI:15377")
-                _ = test_entity.get_name()
-                chebi_ok = True
-                logger.info("Networks tab - Using libchebipy.ChebiEntity package for ChEBI to metabolite name conversion")
-                #print('using libchebipy.ChebiEntity')
-            except Exception:
-                chebi_ok = False
-                logger.info("Network tab - Using downloaded file 'names.tsv.gz' mapping for ChEBI to metabolite name conversion")
-                #print('using downloaded file-based mapping')
-
-                # --- build map only for columns you have (before DA) ---
-                cid_map   = chebi_names_for_ids(NAMES_PATH, list(G.nodes()))
-
-            # --- Lookup human names (only for metabolites) ---
+            # ChEBI 2.0 - based name lookup for differential metabolites
             chebi_to_name = {}
-            for node in G.nodes():
-                if network_level == "diff-metabolite":
-                    try:
-                        if chebi_ok:
-                            chebi_to_name[node] = libchebipy.ChebiEntity(node).get_name()
-                        else:
-                            # fallback: use preloaded cid_map, defaulting to "CHEBI:xxxx" if missing
-                            chebi_to_name[node] = cid_map.get(node.replace("CHEBI:", ""), f"CHEBI:{node}")
-                    except Exception:
-                        chebi_to_name[node] = node
-                else:
+            if network_level == "diff-metabolite":
+                logger.info(f"Network plots tab - Starting ChEBI id to metabolite name conversion for all studies.")
+                with sqlite3.connect(DB_PATH) as conn:
+                    cursor = conn.cursor()
+                    for node in G.nodes():
+                        chebi_to_name[node] = _safe_chebi_name(node, cursor)
+                    conn.commit()  # commit ONCE
+                logger.info(f"Network plots tab - Finished ChEBI id to metabolite name conversion for all studies.")
+            else:
+                for node in G.nodes():
                     # pathway IDs are already human-readable (or you can map them here)
                     chebi_to_name[node] = node
+
 
             # --- Prepare Cytoscape elements ---
             #study_names = [st.node_name for st in studies]

@@ -1,7 +1,8 @@
 # pages/single_study_analysis_page_tabs/differential_metabolites.py
+from .shared_functions.data_processing import da_testing
 from dash import html, dcc, callback, Input, Output, dash_table, State, no_update
 import dash_bootstrap_components as dbc
-import os, re, gzip, csv
+import os, re, gzip, csv, requests
 import pandas as pd
 import plotly.express as px
 import plotly.io as pio
@@ -9,62 +10,18 @@ import base64
 from scipy import stats
 from statsmodels.stats.multitest import multipletests
 import json
-import libchebipy
 import logging
 from pathlib import Path
 logger = logging.getLogger(__name__)
 
-NAMES_PATH = Path("names.tsv.gz")
+import requests
 
+import sqlite3
 
-def da_testing(self):
-        '''
-        Performs differential analysis testing, adds pval_df attribute containing results.
-        '''
-        if self.pathway_level == True:
-            dat = self.pathway_data
-        else:
-            dat = self.processed_data
+CACHE_DIR = Path("assets/cache")
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-        # Directly filter using the 'group_type' column
-        X_case = dat.loc[dat['group_type'] == 'Case'].select_dtypes(include='number')
-        X_ctrl = dat.loc[dat['group_type'] == 'Control'].select_dtypes(include='number')
-
-        
-        # Convert to DataFrame if filtering returned a Series
-        if isinstance(X_case, pd.Series):
-            X_case = X_case.to_frame().T
-        if isinstance(X_ctrl, pd.Series):
-            X_ctrl = X_ctrl.to_frame().T
-        
-        # Restrict to common numeric columns
-        common_cols = X_case.columns.intersection(X_ctrl.columns)
-        X_case = X_case[common_cols]
-        X_ctrl = X_ctrl[common_cols]
-
-        stat, pvals = stats.ttest_ind(X_case, X_ctrl,
-                                    alternative='two-sided',
-                                    nan_policy='raise')
-        pval_df = pd.DataFrame({
-            'P-value': pvals,
-            'Stat': stat,
-            'Direction': ['Up' if s > 0 else 'Down' for s in stat]
-        }, index=X_case.columns)
-        
-        pval_df['Stat'] = stat
-        pval_df['Direction'] = ['Up' if x > 0 else 'Down' for x in stat]
-        self.pval_df = pval_df
-
-        # fdr correction 
-        pval_df['FDR_P-value'] = multipletests(pvals, method='fdr_bh')[1]
-
-        # return significant metabolites
-        self.DA_metabolites = pval_df[pval_df['FDR_P-value'] < 0.05].index.tolist()
-        print(f"Number of differentially abundant metabolites: {len(self.DA_metabolites)}") 
-
-        # generate tuples for nx links
-        self.connection = [(self.node_name, met) for met in self.DA_metabolites]
-        self.full_connection = [(self.node_name, met) for met in self.processed_data.columns[:-1]]
+DB_PATH = CACHE_DIR / "chebi_name_map.db"
 
 # ========================================== #
 # Layout of the Differential metabolites tab #
@@ -77,29 +34,49 @@ layout = html.Div([
                     # Background processing description
                     html.Div(
                         [
-                            html.H4("Background processing description", style={"marginBottom": "0.5rem"}),
+                            html.H4("Background processing", style={"marginBottom": "0.75rem"}),
+
                             html.P(
-                                "Differential testing is performed by first separating metabolite "
-                                "data into Case and Control groups, then runs an independent two‐sided t‐test "
-                                "for each metabolite to compare their means. It labels each metabolite as “Up” "
-                                "or “Down” based on the sign of the test statistic, applies Benjamini–Hochberg "
-                                "FDR correction to the p-values, and finally reports those metabolites with an "
-                                "adjusted p-value below 0.05 as differentially abundant."
+                                "Differential testing separates metabolites into Case and Control groups and performs "
+                                "an independent two-sided t-test for each metabolite. Metabolites are labelled as "
+                                "“Up” or “Down” based on the sign of the test statistic, followed by Benjamini–Hochberg "
+                                "FDR correction of p-values. Metabolites with an adjusted p-value below 0.05 are "
+                                "reported as differentially abundant.",
+                                style={"marginBottom": "0.75rem"}
                             ),
-                            html.P([
-                                    html.B("Note:"),
-                                    " If the libchebipy.ChebiEntity package is not avaliable then the downloaded "
-                                    "ChEBI to metabolite conversion file (from the EBI website) is used.  "
-                                    "To know which method is being used for the conversion of ChEBI ids into metabolite names "
-                                    "consult the app.log file. If the downloaded file is being used "
-                                    "processing time is longer and may increase to 5 minutes."],
-                                    style={"marginBottom": "0.5rem"}
-                                ),
+
+                            html.Div(
+                                [
+                                    html.B("Important note"),
+                                    html.P(
+                                        [
+                                            "For studies using ChEBI identifiers, metabolite names are retrieved via the "
+                                            "ChEBI 2.0 API. This step takes approximately ",
+                                            html.B("15–20 seconds"),
+                                            " to convert 10 metabolites. "
+                                            "Once completed, names are cached locally so future analyses run faster."
+                                        ],
+                                        style={"marginTop": "0.5rem"}
+                                    ),
+                                    html.P(
+                                        "Please keep the app open until the results are displayed. Closing or refreshing "
+                                        "the app will interrupt name retrieval and prevent caching. "
+                                        "Advanced users can consult the app log file to see how many metabolites are being processed.",
+                                        style={"marginBottom": 0}
+                                    ),
+                                ],
+                                style={
+                                    "backgroundColor": "#ffffff",
+                                    "borderLeft": "4px solid #0074D9",
+                                    "padding": "0.75rem 1rem",
+                                    "borderRadius": "3px",
+                                },
+                            ),
                         ],
                         style={
-                            "backgroundColor": "#f0f0f0",
-                            "padding": "1rem",
-                            "borderRadius": "5px",
+                            "backgroundColor": "#f5f5f5",
+                            "padding": "1.25rem",
+                            "borderRadius": "6px",
                             "marginBottom": "1.5rem",
                         },
                     ),
@@ -262,97 +239,6 @@ def register_callbacks():
         # load and index
         df = pd.read_csv(filepath).set_index("database_identifier")
 
-        # Replace each ChEBI ID in the index with its metabolite name:
-        def chebi_names_for_ids(path, wanted_labels):
-            # collect numeric CHEBI ids we actually need
-            wanted = set()
-            lab2cid = {}
-            for lbl in wanted_labels:
-                m = re.search(r"(\d+)", str(lbl))
-                if m:
-                    cid = m.group(1)
-                    lab2cid[lbl] = cid
-                    wanted.add(cid)
-            if not wanted:
-                return {}
-
-            RANK = {"NAME":0, "IUPAC NAME":1, "UNIPROT NAME":2, "SYNONYM":3}
-            best = {}  # cid -> (rank, ascii_missing, chosen)
-
-            p = Path(path)
-            with gzip.open(p, "rt", encoding="utf-8", errors="replace", newline="") as fh:
-                reader = csv.DictReader(fh, delimiter="\t")
-                # expected keys: id, compound_id, name, type, status_id, adapted, language_code, ascii_name
-                for row in reader:
-                    if not row:  # blank/malformed line
-                        continue
-                    cpd = (row.get("compound_id") or "").strip()
-                    if cpd not in wanted:
-                        continue
-
-                    lang = (row.get("language_code") or "").strip()
-                    if lang and lang != "en":   # keep EN; treat empty as EN
-                        continue
-
-                    typ  = (row.get("type") or "").strip().upper()
-                    rank = RANK.get(typ, 9)
-
-                    aname = (row.get("ascii_name") or "").strip()
-                    ascii_missing = (aname == "")
-                    chosen = aname if aname else cpd  # prefer ascii_name; else CHEBI id
-
-                    cand = (rank, ascii_missing, chosen)
-                    if (cpd not in best) or (cand < best[cpd]):
-                        best[cpd] = cand
-
-            # default any missing to their CHEBI id
-            return {cid: (best[cid][2] if cid in best else f"CHEBI:{cid}") for cid in wanted}
-
-        # --- build map only for columns you have (before DA) ---
-        meta_cols = [c for c in df.columns if c != "group_type"]
-        cid_map   = chebi_names_for_ids(NAMES_PATH, meta_cols)
-
-        def to_display(lbl):
-            if lbl == "group_type":
-                return lbl
-            m = re.search(r"(\d+)", str(lbl))
-            if not m:
-                return lbl
-            cid = m.group(1)
-            # replace 'CHEBI:' prefix if no match found
-            return cid_map.get(cid, f"CHEBI:{cid}")
-
-        # --- test if libchebipy works properly ---
-        try:
-            test_entity = libchebipy.ChebiEntity("CHEBI:15377")
-            _ = test_entity.get_name()
-            chebi_ok = True
-        except Exception:
-            chebi_ok = False
-
-        # --- choose name conversion method accordingly ---
-        if chebi_ok:
-            logger.info("Differential metabolite tab - Using libchebipy.ChebiEntity package for ChEBI to metabolite name conversion")
-            #print('using libchebipy.ChebiEntity')
-
-            # Safe libchebipy-based name lookup
-            def _safe_chebi_name(chebi_id):
-                try:
-                    name = libchebipy.ChebiEntity(chebi_id).get_name()
-                    return name
-                except Exception:
-                    return chebi_id
-
-            df.columns = df.columns.map(_safe_chebi_name)
-        else:
-            logger.info("Differential metabolite tab - Using downloaded file 'names.tsv.gz' mapping for ChEBI to metabolite name conversion")
-            #print('using downloaded file-based mapping')
-
-            # Fallback to lookup via file-based mapping
-            df = df.rename(columns=to_display)
-        #df = df.rename(columns=to_display)
-        #df.columns = df.columns.map(_safe_chebi_name)
-
         # run your da_testing as before...
         class DA: pass
         da = DA()
@@ -381,6 +267,112 @@ def register_callbacks():
         sig_sorted["FDR_P-value"] = sig_sorted["FDR_P-value"].apply(lambda x: f"{x:.3e}")
         sig_sorted["Stat"]        = sig_sorted["Stat"].round(3)
 
+        # Filtering the abundance table to only contain the diff metabolites
+        # Columns that should always be retained
+        always_keep = ['Group', 'group_type']
+
+        # Filter df to include differential metabolites + always_keep columns
+        keep_cols = list(df.columns.intersection(sig_sorted.index)) + [col for col in always_keep if col in df.columns]
+
+        # Reorder columns so that 'Group' and 'group_type' stay at the end
+        df_diff = df[keep_cols].copy()
+
+
+        # ChEBI 2.0 - based name lookup   
+        _CHEBI_PATTERN = re.compile(r"^(CHEBI:\d+|chebi:\d+|\d+)$")
+
+        def is_valid_chebi_id(value: str) -> bool:
+            return isinstance(value, str) and bool(_CHEBI_PATTERN.match(value))
+        def normalise_chebi_id(value: str) -> str:
+            value = value.strip()
+            if value.isdigit():
+                return f"CHEBI:{value}"
+            return value.upper()
+             
+        def _safe_chebi_name(value, cursor):
+            # Skip non-ChEBI columns
+            if not is_valid_chebi_id(value):
+                return value
+
+            chebi_id = normalise_chebi_id(value)
+
+            # 1️⃣ SQLite lookup
+            cursor.execute(
+                "SELECT name FROM chebi_name_map WHERE chebi_id = ?",
+                (chebi_id,)
+            )
+            row = cursor.fetchone()
+
+            if row and row[0] != chebi_id:
+                return row[0]
+
+            # 2️⃣ API fallback (UNCHANGED LOGIC)
+            response = requests.get(
+                "https://www.ebi.ac.uk/chebi/backend/api/public/compounds/",
+                params={"chebi_ids": chebi_id},
+                timeout=10
+            )
+
+            try:
+                data = response.json()
+            except ValueError:
+                return value
+
+            # CASE 1: dict keyed by CHEBI ID
+            if isinstance(data, dict):
+                entry = data.get(chebi_id) or data.get(value)
+                if entry and entry.get("exists"):
+                    name = entry["data"].get("name", value)
+                    cursor.execute(
+                        "INSERT OR REPLACE INTO chebi_name_map VALUES (?, ?)",
+                        (chebi_id, name)
+                    )
+                    return name
+
+            # CASE 2: list response
+            if isinstance(data, list) and data and isinstance(data[0], dict):
+                name = data[0].get("name", value)
+                cursor.execute(
+                    "INSERT OR REPLACE INTO chebi_name_map VALUES (?, ?)",
+                    (chebi_id, name)
+                )
+                return name
+
+            return value
+
+
+        num_of_cols = len(df_diff.columns)
+        logger.info(f"Upset plots tab - Starting ChEBI id to metabolite name conversion for {selected_file} which has {num_of_cols} ids.")
+        with sqlite3.connect(DB_PATH) as conn:
+            cursor = conn.cursor()
+
+            # Apply to columns
+            df_diff.columns = [
+                _safe_chebi_name(c, cursor)
+                for c in df_diff.columns
+            ]
+
+            # Apply to index
+            sig_sorted.index = [
+                _safe_chebi_name(i, cursor)
+                for i in sig_sorted.index
+            ]
+
+            conn.commit()  # commit ONCE
+
+
+        #df_diff.columns = df_diff.columns.map(_safe_chebi_name)
+        #sig_sorted = sig_sorted.rename(index=_safe_chebi_name)
+
+
+        # Save the KPCA scores.
+        results_folder = os.path.join("Projects", selected_project, "raw_results_data", "differential metabolites")
+        os.makedirs(results_folder, exist_ok=True)
+        base_filename = selected_file.replace('.csv', '')
+        save_filename = f"Diff_Metabolite_results{base_filename}.csv"
+        save_filepath = os.path.join(results_folder, save_filename)
+        df_diff.to_csv(save_filepath)
+
         metabolite_table = dash_table.DataTable(
                 data=sig_sorted.reset_index().to_dict('records'),
                 columns=[{"name": c, "id": c} for c in sig_sorted.reset_index().columns],
@@ -404,7 +396,7 @@ def register_callbacks():
         ordered_mets = list(sig_sorted.loc[top_mets].index)
         title       = f"Box Plot of Top {len(top_mets)} Differentially Abundant Metabolites"
 
-        box_df = df[top_mets + ["group_type"]].reset_index(drop=True)
+        box_df = df_diff[top_mets + ["group_type"]].reset_index(drop=True)
         box_long = pd.melt(
             box_df,
             id_vars=["group_type"],
