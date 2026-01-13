@@ -4,3 +4,4 @@ __pycache__/
 .env
 .pytest_cache/
 *.log
+pre-processed-datasets\selected_studies_temp.txt
