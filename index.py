@@ -162,5 +162,9 @@ def display_page_and_title(pathname, search):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    #app.run_server(debug=True)
+    app.run(
+        debug=True,                 # keep error messages
+        dev_tools_hot_reload=False, # stop page resets
+    )
 
