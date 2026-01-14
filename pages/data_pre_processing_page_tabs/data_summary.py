@@ -22,9 +22,10 @@ import time
 import logging
 from io import StringIO
 logger = logging.getLogger(__name__)
+from paths import UPLOAD_FOLDER, PROJECTS_DIR
 
 
-UPLOAD_FOLDER = "pre-processed-datasets"
+#UPLOAD_FOLDER = "pre-processed-datasets"
 # Path to the temporary file that holds the selected studies
 SELECTED_STUDIES_FILE = os.path.join(UPLOAD_FOLDER, "selected_studies_temp.txt")
 
@@ -300,7 +301,7 @@ def register_callbacks():
 
         # Use project_folder to build the save path, or error.
         if project_folder:
-            base_save = os.path.join(project_folder, "Processed-datasets")
+            base_save = os.path.join(PROJECTS_DIR, project_folder, "Processed-datasets")
         else:
             logger.error("Data summary tab - project folder chosen doesn't exist")
             return html.Div("Project folder chosen doesn't exist"), False
@@ -479,9 +480,9 @@ def register_callbacks():
 
         # Determine destination path
         if project_folder:
-            dest_path = os.path.join(project_folder, "project_details_file.json")
+            dest_path = os.path.join(PROJECTS_DIR, project_folder, "project_details_file.json")
         else:
-            dest_path = "project_details_file.json"
+            dest_path = PROJECTS_DIR / "project_details_file.json"
 
         try:
             # 1) Load the incoming payload
@@ -544,7 +545,7 @@ def register_callbacks():
 
         # Build the base path using the project folder if available, else error
         if project_folder:
-            base = os.path.join(project_folder, "Processed-datasets")
+            base = os.path.join(PROJECTS_DIR, project_folder, "Processed-datasets")
         else:
             logger.error("Data summary tab - project folder chosen doesn't exist")
             return html.Div("Project folder chosen doesn't exist")
@@ -647,7 +648,7 @@ def register_callbacks():
 
         total = len(selected_studies or [])
         if project_folder:
-            base = os.path.join(project_folder, "Processed-datasets")
+            base = os.path.join(PROJECTS_DIR, project_folder, "Processed-datasets")
         else:
             logger.error("Data summary tab - project folder chosen doesn't exist")
             raise PreventUpdate

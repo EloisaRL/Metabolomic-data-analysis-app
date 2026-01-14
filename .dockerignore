@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+
+# Git
+.git/
+.gitignore
+
+# Data folders (not required at start up)
+cache/
+pre-processed-datasets/
+Projects/
+data_preprocessing_flows/
+
+# Not needed at runtime
+Metabolomics_Workbench_study_download.ipynb

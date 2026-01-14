@@ -15,10 +15,10 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 import requests
-
+from paths import CACHE_DIR, PROJECTS_DIR
 import sqlite3
 
-CACHE_DIR = Path("cache")
+#CACHE_DIR = Path("cache")
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 DB_PATH = CACHE_DIR / "chebi_name_map.db"
@@ -230,7 +230,7 @@ def register_callbacks():
 
         # build path
         filepath = os.path.join(
-            "Projects", selected_project, "processed-datasets", selected_file
+            PROJECTS_DIR, selected_project, "processed-datasets", selected_file
         )
         if not os.path.exists(filepath):
             error = dbc.Alert(f"Processed file not found: {filepath}", color="danger")
@@ -366,7 +366,7 @@ def register_callbacks():
 
 
         # Save the KPCA scores.
-        results_folder = os.path.join("Projects", selected_project, "raw_results_data", "differential metabolites")
+        results_folder = os.path.join(PROJECTS_DIR, selected_project, "raw_results_data", "differential metabolites")
         os.makedirs(results_folder, exist_ok=True)
         base_filename = selected_file.replace('.csv', '')
         save_filename = f"Diff_Metabolite_results{base_filename}.csv"
@@ -414,7 +414,7 @@ def register_callbacks():
         else:
             study_name = None
 
-        project_details_path = os.path.join("Projects", selected_project, "project_details_file.json")
+        project_details_path = os.path.join(PROJECTS_DIR, selected_project, "project_details_file.json")
 
         with open(project_details_path, "r", encoding="utf-8") as f:
             payload = json.load(f).get("studies", {})
@@ -572,7 +572,7 @@ def register_callbacks():
 
         # Build your output directory
         out_dir = os.path.join(
-            "Projects",
+            PROJECTS_DIR,
             project,
             "Plots",
             "Single-study-analysis",
@@ -619,7 +619,7 @@ def register_callbacks():
             return
 
         out_dir = os.path.join(
-            "Projects",
+            PROJECTS_DIR,
             project,
             "Plots",
             "Single-study-analysis",

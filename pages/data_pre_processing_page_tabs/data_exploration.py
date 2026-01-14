@@ -25,8 +25,9 @@ import plotly.io as pio
 import logging
 from io import StringIO
 logger = logging.getLogger(__name__)
+from paths import UPLOAD_FOLDER, APP_ROOT, DATA_FLOWS_DIR
 
-UPLOAD_FOLDER = "pre-processed-datasets"
+#UPLOAD_FOLDER = "pre-processed-datasets"
 # Path to the temporary file that holds the selected studies
 SELECTED_STUDIES_FILE = os.path.join(UPLOAD_FOLDER, "selected_studies_temp.txt")
 
@@ -408,17 +409,7 @@ layout = html.Div(
                                                 html.H5("Pre-built data processing", className="mt-3"),
                                                 dbc.Checklist(
                                                     id="prebuilt-flows_dpp",
-                                                    options=[
-                                                        {
-                                                            "label": html.Span(
-                                                                os.path.splitext(flow)[0].replace("-", " "),
-                                                                id=f"prebuilt-{os.path.splitext(flow)[0]}"
-                                                            ),
-                                                            "value": os.path.splitext(flow)[0]
-                                                        }
-                                                        for flow in sorted(os.listdir("data_preprocessing_flows"))
-                                                        if flow.endswith(".txt")
-                                                    ],
+                                                    options=[],          # populated by callback
                                                     value=[],
                                                     inline=False,
                                                     style={"paddingLeft": "1rem"}
@@ -1343,7 +1334,7 @@ def register_callbacks():
 
             flows = [
                 os.path.splitext(fn)[0]
-                for fn in os.listdir("data_preprocessing_flows")
+                for fn in os.listdir(DATA_FLOWS_DIR)
                 if fn.endswith(".txt")
             ]
 
@@ -1494,7 +1485,7 @@ def register_callbacks():
             if not flow_name:
                 return "Please provide a name for the preprocessing flow."
             filename = flow_name.replace(" ", "-") + ".txt"
-            folder = "data_preprocessing_flows"
+            folder = DATA_FLOWS_DIR
             os.makedirs(folder, exist_ok=True)
             file_path = os.path.join(folder, filename)
             data = {
@@ -1571,7 +1562,7 @@ def register_callbacks():
             "max_abs_scaler": "Max Abs Scaler"
         }
         
-        folder = "data_preprocessing_flows"
+        folder = DATA_FLOWS_DIR
         options = []
         tooltips = []
         
@@ -1687,6 +1678,7 @@ def register_callbacks():
             # Build path
             project = project_name.replace(" ", "-")
             out_dir = os.path.join(
+                APP_ROOT,
                 "Projects",
                 project,
                 "Plots",
@@ -1778,6 +1770,7 @@ def register_callbacks():
             # Build path
             project = project_name.replace(" ", "-")
             out_dir = os.path.join(
+                APP_ROOT,
                 "Projects",
                 project,
                 "Plots",
@@ -1862,6 +1855,7 @@ def register_callbacks():
             # Build path
             project = project_name.replace(" ", "-")
             out_dir = os.path.join(
+                APP_ROOT,
                 "Projects",
                 project,
                 "Plots",

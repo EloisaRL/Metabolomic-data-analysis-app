@@ -6,9 +6,10 @@ import os
 import base64
 import logging
 logger = logging.getLogger(__name__)
+from paths import UPLOAD_FOLDER, PROJECTS_DIR
 
 
-UPLOAD_FOLDER = "pre-processed-datasets"
+#UPLOAD_FOLDER = "pre-processed-datasets"
 DATASET_SOURCE_LABELS = {
     "metabolights": "MetaboLights",
     "metabolomics_workbench": "Metabolomics Workbench",
@@ -318,11 +319,11 @@ def register_callbacks():
 
         # Populate dropdown when modal opens
         if trigger_id == "modal-analysis-project" and is_open:
-            if os.path.exists("Projects"):
-                folders = os.listdir("Projects")
+            if os.path.exists(PROJECTS_DIR):
+                folders = os.listdir(PROJECTS_DIR)
                 dropdown_options = [
                     {"label": folder.replace("-", " "), "value": folder}
-                    for folder in folders if os.path.isdir(os.path.join("Projects", folder))
+                    for folder in folders if os.path.isdir(os.path.join(PROJECTS_DIR, folder))
                 ]
             else:
                 dropdown_options = []
@@ -361,7 +362,7 @@ def register_callbacks():
             else:
                 return is_open, "Project Name Not Provided", ""
 
-            projects_dir = "Projects"
+            projects_dir = PROJECTS_DIR
             project_folder_path = os.path.join(projects_dir, sanitized_name)
 
             # Ensure the Projects folder exists

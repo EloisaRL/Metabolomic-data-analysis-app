@@ -18,6 +18,8 @@ import json
 import logging
 logger = logging.getLogger(__name__)
 
+from paths import PROJECTS_DIR, PREPROCESSED_DIR
+
 refmet = pd.read_csv("refmet.csv", dtype=object)
 refmet.columns = refmet.columns.str.strip() 
 name2pubchem = dict(zip(refmet['refmet_name'], refmet['chebi_id']))
@@ -242,7 +244,7 @@ def register_callbacks():
             return html.Div("Please select a project and a file for differential pathway analysis."), None, None, None
 
         # Construct the full processed file path.
-        processed_filepath = os.path.join("Projects", selected_project, "processed-datasets", selected_file)
+        processed_filepath = os.path.join(PROJECTS_DIR, selected_project, "processed-datasets", selected_file)
         
         if not os.path.exists(processed_filepath):
             logger.error(f"Differential pathway tab - Processed file '{processed_filepath}' not found")
@@ -256,7 +258,7 @@ def register_callbacks():
             study_name = selected_file
 
         # Build the details file path (unchanged logic).
-        folder_details = os.path.join("pre-processed-datasets", study_name)
+        folder_details = os.path.join(PREPROCESSED_DIR, study_name)
         details = read_study_details_dpp2(folder_details)
         dataset_source = details.get("Dataset Source", "").lower()
         try:
@@ -389,7 +391,7 @@ def register_callbacks():
             scores.rename(columns=new_columns, inplace=True)
             
             # Save the KPCA scores.
-            results_folder = os.path.join("Projects", selected_project, "raw_results_data", "differential pathways")
+            results_folder = os.path.join(PROJECTS_DIR, selected_project, "raw_results_data", "differential pathways")
             os.makedirs(results_folder, exist_ok=True)
             base_filename = selected_file.replace('.csv', '')
             save_filename = f"KPCA_results{base_filename}.csv"
@@ -477,7 +479,7 @@ def register_callbacks():
                 else:
                     study_name = None
 
-                project_details_path = os.path.join("Projects", selected_project, "project_details_file.json")
+                project_details_path = os.path.join(PROJECTS_DIR, selected_project, "project_details_file.json")
 
                 with open(project_details_path, "r", encoding="utf-8") as f:
                     payload = json.load(f).get("studies", {})
@@ -630,7 +632,7 @@ def register_callbacks():
         w = fig.layout.width  or 700
         h = fig.layout.height or 400
 
-        out_dir = os.path.join("Projects", project,
+        out_dir = os.path.join(PROJECTS_DIR, project,
                             "Plots", "Single-study-analysis",
                             "Differential-pathway-box-plots")
         os.makedirs(out_dir, exist_ok=True)
@@ -667,7 +669,7 @@ def register_callbacks():
             return
 
         data = base64.b64decode(payload["data"])
-        out_dir = os.path.join("Projects", project,
+        out_dir = os.path.join(PROJECTS_DIR, project,
                             "Plots", "Single-study-analysis",
                             "Differential-pathway-table-plots")
         os.makedirs(out_dir, exist_ok=True)

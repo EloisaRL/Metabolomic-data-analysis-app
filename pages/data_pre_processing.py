@@ -8,7 +8,6 @@ from .data_pre_processing_page_tabs.data_exploration     import register_callbac
 from .data_pre_processing_page_tabs.data_summary     import layout    as data_summary_layout
 from .data_pre_processing_page_tabs.data_summary     import register_callbacks as register_data_summary_cb
 
-UPLOAD_FOLDER = "pre-processed-datasets"
 
 # -----------------------------
 # Helper functions

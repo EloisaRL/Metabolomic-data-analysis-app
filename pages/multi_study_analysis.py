@@ -9,10 +9,11 @@ from .multi_study_analysis_page_tabs.upset_plots import register_callbacks as re
 from .multi_study_analysis_page_tabs.netowrk_plots     import layout    as network_layout
 from .multi_study_analysis_page_tabs.netowrk_plots     import register_callbacks as register_network_cb
 
+from paths import PROJECTS_DIR
 
 # Helper function to list project folders in the "Projects" folder.
 def list_projects():
-    projects_dir = "Projects"
+    projects_dir = PROJECTS_DIR
     try:
         # List only directories
         return sorted([f for f in os.listdir(projects_dir) if os.path.isdir(os.path.join(projects_dir, f))])
@@ -22,7 +23,7 @@ def list_projects():
 # Helper function to list files in processed-datasets folder.
 def list_processed_files(selected_project):
     # Modify the base path as needed for your project structure.
-    folder_path = os.path.join("projects", selected_project, "processed-datasets")
+    folder_path = os.path.join(PROJECTS_DIR, selected_project, "processed-datasets")
     try:
         files = os.listdir(folder_path)
         # Only include files (exclude subdirectories)
@@ -194,7 +195,7 @@ def update_files_checklist(selected_project):
     files = list_processed_files(selected_project)
 
     # Load study metadata
-    project_details_path = os.path.join("Projects", selected_project, "project_details_file.json")
+    project_details_path = os.path.join(PROJECTS_DIR, selected_project, "project_details_file.json")
     try:
         with open(project_details_path, "r", encoding="utf-8") as f:
             payload = json.load(f).get("studies", {})
@@ -306,7 +307,7 @@ def show_save_toast_msa(n_upset, n_diff,
 
     # Common base directory
     base = os.path.join(
-        "Projects", project or "",
+        PROJECTS_DIR, project or "",
         "Plots", "Multi-study-analysis"
     )
 

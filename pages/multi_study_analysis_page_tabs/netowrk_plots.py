@@ -25,16 +25,16 @@ import glob
 import logging
 from pathlib import Path
 logger = logging.getLogger(__name__)
-
+from paths import PROJECTS_DIR, UPLOAD_FOLDER, CACHE_DIR
 import sqlite3
 import requests
 
-CACHE_DIR = Path("cache")
+#CACHE_DIR = Path("cache")
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 DB_PATH = CACHE_DIR / "chebi_name_map.db"
 
 
-UPLOAD_FOLDER = "pre-processed-datasets"
+#UPLOAD_FOLDER = "pre-processed-datasets"
 
 refmet = pd.read_csv("refmet.csv", dtype=object)
 refmet.columns = refmet.columns.str.strip() 
@@ -730,7 +730,7 @@ def register_callbacks():
             return None
 
         # Load study metadata
-        project_details_path = os.path.join("Projects", selected_project, "project_details_file.json")
+        project_details_path = os.path.join(PROJECTS_DIR, selected_project, "project_details_file.json")
         try:
             with open(project_details_path, "r", encoding="utf-8") as f:
                 payload = json.load(f).get("studies", {})
@@ -738,7 +738,7 @@ def register_callbacks():
             payload = {}
 
         # ---------- Load previously saved disease associations (if any) ----------
-        project_dir  = os.path.join("Projects", selected_project)
+        project_dir  = os.path.join(PROJECTS_DIR, selected_project)
         mapping_file = os.path.join(project_dir, "disease_associations.json")
         try:
             with open(mapping_file, "r", encoding="utf-8") as f:
@@ -849,7 +849,7 @@ def register_callbacks():
             return "Nothing to save."
 
         # Ensure project dir + file path
-        project_dir = os.path.join("Projects", selected_project)
+        project_dir = os.path.join(PROJECTS_DIR, selected_project)
         os.makedirs(project_dir, exist_ok=True)
         mapping_file = os.path.join(project_dir, "disease_associations.json")
 
@@ -926,14 +926,14 @@ def register_callbacks():
                 return no_update, no_update, no_update, no_update
             
             # 1. load disease associations
-            assoc_path = os.path.join('Projects', selected_project, 'disease_associations.json')
+            assoc_path = os.path.join(PROJECTS_DIR, selected_project, 'disease_associations.json')
             with open(assoc_path, 'r', encoding='utf-8') as f:
                 associations = json.load(f)
 
             # 2. build a list of Analysis instances (only those with DA_metabolites)
             studies = []
             for fname in selected_files:
-                csv_path = os.path.join("Projects", selected_project, "processed-datasets", fname)
+                csv_path = os.path.join(PROJECTS_DIR, selected_project, "processed-datasets", fname)
                 if not os.path.exists(csv_path):
                     continue
                 study_name = fname.split("_")[1] if len(fname.split("_")) >= 3 else fname
@@ -944,7 +944,7 @@ def register_callbacks():
                 da.pathway_level = False
                 da.node_name      = study_name
 
-                folder_details = os.path.join("pre-processed-datasets", da.node_name)
+                folder_details = os.path.join(UPLOAD_FOLDER, da.node_name)
                 details = read_study_details_msa(folder_details)
                 dataset_source = details.get("Dataset Source", "").lower()
 
@@ -1148,7 +1148,7 @@ def register_callbacks():
             selected_files.sort()
             for fname in selected_files:
                 path = os.path.join(
-                    "Projects", selected_project,
+                    PROJECTS_DIR, selected_project,
                     "processed-datasets", fname
                 )
                 if not os.path.exists(path):
@@ -1171,7 +1171,7 @@ def register_callbacks():
                 all_study_names.append(name)
 
                 # Build the details file path (unchanged logic).
-                folder_details = os.path.join("pre-processed-datasets", da.node_name)
+                folder_details = os.path.join(UPLOAD_FOLDER, da.node_name)
                 details = read_study_details_msa(folder_details)
                 dataset_source = details.get("Dataset Source", "").lower()
                 
@@ -1720,7 +1720,7 @@ def register_callbacks():
 
         for fname in selected_files:
             study_name = fname.split("_")[1] if len(fname.split("_")) >= 3 else fname
-            csv_path = os.path.join('Projects', selected_project, "processed-datasets", fname)
+            csv_path = os.path.join(PROJECTS_DIR, selected_project, "processed-datasets", fname)
 
             try:
                 df = pd.read_csv(csv_path).set_index("database_identifier")
@@ -1729,7 +1729,7 @@ def register_callbacks():
                 continue
 
             # Get dataset source (e.g., 'metabolomics workbench' or 'refmet ids')
-            folder_details = os.path.join("pre-processed-datasets", study_name)
+            folder_details = os.path.join(UPLOAD_FOLDER, study_name)
             details = read_study_details_msa(folder_details)
             dataset_source = details.get("Dataset Source", "").lower()
 

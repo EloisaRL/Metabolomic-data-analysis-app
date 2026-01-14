@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  dash-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: eloisarl/metabolomic-data-analysis-app:latest
+    container_name: metabolomics_dash
+    ports:
+      - "8050:8050"
+    volumes:
+      - ./cache:/app/cache
+      - ./pre-processed-datasets:/app/pre-processed-datasets
+      - ./Projects:/app/Projects
+      - ./data_preprocessing_flows:/app/data_preprocessing_flows
+

@@ -18,17 +18,15 @@ import plotly.io as pio
 import logging
 from pathlib import Path
 logger = logging.getLogger(__name__)
-
+from paths import PROJECTS_DIR, CACHE_DIR, UPLOAD_FOLDER
 import sqlite3
 import requests
 
-CACHE_DIR = Path("cache")
+#CACHE_DIR = Path("cache")
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 DB_PATH = CACHE_DIR / "chebi_name_map.db"
 
-
-NAMES_PATH = Path("names.tsv.gz")
-UPLOAD_FOLDER = "pre-processed-datasets"
+#UPLOAD_FOLDER = "pre-processed-datasets"
 
 refmet = pd.read_csv("refmet.csv", dtype=object)
 refmet.columns = refmet.columns.str.strip() 
@@ -315,7 +313,7 @@ def register_callbacks():
         # 1) load each file, grab the full set of metabolites
         studies = []
         for fname in selected_files:
-            path = os.path.join("Projects", selected_project, "processed-datasets", fname)
+            path = os.path.join(PROJECTS_DIR, selected_project, "processed-datasets", fname)
             if not os.path.exists(path):
                 continue
             try:
@@ -420,7 +418,7 @@ def register_callbacks():
         ########################################################################
         studies = []
         for file in selected_files:
-            filepath = os.path.join("Projects", selected_project, "processed-datasets", file)
+            filepath = os.path.join(PROJECTS_DIR, selected_project, "processed-datasets", file)
             if not os.path.exists(filepath):
                 continue
             try:
@@ -637,8 +635,6 @@ def register_callbacks():
         return graph_coor, combined_diff, coor_payload, diff_payload
         
 
-    PROJECT_ROOT = os.path.join(os.path.dirname(__file__), "Project")
-
 
     # Callback controls the save metabolites upset plot pop up from opening
     @callback(
@@ -678,7 +674,7 @@ def register_callbacks():
             return
 
         # Build the full directory:
-        base_dir = os.path.join("Projects", project,
+        base_dir = os.path.join(PROJECTS_DIR, project,
                                 "Plots", "Multi-study-analysis", "Co-occurring-metabolites-upset-plots")
         # If it doesn't exist, bail out with an error
         if not os.path.isdir(base_dir):
@@ -736,7 +732,7 @@ def register_callbacks():
             return
 
         # Build the full directory:
-        base_dir = os.path.join("Projects", project,
+        base_dir = os.path.join(PROJECTS_DIR, project,
                                 "Plots", "Multi-study-analysis", "Differential-co-occurring-metabolites-upset-plots")
         
         # If it doesn't exist, bail out with an error

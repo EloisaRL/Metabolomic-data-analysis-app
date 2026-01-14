@@ -1,19 +1,26 @@
-from dash import html, dcc
-import dash_bootstrap_components as dbc
-from dash.dependencies import Input, Output
+#from dash import html, dcc
+#import dash_bootstrap_components as dbc
+#from dash.dependencies import Input, Output
 
 import logging
 from logging.handlers import RotatingFileHandler
+from paths import CACHE_DIR
 
 # Set up rotating log file
+CACHE_DIR.mkdir(exist_ok=True)
+LOG_FILE = CACHE_DIR / "app.log"
 log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-log_handler = RotatingFileHandler('app.log', maxBytes=1_000_000, backupCount=5)
+log_handler = RotatingFileHandler(LOG_FILE, maxBytes=1_000_000, backupCount=5)
 log_handler.setFormatter(log_formatter)
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 logger.addHandler(log_handler)
 
 logger.info("Dash app initialized")
+
+from dash import html, dcc
+import dash_bootstrap_components as dbc
+from dash.dependencies import Input, Output
 
 from pages import home, data_pre_processing, datasets, single_study_analysis, multi_study_analysis, plots
 from app import app
@@ -143,7 +150,7 @@ app.layout = html.Div([sidebar,
 )
 
 def display_page_and_title(pathname, search):
-    logger.info(f"Route accessed: {pathname}")
+    logging.getLogger(__name__).info(f"Route accessed: {pathname}")
     if pathname == "/data-pre-processing":
         return data_pre_processing.layout, "Data Pre-Processing"
     elif pathname == "/datasets":
@@ -163,7 +170,11 @@ def display_page_and_title(pathname, search):
 
 if __name__ == "__main__":
     #app.run_server(debug=True)
+    logger.info("App available at http://localhost:8050")
+    print("App available at http://localhost:8050")
     app.run(
+        host="0.0.0.0",
+        port=8050,
         debug=True,                 # keep error messages
         dev_tools_hot_reload=False, # stop page resets
     )

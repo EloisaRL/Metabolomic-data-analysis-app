@@ -13,3 +13,4 @@ scipy==1.11.4
 seaborn==0.13.2
 sspa==1.0.4
 statsmodels==0.14.1
+tqdm==4.66.2

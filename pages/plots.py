@@ -1,8 +1,8 @@
 import os
-from dash import html, dcc, callback_context, no_update
+from dash import html, dcc, callback_context, no_update, callback
 from dash.dependencies import Input, Output, State, ALL
 import dash_bootstrap_components as dbc
-from app import app
+#from app import app
 from dash import html
 import base64
 
@@ -121,7 +121,7 @@ layout = html.Div([
     ),
 ])
 
-@app.callback(
+@callback(
     Output("project-dropdown-modal", "options"),
     Input("project-modal-plots", "is_open")
 )
@@ -136,7 +136,7 @@ def update_project_list(is_open):
     return no_update
 
 # — enable the “Confirm” button once they pick something —
-@app.callback(
+@callback(
     Output('confirm-project-btn', 'disabled'),
     Input('project-dropdown-modal', 'value')
 )
@@ -144,7 +144,7 @@ def _enable_confirm(val):
     return val is None
 
 # — when they hit Confirm: close modal, store project, set subtitle —
-@app.callback(
+@callback(
     Output('project-modal-plots', 'is_open'),
     Output('selected-project-store', 'data'),
     Output('project-title', 'children'),
@@ -157,7 +157,7 @@ def _confirm_project(n_clicks, project):
     return False, project, project.replace('-', ' ')
 
 # — populate the plot‐folder dropdown from the chosen project —
-@app.callback(
+@callback(
     Output('plot-folder-dropdown', 'options'),
     Output('plot-folder-dropdown', 'value'),
     Input('selected-project-store', 'data'),
@@ -201,7 +201,7 @@ style_cell = {
     "padding": "5px",                  # less vertical space
 }
 
-""" @app.callback(
+""" @callback(
     Output('subfolder-table-wrapper', 'children'),
     Input ('plot-folder-dropdown','value'),
     State('selected-project-store','data'),
@@ -260,7 +260,7 @@ def render_subfolder_table(plot_folder, project):
     table = html.Table([thead, html.Tbody(rows)], style=style_table)
     return table """
 
-@app.callback(
+@callback(
     Output('subfolder-table-wrapper', 'children'),
     Input('plot-folder-dropdown', 'value'),
     State('selected-project-store', 'data'),
@@ -329,7 +329,7 @@ def render_subfolder_table(plot_folder, project):
     )
 
 
-@app.callback(
+@callback(
     Output('preview-box', 'children'),
     Input({'type': 'file-button', 'path': ALL}, 'n_clicks'),
     prevent_initial_call=True
@@ -366,7 +366,7 @@ def preview_file(n_clicks_list):
 
 
 """ 
-@app.callback(
+@callback(
     Output("plots-files-table", "children"),
     [Input("project-dropdown-plt", "value"), Input("url", "pathname")]
 )

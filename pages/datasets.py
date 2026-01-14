@@ -4,13 +4,15 @@ from datetime import datetime
 import dash_bootstrap_components as dbc
 from dash import html, dcc, dash_table, callback, no_update, State
 from dash.dependencies import Input, Output
-from app import app
+#from app import app
 import json
+from paths import UPLOAD_FOLDER, PROJECTS_DIR, APP_ROOT
 
 # Base folder for projects.
-projects_folder = "Projects"
+#projects_folder = "Projects"
+projects_folder = PROJECTS_DIR
 
-UPLOAD_FOLDER = "pre-processed-datasets"
+#UPLOAD_FOLDER = "pre-processed-datasets"
 # Path to the temporary file that holds the selected studies
 SELECTED_STUDIES_FILE = os.path.join(UPLOAD_FOLDER, "selected_studies_temp.txt")
 
@@ -107,7 +109,7 @@ def show_processed_datasets(selected_project, pathname):
         )
 
     # Load JSON payload for study metadata
-    project_details_path = os.path.join("Projects", selected_project, "project_details_file.json")
+    project_details_path = os.path.join(APP_ROOT, "Projects", selected_project, "project_details_file.json")
     try:
         with open(project_details_path, "r", encoding="utf-8") as f:
             payload = json.load(f).get("studies", {})
