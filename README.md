@@ -5,19 +5,23 @@
 An interactive Dash application for visualising and analysing differential metabolites and differential pathways in a single study or across multiple studies.  
 The app automatically harmonises metabolite annotations (RefMet names or ChEBI IDs), letting you seamlessly explore your own data or public datasets from MetaboLights and Metabolomics Workbench in one place.
 
+<p align="center">
+  <img
+    src="https://github.com/user-attachments/assets/f28ff8f3-4e41-4baf-9c69-7901be25da60"
+    alt="Workflow overview"
+    width="600"
+  />
+</p>
 
-![image](https://github.com/user-attachments/assets/7b7ffe0e-f397-4394-9858-11038453f6c3)
+
 
 ---
 
 ## Table of Contents
 
-- [Features](#features)  
 - [Getting Started](#getting-started)  
-  - [Clone the Repository](#clone-the-repository)
-  - [Set up the Environment](#set-up-the-environment) 
-  - [Install Dependencies](#install-dependencies)  
-  - [Run the App](#run-the-app)
+  - [Option A — Run with Docker (Recommended)](#option-a--run-with-docker-recommended)
+  - [Option B — Run Locally with Python](#option-b--run-locally-with-python) 
   - [Data Requirements](#data-requirements)
 - [Usage](#usage)  
   - [Single-Study Analysis](#single-study-analysis)  
@@ -26,68 +30,83 @@ The app automatically harmonises metabolite annotations (RefMet names or ChEBI I
 - [Contributing](#contributing)  
 - [License](#license)  
 
----
-
-## Features
-
-1. **Interactive Visualisations**  
-   - Dynamic plots of differential metabolites, differential pathways, clustering, and more.  
-
-2. **Single-Study Analysis**  
-   - Upload your own processed data (RefMet name/ChEBI IDs).  
-   - Visualise differential metabolites and differential pathways from a single study.
-
-3. **Multi-Study Analysis**  
-   - Integrate data from multiple sources (e.g., public repositories or your own studies).  
-   - Harmonise metabolite annotations across studies to find common signatures.  
-   - Compare study-specific vs. cross-study trends in a unified view.
-
-4. **Public Repository Integration**  
-   - Pull annotated metabolomic data directly from MetaboLights or MetabolomicsWorkbench.  
-   - Harmonises annotations with either ChEBI IDs or RefMet names.
-
-5. **Reproducibility and Reusability**  
-   - Built-in support for standardised formats and nomenclature.  
-   - Easy export of (high resolution in svg format) plots, tables, and filtered datasets for downstream analysis or publication.
 
 ---
 
 ## Getting Started
 
-### Clone the Repository
+There are **two ways** to run the application:
 
+- **Option A (Recommended): Run with Docker (no Python setup required)**
+- **Option B: Run locally with Python (for development or contributors)**
+
+
+### Option A — Run with Docker (Recommended)
+This is the **simplest and most reproducible way** to run the app.
+
+**Prerequisites**
+- Docker
+- Docker Compose
+
+#### Steps
+```bash
+git clone https://github.com/EloisaRL/Metabolomic-data-analysis-app.git
+cd Metabolomic-data-analysis-app
+docker compose up
+```
+Docker will pull the published image from Docker Hub and start the app.
+
+Once running, open your browser at:
+```arduino
+http://localhost:8050
+```
+
+To stop the app:
+```bash
+docker compose down
+```
+
+
+### Option B — Run Locally with Python
+This option is useful if you want to **develop or modify the code**.
+
+**Prerequisites**
+- Python **3.12.9**
+
+#### Steps
+
+Clone the repository:
 ```bash
 git clone https://github.com/EloisaRL/Metabolomic-data-analysis-app.git
 cd Metabolomic-data-analysis-app
 ```
 
-### Set up the Environment
-Ensure you are using **Python 3.12.9** (or create a virtual environment with it).    
-
-**Create and activate a virtual environment (optional but recommended):**
-
+Create and activate a virtual environment (optional but recommended):
 ```bash
 python -m venv venv
 venv\Scripts\activate      # On macOS/Linux: source venv/bin/activate
 ```
-### Install Dependencies
-Install all required packages using the `requirements.txt` file:
 
+Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-### Run the App 
-
+Run the app:
 ```bash
 python index.py
 ```
-You’ll see output similar to:
 
-```console
-Dash is running on http://127.0.0.1:8050/  (Press CTRL+C to quit)
+You should see output similar to:
+```bash
+Dash is running on http://127.0.0.1:8050/
 ```
-**Ctrl+Click** (or **Cmd+Click** on macOS) the link to open the app in your browser.
+
+Open the app in your browser at:
+```arduino
+http://localhost:8050
+```
+
 
 ### Data Requirements
 
