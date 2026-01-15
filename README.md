@@ -45,9 +45,11 @@ There are **two ways** to run the application:
 ### Option A — Run with Docker (Recommended)
 This is the **simplest and most reproducible way** to run the app.
 
-**Prerequisites**
-- Docker
-- Docker Compose
+### Prerequisites
+- Docker Desktop (Windows or macOS) or Docker Engine (Linux)
+- Docker Compose (included with Docker Desktop)
+
+> **Note:** Docker Desktop must be running before executing the commands below.
 
 #### Steps
 ```bash
